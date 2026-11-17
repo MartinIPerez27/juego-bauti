@@ -130,23 +130,22 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 #s-config .btn.go{position:absolute;right:70px;bottom:24px}
 
 /* ===== MEMORIA ===== */
-.side{position:absolute;top:130px;bottom:34px;width:230px;border-radius:26px;border:6px solid var(--ink);background:var(--bg2);padding:14px;
-  transition:transform .3s var(--ease-out),box-shadow .3s var(--ease-out);box-shadow:0 8px 0 var(--ink)}
-.side.a{left:30px}.side.b{right:30px}
-.side .nm{font-family:var(--display);font-size:46px;line-height:1;text-align:center;text-shadow:0 4px 0 var(--ink)}
+.side{position:absolute;top:14px;height:66px;display:flex;align-items:center;gap:16px;padding:0 22px;border-radius:20px;border:5px solid var(--ink);background:var(--bg2);
+  transition:box-shadow .3s var(--ease-out);box-shadow:0 6px 0 var(--ink)}
+.side.a{left:30px}.side.b{right:30px;flex-direction:row-reverse}
+.side .nm{font-family:var(--display);font-size:38px;line-height:1;text-shadow:0 4px 0 var(--ink)}
 .side.a .nm{color:var(--blue)}.side.b .nm{color:var(--red)}
-.side .sc{font-family:var(--display);font-size:90px;line-height:1;text-align:center;color:#fff;text-shadow:0 5px 0 var(--ink)}
+.side .sc{font-family:var(--display);font-size:50px;line-height:1;min-width:34px;text-align:center;color:#fff;text-shadow:0 4px 0 var(--ink)}
 .side .sc.bump{animation:bump .4s var(--ease-out)}
 @keyframes bump{40%{transform:scale(1.3)}}
-.side .tray{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;align-content:flex-start;max-height:300px;overflow:hidden}
+#mturn{position:absolute;left:50%;top:14px;translate:-50% 0;height:66px;display:flex;align-items:center;gap:12px;font-family:var(--display);font-size:40px;color:var(--yellow);text-shadow:0 4px 0 var(--ink);white-space:nowrap}
+#mturn .pip{width:26px;height:26px;border-radius:50%;border:4px solid var(--ink);background:var(--bg2);transition:background .15s,transform .2s var(--ease-out)}
+#mturn .pip.on{background:var(--yellow);transform:scale(1.15)}
 .thumb{width:44px;height:66px;border:3px solid var(--ink);border-radius:8px;object-fit:cover;object-position:50% 18%;background:var(--ink)}
 .thumb.pop{animation:pop .36s var(--ease-out)}
 @keyframes pop{from{opacity:0;transform:scale(.6)}}
-.side.turn{transform:translateY(-6px);box-shadow:0 14px 0 var(--ink),0 0 0 6px var(--yellow)}
-.turnflag{position:absolute;left:50%;transform:translateX(-50%);top:-44px;white-space:nowrap;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:14px;
-  font-family:var(--display);font-size:28px;padding:0 14px;opacity:0;transition:opacity .2s}
-.side.turn .turnflag{opacity:1}
-#board{position:absolute;left:280px;right:280px;top:60px;bottom:30px;perspective:1100px;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2)}
+.side.turn{box-shadow:0 6px 0 var(--ink),0 0 0 5px var(--yellow)}
+#board{position:absolute;left:30px;right:30px;top:98px;bottom:22px;perspective:1100px;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2)}
 #board .bi{position:relative;width:100%}
 .slot{position:absolute;transition:transform .16s var(--ease-out)}
 .slot:active:not(:disabled){transform:scale(.96)}
@@ -184,30 +183,30 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 #s-team .ai{position:absolute;left:0;right:0;top:300px;text-align:center;font-size:64px;color:var(--paper);text-shadow:0 5px 0 var(--ink)}
 
 /* ===== BATALLA ===== */
-.score{position:absolute;top:14px;left:30px;right:30px;height:84px;display:flex;justify-content:space-between;align-items:center}
-.score .p{display:flex;align-items:center;gap:16px;background:var(--bg2);border:5px solid var(--ink);border-radius:20px;height:76px;padding:0 24px;box-shadow:0 6px 0 var(--ink)}
-.score .p .n{font-family:var(--display);font-size:46px;line-height:1}
+.score{position:absolute;top:12px;left:30px;right:30px;height:64px;display:flex;justify-content:space-between;align-items:center}
+.score .p{display:flex;align-items:center;gap:16px;background:var(--bg2);border:5px solid var(--ink);border-radius:18px;height:60px;padding:0 22px;box-shadow:0 5px 0 var(--ink)}
+.score .p .n{font-family:var(--display);font-size:36px;line-height:1}
 .score .p.a .n{color:var(--blue)}.score .p.b .n{color:var(--red)}
-.score .p .v{font-family:var(--display);font-size:68px;line-height:1;color:#fff;text-shadow:0 4px 0 var(--ink);min-width:44px;text-align:center}
+.score .p .v{font-family:var(--display);font-size:50px;line-height:1;color:#fff;text-shadow:0 4px 0 var(--ink);min-width:44px;text-align:center}
 .score .v.bump{animation:bump .5s var(--ease-out)}
-.score .rd{font-family:var(--display);font-size:44px;color:var(--yellow);text-shadow:0 4px 0 var(--ink)}
-.team{position:absolute;top:116px;height:250px;width:560px;display:flex;gap:14px;align-items:flex-start;justify-content:center}
+.score .rd{font-family:var(--display);font-size:36px;color:var(--yellow);text-shadow:0 4px 0 var(--ink)}
+.team{position:absolute;top:92px;height:268px;width:560px;display:flex;gap:14px;align-items:flex-start;justify-content:center}
 .team.a{left:30px}.team.b{right:30px}
 .team .card{transition:filter .4s,opacity .4s,transform .5s var(--ease-out)}
 .team.win .card{box-shadow:0 0 0 .3em var(--yellow),0 .5em 1.1em rgba(0,0,0,.5)}
 .team.lose .card{filter:saturate(.7) brightness(.85)}
-.pwr{position:absolute;top:372px;width:300px;height:72px;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--paper);color:var(--ink);
+.pwr{position:absolute;top:354px;width:300px;height:72px;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--paper);color:var(--ink);
   border:5px solid var(--ink);border-radius:20px;font-family:var(--display);font-size:62px;box-shadow:0 6px 0 var(--ink);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .3s var(--ease-out)}
 .pwr.show{opacity:1;transform:none}
 .pwr svg{width:44px;height:44px}
 .pwr.a{left:160px}.pwr.b{right:160px}
-.chips{position:absolute;top:462px;width:560px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chips{position:absolute;top:438px;width:560px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chips.a{left:30px}.chips.b{right:30px}
-.chip{font-family:var(--display);font-size:27px;line-height:1;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:12px;padding:5px 12px;
+.chip{font-family:var(--display);font-size:25px;line-height:1;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:12px;padding:4px 10px;
   animation:pop .35s var(--ease-out) both}
 .chip b{font-weight:400;color:var(--red)}
-.vs{position:absolute;left:50%;top:170px;translate:-50% 0;z-index:6;font-family:var(--display);font-size:150px;color:var(--yellow);line-height:1;opacity:0;
-  -webkit-text-stroke:8px var(--ink);paint-order:stroke fill;text-shadow:0 8px 0 var(--ink)}
+.vs{position:absolute;left:50%;top:160px;translate:-50% 0;z-index:6;font-family:var(--display);font-size:112px;color:var(--yellow);line-height:1;opacity:0;
+  -webkit-text-stroke:6px var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 var(--ink)}
 .vs.show{animation:vs .6s var(--ease-out) both}
 @keyframes vs{0%{opacity:0;transform:scale(2.2) rotate(-12deg)}60%{opacity:1;transform:scale(.95) rotate(-6deg)}100%{opacity:1;transform:scale(1) rotate(-6deg)}}
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:25}
@@ -322,8 +321,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 
   <!-- MEMORIA -->
   <section class="screen" id="s-mem">
-    <div class="side a" id="sd0"><div class="turnflag">¡TU TURNO!</div><div class="nm"></div><div class="sc">0</div><div class="tray"></div></div>
-    <div class="side b" id="sd1"><div class="turnflag">¡TU TURNO!</div><div class="nm"></div><div class="sc">0</div><div class="tray"></div></div>
+    <div class="side a" id="sd0"><div class="nm"></div><div class="sc">0</div></div>
+    <div class="side b" id="sd1"><div class="nm"></div><div class="sc">0</div></div>
+    <div id="mturn" aria-live="polite"><span class="tn"></span><i class="pip"></i><i class="pip"></i></div>
     <div id="board"></div>
     <div class="disp banner" id="mbanner"></div>
   </section>
@@ -500,13 +500,14 @@ function layout(n,W,H){const gap=14;let best=null;
   for(let cols=3;cols<=16;cols++){const rows=Math.ceil(n/cols),w=Math.min((W-gap*(cols-1))/cols,(H-gap*(rows-1))/rows/1.5);if(!best||w>best.w)best={cols,rows,w}}
   if(best.w<MINW){best.cols=Math.max(3,Math.floor((W+gap)/(MINW+gap)));best.rows=Math.ceil(n/best.cols);best.w=Math.min(MINW,(W-gap*(best.cols-1))/best.cols)}
   best.w=Math.floor(best.w);return{...best,gap}}
-function sideUpdate(){[0,1].forEach(i=>{const s=$('#sd'+i);s.classList.toggle('turn',S.turn===i);$('.nm',s).textContent=S.names[i]})}
-function addThumb(p,c){const t=document.createElement('img');t.className='thumb pop';t.src=c.img;t.alt='';$('.tray',$('#sd'+p)).append(t);
-  const sc=$('.sc',$('#sd'+p));sc.textContent=S.coll[p].length;sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump');return t}
+function sideUpdate(){[0,1].forEach(i=>{const s=$('#sd'+i);s.classList.toggle('turn',S.turn===i);$('.nm',s).textContent=S.names[i]});
+  const tn=$('#mturn .tn');tn.textContent='TURNO: '+S.names[S.turn];tn.style.color=S.turn?'var(--red)':'var(--blue)';
+  $$('#mturn .pip').forEach((p,k)=>p.classList.toggle('on',k<flips))}
+function addThumb(p){const sc=$('.sc',$('#sd'+p));sc.textContent=S.coll[p].length;sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump')}
 function startMemory(){
   S.coll=[[],[]];S.score=[0,0];S.round=0;S.turn=0;busy=true;faceUp=new Set();flips=0;
   const pick=shuffle(CARDS).slice(0,Math.min(S.pairs,CARDS.length));deck=shuffle([...pick,...pick].map(c=>c.id));matched=deck.map(()=>false);left=pick.length;
-  [0,1].forEach(i=>{const s=$('#sd'+i);$('.tray',s).innerHTML='';$('.sc',s).textContent='0'});sideUpdate();
+  [0,1].forEach(i=>{$('.sc',$('#sd'+i)).textContent='0'});sideUpdate();
   go('mem');
   const board=$('#board');board.innerHTML='';board.scrollTop=0;
   const W=board.clientWidth,H=board.clientHeight,L=layout(deck.length,W,H);
@@ -526,21 +527,19 @@ function focusSlot(i){const s=slotEl(i),b=$('#board'),t=s.offsetTop;
   if(t<b.scrollTop||t+s.offsetHeight>b.scrollTop+b.clientHeight)b.scrollTo({top:Math.max(0,t-(b.clientHeight-s.offsetHeight)/2),behavior:REDUCE?'auto':'smooth'})}
 function showCard(i){faceUp.add(i);slotEl(i).classList.add('up');sfx('flip');buzz(8)}
 function humanFlip(i){if(busy||S.ai[S.turn]||matched[i]||faceUp.has(i))return;ac();flipCard(i)}
-async function flipCard(i){busy=true;showCard(i);await sleep(650);
+async function flipCard(i){busy=true;showCard(i);flips++;sideUpdate();await sleep(650);
   const mate=[...faceUp].find(j=>j!==i&&!matched[j]&&deck[j]===deck[i]);
-  if(mate!==undefined){await doMatch(mate,i);flips=0;busy=false;if(left>0)turnStart();else endMemory();return}
-  sfx('no');flips++;
-  if(flips>=2){flips=0;await sleep(450);S.turn^=1;sideUpdate()}
-  busy=false;turnStart()}
+  if(mate!==undefined)await doMatch(mate,i);else sfx('no');
+  if(left===0){flips=0;busy=false;endMemory();return}
+  if(flips>=2){await sleep(500);flips=0;S.turn^=1}   // regla del modo principal: siempre 2 cartas por turno, aciertes o no
+  sideUpdate();busy=false;turnStart()}
 async function doMatch(a,b){const c=BYID[deck[a]],p=S.turn;matched[a]=matched[b]=true;left--;sfx('match');buzz([20,30,20]);
-  const tray=$('.tray',$('#sd'+p));
   [a,b].forEach(i=>slotEl(i).classList.add('ok'));
   focusSlot(a);
   await sleep(450);
   const from=[slotEl(a),slotEl(b)],dst=$('#sd'+p+' .sc');
   await Promise.all(from.map((s,k)=>fly(s,dst,c.img,k*90)));
-  from.forEach(s=>s.classList.add('gone'));S.coll[p].push(c);addThumb(p,c);
-  if(S.coll[p].length>12)tray.firstChild.remove();
+  from.forEach(s=>s.classList.add('gone'));S.coll[p].push(c);addThumb(p);
   if(left>0)await sleep(250)}
 function fly(src,dst,img,delay=0){const a=rectIn(src),b=rectIn(dst),e=document.createElement('div');e.className='fly';
   e.style.cssText=`left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px;background-image:url(${img})`;stage.append(e);
@@ -635,7 +634,7 @@ async function battle(A,B){
   ['#pa','#pb'].forEach(s=>{$(s).classList.remove('show');$('span',$(s)).textContent='0'});
   ['#ca','#cb'].forEach(s=>$(s).innerHTML='');
   $('#vs').classList.remove('show');$('#cap').innerHTML='';$('#b-next').hidden=true;$('#b-skip').hidden=false;
-  const cwFor=n=>Math.min(160,Math.floor((560-14*(n-1))/n));
+  const cwFor=n=>Math.min(n>=3?158:172,Math.floor((560-14*(n-1))/n));
   const place=(sel,T,from)=>{T.forEach((c,i)=>{const e=cardEl(c,cwFor(T.length));$(sel).append(e);
     if(!REDUCE)e.animate([{transform:`translateX(${from*520}px) rotate(${from*14}deg)`,opacity:0},{transform:'none',opacity:1}],{duration:520,delay:i*130,easing:'cubic-bezier(.23,1,.32,1)',fill:'backwards'});})};
   const cap=t=>{$('#cap').innerHTML=`<span>${t}</span>`};
