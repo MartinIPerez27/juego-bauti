@@ -1,0 +1,376 @@
+<script>
+// ============================================================
+// MotorBingo.html — Modo Bingo v4.0
+// Blackout: completar todo el cartón para ganar.
+// Los cartones se generan automáticamente desde BD_GLOBAL.
+// Un botón canta cartas una por una con narración y animación.
+// ============================================================
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+const _BINGO_COLS   = 5;   // columnas del cartón
+const _BINGO_FILAS  = 5;   // filas del cartón (5×5 = 25 casillas)
+const _BINGO_CENTRO = true; // casilla central = LIBRE (ya marcada)
+
+// ── ESTADO ────────────────────────────────────────────────────
+const _bingo = {
+  activa:      false,
+  universo:    "TODOS",
+  jugadores:   [],       // [{ nombre, carton: [{personaje,marcada}], completo }]
+  poolCantado: [],       // personajes ya cantados
+  poolPendiente:[],      // personajes por cantar
+  cantadas:    0,
+  ganador:     null,
+};
+
+let _bingoJugadoresCount = 2;
+
+// ────────────────────────────────────────────────────────────
+// 1. GESTIÓN DE JUGADORES EN CONFIG
+// ────────────────────────────────────────────────────────────
+function agregarJugadorBingo() {
+  if (_bingoJugadoresCount >= 6) return;
+  _bingoJugadoresCount++;
+  _renderizarInputsBingo();
+}
+
+function quitarJugadorBingo() {
+  if (_bingoJugadoresCount <= 1) return;
+  _bingoJugadoresCount--;
+  _renderizarInputsBingo();
+}
+
+function _renderizarInputsBingo() {
+  const lista = document.getElementById('bingo-jugadores-lista');
+  if (!lista) return;
+  const colores = ['a','b','c','d','e','f'];
+  lista.innerHTML = "";
+  for (let i = 0; i < _bingoJugadoresCount; i++) {
+    const fila = document.createElement('div');
+    fila.className = 'jugador-input-fila';
+    fila.innerHTML =
+      `<span class="jugador-color jugador-color-${colores[i] || 'a'}"></span>` +
+      `<input type="text" class="jugador-nombre-input" ` +
+      `placeholder="JUGADOR ${i + 1}" maxlength="20" data-jugador="${i}">`;
+    lista.appendChild(fila);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 2. ARRANQUE
+// ────────────────────────────────────────────────────────────
+function iniciarBingo() {
+  const universo = getOpcion('universo-bingo', 'TODOS');
+  const pantalla = document.getElementById('pantalla-bingo');
+  const nombres  = Array.from(
+    pantalla.querySelectorAll('.jugador-nombre-input')
+  ).map((inp, i) => inp.value.trim() || `JUGADOR ${i + 1}`);
+
+  if (!window.BD_GLOBAL || window.BD_GLOBAL.length === 0) {
+    mostrarToast("⚠ BASE DE DATOS AÚN CARGANDO...");
+    return;
+  }
+
+  if (typeof guardarPerfilesJugadores === "function") guardarPerfilesJugadores(nombres);
+
+  const pool = barajar(obtenerPersonajesPorUniverso(universo));
+  const casillasNecesarias = _BINGO_COLS * _BINGO_FILAS - (_BINGO_CENTRO ? 1 : 0);
+  const minimoPool = casillasNecesarias * nombres.length;
+
+  if (pool.length < minimoPool) {
+    mostrarModal(
+      `NO HAY SUFICIENTES PERSONAJES.\n` +
+      `CON ${nombres.length} JUGADORES NECESITÁS ${minimoPool} EN ${universo}.\n` +
+      `DISPONIBLES: ${pool.length}`,
+      ["VOLVER"], () => {}
+    );
+    return;
+  }
+
+  // Generar cartón único para cada jugador (sin repetir entre cartones)
+  // Estrategia: barajar el pool y asignar bloques de 24 a cada jugador
+  const jugadores = nombres.map((nombre, idx) => {
+    const inicio  = idx * casillasNecesarias;
+    const casillas= pool.slice(inicio, inicio + casillasNecesarias);
+    const carton  = _generarCarton(barajar(casillas));
+    return { nombre, carton, completo: false };
+  });
+
+  // Pool para cantar: todos los personajes que aparecen en algún cartón
+  const todosEnCartones = new Set(
+    jugadores.flatMap(j => j.carton.map(c => c.personaje?.PERSONAJE).filter(Boolean))
+  );
+  // Agregar más del pool para que haya variedad al cantar
+  const extras = barajar(
+    pool.filter(p => !todosEnCartones.has(p.PERSONAJE))
+  ).slice(0, 30);
+
+  const poolParaCantar = barajar([
+    ...pool.filter(p => todosEnCartones.has(p.PERSONAJE)),
+    ...extras,
+  ]);
+
+  Object.assign(_bingo, {
+    activa:       true,
+    universo,
+    jugadores,
+    poolCantado:  [],
+    poolPendiente:poolParaCantar,
+    cantadas:     0,
+    ganador:      null,
+  });
+
+  // Mostrar juego, ocultar config
+  document.getElementById('bingo-config').classList.add('oculto');
+  document.getElementById('bingo-juego').classList.remove('oculto');
+
+  _renderizarCartones();
+  _actualizarContadorCantadas();
+
+  if (typeof reproducirSonido === "function") reproducirSonido('inicio');
+  if (typeof narrar === "function") narrar("¡QUE EMPIECE EL BINGO!");
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. GENERACIÓN DE CARTÓN 5×5
+// ────────────────────────────────────────────────────────────
+function _generarCarton(personajes) {
+  // 25 casillas: 24 personajes + 1 casilla LIBRE en el centro (posición 12)
+  const casillas = [];
+  let pIdx = 0;
+
+  for (let i = 0; i < _BINGO_COLS * _BINGO_FILAS; i++) {
+    const esCentro = _BINGO_CENTRO && i === Math.floor((_BINGO_COLS * _BINGO_FILAS) / 2);
+    casillas.push({
+      personaje: esCentro ? null : (personajes[pIdx++] || null),
+      marcada:   esCentro,  // centro siempre marcado
+      esCentro,
+    });
+  }
+  return casillas;
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. CANTAR CARTA
+// ────────────────────────────────────────────────────────────
+function cantarSiguiente() {
+  if (!_bingo.activa || _bingo.ganador) return;
+  if (_bingo.poolPendiente.length === 0) {
+    mostrarToast("SE CANTARON TODOS LOS PERSONAJES");
+    return;
+  }
+
+  // Deshabilitar botón brevemente
+  const btn = document.getElementById('bingo-btn-cantar');
+  if (btn) { btn.disabled = true; }
+
+  const personaje = _bingo.poolPendiente.shift();
+  _bingo.poolCantado.push(personaje);
+  _bingo.cantadas++;
+
+  // Mostrar carta cantada
+  _mostrarCartaCantada(personaje);
+
+  // Marcar en todos los cartones
+  let hayGanador = false;
+  _bingo.jugadores.forEach((jugador, jIdx) => {
+    jugador.carton.forEach((casilla, cIdx) => {
+      if (casilla.personaje?.PERSONAJE === personaje.PERSONAJE && !casilla.marcada) {
+        casilla.marcada = true;
+        // Animar la casilla marcada
+        _animarCasillaMarkada(jIdx, cIdx);
+      }
+    });
+    // Verificar blackout
+    if (!jugador.completo && jugador.carton.every(c => c.marcada)) {
+      jugador.completo = true;
+      hayGanador       = true;
+      _bingo.ganador   = jugador.nombre;
+    }
+  });
+
+  _actualizarContadorCantadas();
+
+  // Narrar el personaje cantado
+  if (typeof narrarEvento === "function") {
+    narrarEvento(`${pronunciarNombre(personaje.PERSONAJE)}`);
+  }
+
+  if (hayGanador) {
+    setTimeout(() => _finalizarBingo(_bingo.ganador), 1200);
+    return;
+  }
+
+  // Re-habilitar botón después de un momento
+  setTimeout(() => {
+    if (btn) btn.disabled = false;
+  }, 800);
+}
+
+function _mostrarCartaCantada(personaje) {
+  const img         = document.getElementById('bingo-carta-img');
+  const placeholder = document.getElementById('bingo-carta-placeholder');
+  const nombre      = document.getElementById('bingo-carta-nombre');
+  const wrapper     = document.getElementById('bingo-carta-img-wrapper');
+
+  if (personaje.IMAGEN && img) {
+    img.onerror = () => {
+      // Si la imagen falla al cargar, volver al placeholder
+      img.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'flex';
+      wrapper?.classList.add('bingo-carta-img-vacia');
+    };
+    img.onload = () => {
+      img.style.display = 'block';
+      if (placeholder) placeholder.style.display = 'none';
+      wrapper?.classList.remove('bingo-carta-img-vacia');
+    };
+    img.src = personaje.IMAGEN;
+    img.alt = personaje.PERSONAJE;
+  } else {
+    // Sin imagen — mostrar placeholder directamente
+    if (img) { img.style.display = 'none'; img.removeAttribute('src'); }
+    if (placeholder) placeholder.style.display = 'flex';
+    wrapper?.classList.add('bingo-carta-img-vacia');
+  }
+
+  if (nombre) nombre.textContent = personaje.PERSONAJE;
+
+  // Animación de entrada
+  if (wrapper) {
+    wrapper.style.animation = 'none';
+    void wrapper.offsetWidth; // reflow
+    wrapper.style.animation = 'pantallaFadeIn 0.3s ease-out';
+  }
+}
+
+function _animarCasillaMarkada(jugadorIdx, casillaIdx) {
+  const el = document.querySelector(
+    `[data-jugador="${jugadorIdx}"] [data-casilla="${casillaIdx}"]`
+  );
+  if (!el) return;
+  el.classList.add('bingo-marcada');
+  if (typeof animarCartaMatch === "function") {
+    animarCartaMatch(el.querySelector('.carta') || el);
+  }
+}
+
+function _actualizarContadorCantadas() {
+  const el = document.getElementById('bingo-contador');
+  if (el) el.textContent = `${_bingo.cantadas} CANTADAS`;
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. FIN DE PARTIDA
+// ────────────────────────────────────────────────────────────
+function _finalizarBingo(ganadorNombre) {
+  _bingo.activa = false;
+
+  // Encontrar el cartón ganador y animarlo (destella completo)
+  const ganadorIdx = _bingo.jugadores.findIndex(j => j.nombre === ganadorNombre);
+  if (ganadorIdx >= 0) {
+    const cartonEl = document.querySelector(`.bingo-carton[data-jugador="${ganadorIdx}"]`);
+    if (cartonEl) {
+      cartonEl.classList.add('bingo-ganador');
+      cartonEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  if (typeof lanzarConfetti === "function") lanzarConfetti();
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  if (typeof narrar === "function") {
+    narrar(`¡BINGO! ¡${ganadorNombre} GANÓ! ¡COMPLETÓ EL CARTÓN CON ${_bingo.cantadas} CARTAS CANTADAS!`);
+  }
+
+  // Esperar a que se vea bien la animación de destello antes del modal
+  setTimeout(() => {
+    if (typeof mostrarPodio === "function") {
+      mostrarPodio(
+        "🎰 ¡BINGO!",
+        [{ nombre: ganadorNombre, puntos: _bingo.cantadas, color: 'var(--color-acento-oro)' }],
+        ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+        (opcion) => {
+          document.getElementById('bingo-config').classList.remove('oculto');
+          document.getElementById('bingo-juego').classList.add('oculto');
+          _limpiarBingo();
+          if (opcion === 1) navegarA('pantalla-menu');
+        }
+      );
+    } else {
+      mostrarModal(
+        `🎰 ¡BINGO!\n¡${ganadorNombre} GANÓ!\n\n${_bingo.cantadas} CARTAS CANTADAS`,
+        ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+        (opcion) => {
+          document.getElementById('bingo-config').classList.remove('oculto');
+          document.getElementById('bingo-juego').classList.add('oculto');
+          _limpiarBingo();
+          if (opcion === 1) navegarA('pantalla-menu');
+        }
+      );
+    }
+  }, 1800);
+}
+
+function _limpiarBingo() {
+  const img         = document.getElementById('bingo-carta-img');
+  const placeholder = document.getElementById('bingo-carta-placeholder');
+  const nombre      = document.getElementById('bingo-carta-nombre');
+  const wrapper     = document.getElementById('bingo-carta-img-wrapper');
+
+  if (img) { img.removeAttribute('src'); img.style.display = 'none'; }
+  if (placeholder) placeholder.style.display = 'flex';
+  wrapper?.classList.add('bingo-carta-img-vacia');
+  if (nombre) nombre.textContent = '';
+
+  document.getElementById('bingo-cartones').innerHTML = '';
+  document.getElementById('bingo-contador').textContent = '0 CANTADAS';
+  const btn = document.getElementById('bingo-btn-cantar');
+  if (btn) btn.disabled = false;
+}
+
+// ────────────────────────────────────────────────────────────
+// 6. RENDERIZADO DE CARTONES
+// ────────────────────────────────────────────────────────────
+function _renderizarCartones() {
+  const contenedor = document.getElementById('bingo-cartones');
+  if (!contenedor) return;
+
+  contenedor.innerHTML = _bingo.jugadores.map((jugador, jIdx) => `
+    <div class="bingo-carton" data-jugador="${jIdx}">
+      <div class="bingo-carton-header" style="color:${_colorJugador(jIdx)}">
+        ${jugador.nombre}
+      </div>
+      <div class="bingo-grid">
+        ${jugador.carton.map((casilla, cIdx) => _htmlCasilla(casilla, jIdx, cIdx)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function _htmlCasilla(casilla, jIdx, cIdx) {
+  if (casilla.esCentro) {
+    return `<div class="bingo-casilla bingo-libre" data-casilla="${cIdx}">
+      <div style="font-size:18px;">⭐</div>
+      <div style="font-size:9px;font-weight:700;">LIBRE</div>
+    </div>`;
+  }
+
+  const p   = casilla.personaje;
+  const img = p?.IMAGEN
+    ? `<img src="${p.IMAGEN}" alt="${p?.PERSONAJE || ''}"
+            style="width:100%;height:100%;object-fit:cover;"
+            onerror="this.style.display='none'">`
+    : `<div style="font-size:18px;">🦸</div>`;
+
+  return `<div class="bingo-casilla ${casilla.marcada ? 'bingo-marcada' : ''}"
+               data-casilla="${cIdx}">
+    <div class="bingo-casilla-img">${img}</div>
+    <div class="bingo-casilla-nombre">${p?.PERSONAJE || ''}</div>
+    ${casilla.marcada ? '<div class="bingo-check">✓</div>' : ''}
+  </div>`;
+}
+
+function _colorJugador(idx) {
+  return ['#e63946','#4cc9f0','#57cc99','#f4a261','#a855f7','#ffd60a'][idx] || '#fff';
+}
+</script>

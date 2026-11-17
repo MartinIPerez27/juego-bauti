@@ -1,0 +1,543 @@
+<script>
+// ============================================================
+// MotorMemoria.html — Modo Memoria v4.0
+// Juego de Cartas MARVEL / DC
+// Depende de: MotorBD.html, MotorUI.html, MotorAudio.html
+// ============================================================
+
+// ── CONFIGURACIÓN POR MODALIDAD ──────────────────────────────
+const _CONFIG_MEMORIA = {
+  FACIL:   { pares: 30,  retrasoMs: null, scoring: { match: 10, fallo:  0 }, timeoutMin: null },
+  MEDIO:   { pares: 70,  retrasoMs: 2000, scoring: { match: 15, fallo: -3 }, timeoutMin: 45   },
+  DIFICIL: { pares: 120, retrasoMs: 1500, scoring: { match: 20, fallo: -5 }, timeoutMin: 90   },
+};
+
+// ── ESTADO DE PARTIDA ─────────────────────────────────────────
+const _memoria = {
+  activa:      false,
+  modalidad:   "FACIL",
+  jugadores:   [],        // [{ nombre, puntos, color }]
+  turnoActual: 0,
+  tablero:     [],        // array de objetos carta
+  cartaVolteada: null,    // primera carta del intento actual
+  bloqueado:   false,     // impide voltear durante animación
+  pairesEncontrados: 0,
+  totalPares:  0,
+  timerInterval: null,
+  tiempoRestanteMs: null,
+  timestamp:   null,
+};
+
+// ────────────────────────────────────────────────────────────
+// 1. ARRANQUE
+// ────────────────────────────────────────────────────────────
+function arrancarJuegoMemoria({ modalidad, universo, nombres }) {
+  const cfg    = _CONFIG_MEMORIA[modalidad] || _CONFIG_MEMORIA.FACIL;
+  const pool   = barajar(obtenerPersonajesPorUniverso(universo));
+
+  if (pool.length < cfg.pares) {
+    mostrarModal(
+      `NO HAY SUFICIENTES PERSONAJES.\n` +
+      `NECESITÁS AL MENOS ${cfg.pares} EN ${universo}.\n` +
+      `DISPONIBLES: ${pool.length}`,
+      ["VOLVER"],
+      () => navegarA('pantalla-memoria-config')
+    );
+    return;
+  }
+
+  // Seleccionar los personajes para esta partida
+  const seleccionados = pool.slice(0, cfg.pares);
+
+  // Construir tablero: cada personaje aparece 2 veces (par)
+  const tablero = barajar([
+    ...seleccionados.map((p, i) => _crearCarta(p, i, 'A')),
+    ...seleccionados.map((p, i) => _crearCarta(p, i, 'B')),
+  ]);
+
+  // Inicializar jugadores
+  const colores = ['#e63946', '#4cc9f0', '#57cc99', '#f4a261'];
+  const jugadores = nombres.map((nombre, idx) => ({
+    nombre,
+    puntos: 0,
+    color:  colores[idx] || colores[0],
+  }));
+
+  Object.assign(_memoria, {
+    activa:            true,
+    modalidad,
+    jugadores,
+    turnoActual:       0,
+    tablero,
+    cartaVolteada:     null,
+    bloqueado:         false,
+    pairesEncontrados: 0,
+    totalPares:        cfg.pares,
+    timerInterval:     null,
+    tiempoRestanteMs:  cfg.timeoutMin ? cfg.timeoutMin * 60 * 1000 : null,
+    timestamp:         Date.now(),
+  });
+
+  navegarA('pantalla-memoria-juego');
+  _renderizarTablero();
+
+  if (typeof reproducirSonido === "function") reproducirSonido('inicio');
+  if (typeof narrar === "function") narrar("¡QUE EMPIECE EL JUEGO DE MEMORIA!");
+
+  mostrarTurno(jugadores[0].nombre, 0);
+  document.getElementById('btn-pausa')?.classList.remove('oculto');
+
+  // Iniciar timer si tiene timeout
+  if (_memoria.tiempoRestanteMs) _iniciarTimer();
+
+  // Mostrar marcador
+  _renderizarMarcador();
+  document.getElementById('marcador-memoria')?.classList.remove('oculto');
+}
+
+function _crearCarta(personaje, idx, sufijo) {
+  return {
+    id:         `carta_${idx}_${sufijo}`,
+    pareId:     idx,           // las dos cartas del mismo par tienen el mismo pareId
+    personaje,
+    revelada:   false,
+    encontrada: false,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// 2. RENDERIZADO DEL TABLERO
+// ────────────────────────────────────────────────────────────
+function _renderizarTablero() {
+  const tablero = document.getElementById('tablero-memoria');
+  if (!tablero) return;
+
+  // Calcular columnas según modalidad y orientación
+  const ancho      = window.innerWidth;
+  const landscape  = ancho > window.innerHeight;
+  const cols       = _calcularColumnas(_memoria.modalidad, landscape);
+  tablero.style.gridTemplateColumns = `repeat(${cols}, minmax(${CONFIG.CARTA_MIN_PX}px, 1fr))`;
+
+  tablero.innerHTML = _memoria.tablero.map(carta => _htmlCarta(carta)).join('');
+
+  // Agregar listeners táctiles a cada carta
+  tablero.querySelectorAll('.carta-memoria').forEach(el => {
+    el.addEventListener('click', () => voltearCarta(el.dataset.cartaId));
+    if (typeof activarFallbackTactil === "function") {
+      activarFallbackTactil(el.querySelector('.carta'));
+    }
+  });
+}
+
+function _calcularColumnas(modalidad, landscape) {
+  if (modalidad === 'FACIL')   return landscape ? 10 : 6;
+  if (modalidad === 'MEDIO')   return landscape ? 14 : 8;
+  if (modalidad === 'DIFICIL') return landscape ? 16 : 10;
+  return 8;
+}
+
+function _htmlCarta(carta) {
+  const img = carta.personaje.IMAGEN
+    ? `<img src="${carta.personaje.IMAGEN}" alt="${carta.personaje.PERSONAJE}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+            onerror="this.style.display='none'">`
+    : `<div style="display:flex;align-items:center;justify-content:center;
+                   width:100%;height:100%;font-size:24px;">🦸</div>`;
+
+  const claseEncontrada = carta.encontrada ? 'carta-encontrada' : '';
+  const claseRevelada   = (carta.revelada || carta.encontrada) ? 'revelada' : '';
+
+  return `
+    <div class="carta-memoria ${claseEncontrada}" data-carta-id="${carta.id}">
+      <div class="carta ${claseRevelada}"
+           style="width:100%;height:100%;min-height:${CONFIG.CARTA_MIN_PX * 1.4}px;">
+        <div class="cara-frente" style="background:var(--color-fondo-card);
+             border-radius:10px;border:1.5px solid var(--color-borde);">
+          ${img}
+          <div style="position:absolute;bottom:0;left:0;right:0;
+                      background:linear-gradient(transparent,rgba(0,0,0,0.85));
+                      padding:4px 6px;border-radius:0 0 10px 10px;
+                      font-size:8px;font-weight:700;text-align:center;line-height:1.2;">
+            ${carta.personaje.PERSONAJE}
+          </div>
+        </div>
+        <div class="cara-dorso"></div>
+      </div>
+    </div>`;
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. LÓGICA DE VOLTEO
+// ────────────────────────────────────────────────────────────
+function voltearCarta(cartaId) {
+  if (_memoria.bloqueado || window._juegoEnPausa) return;
+
+  const carta = _memoria.tablero.find(c => c.id === cartaId);
+  if (!carta || carta.encontrada) return;
+  // Evitar clickear la misma carta dos veces en el mismo intento
+  if (_memoria.cartaVolteada && _memoria.cartaVolteada.id === cartaId) return;
+  // En MEDIO/DIFÍCIL no se puede clickear una carta ya revelada (de intento anterior)
+  if (carta.revelada && _memoria.modalidad !== "FACIL") return;
+
+  // ── FÁCIL: buscar si ya hay una carta con el mismo pareId boca arriba ──
+  if (_memoria.modalidad === "FACIL" && !carta.revelada) {
+    const yaRevelada = _memoria.tablero.find(c =>
+      c.id !== cartaId &&
+      c.pareId === carta.pareId &&
+      c.revelada &&
+      !c.encontrada
+    );
+    if (yaRevelada) {
+      // Par inmediato — voltear esta carta y resolver match
+      carta.revelada = true;
+      const el = document.querySelector(`[data-carta-id="${cartaId}"] .carta`);
+      if (el) el.classList.add('revelada');
+      if (typeof reproducirSonido === "function") reproducirSonido('extraccion');
+
+      _memoria.bloqueado    = true;
+      _memoria.cartaVolteada = null; // limpiar intento previo si había
+      setTimeout(() => _procesarIntento(yaRevelada, carta, true), 300);
+      return;
+    }
+  }
+
+  // Voltear visualmente si no estaba revelada
+  if (!carta.revelada) {
+    carta.revelada = true;
+    const el = document.querySelector(`[data-carta-id="${cartaId}"] .carta`);
+    if (el) el.classList.add('revelada');
+    if (typeof reproducirSonido === "function") reproducirSonido('extraccion');
+  }
+
+  if (!_memoria.cartaVolteada) {
+    // Primera carta del intento
+    _memoria.cartaVolteada = carta;
+  } else {
+    // Segunda carta — evaluar par
+    _memoria.bloqueado = true;
+    const primera = _memoria.cartaVolteada;
+    const segunda = carta;
+    const esMatch = primera.pareId === segunda.pareId && primera.id !== segunda.id;
+    _procesarIntento(primera, segunda, esMatch);
+  }
+}
+
+function _procesarIntento(primera, segunda, esMatch) {
+  const cfg        = _CONFIG_MEMORIA[_memoria.modalidad];
+  const jugador    = _memoria.jugadores[_memoria.turnoActual];
+  historialSesion.intentos++;
+
+  if (esMatch) {
+    // ── PAR ENCONTRADO ──
+    historialSesion.aciertos++;
+    jugador.puntos += cfg.scoring.match;
+    _memoria.pairesEncontrados++;
+
+    // Animar match
+    [primera, segunda].forEach(c => {
+      const el = document.querySelector(`[data-carta-id="${c.id}"] .carta`);
+      if (el && typeof animarCartaMatch === "function") animarCartaMatch(el);
+    });
+
+    if (typeof reproducirSonido === "function") reproducirSonido('match');
+    if (typeof narrarEvento === "function") {
+      narrarEvento(`¡BIEN! ENCONTRASTE A ${pronunciarNombre(primera.personaje.PERSONAJE)}!`);
+    }
+
+    // Marcar como encontradas
+    setTimeout(() => {
+      [primera, segunda].forEach(c => {
+        c.encontrada = true;
+        c.revelada   = true;
+        const wrapper = document.querySelector(`[data-carta-id="${c.id}"]`);
+        if (wrapper) wrapper.classList.add('carta-encontrada');
+      });
+
+      // Limpiar estado de intento — importante si una de las cartas
+      // ya estaba boca arriba de un turno anterior
+      _memoria.cartaVolteada = null;
+      _memoria.bloqueado     = false;
+      _actualizarMarcador();
+
+      // El mismo jugador sigue
+      mostrarTurno(jugador.nombre, _memoria.turnoActual);
+
+      // ¿Terminó el juego?
+      if (_memoria.pairesEncontrados >= _memoria.totalPares) {
+        setTimeout(_finalizarPartidaMemoria, 500);
+      } else {
+        guardarEstadoMemoria(_memoria);
+      }
+    }, 600);
+
+  } else {
+    // ── FALLO ──
+    jugador.puntos += cfg.scoring.fallo; // 0 en FÁCIL, negativo en otros
+    if (jugador.puntos < 0) jugador.puntos = 0; // nunca negativo en pantalla
+
+    [primera, segunda].forEach(c => {
+      const el = document.querySelector(`[data-carta-id="${c.id}"] .carta`);
+      if (el && typeof animarCartaFail === "function") animarCartaFail(el);
+    });
+
+    if (typeof reproducirSonido === "function") reproducirSonido('fail');
+    if (_memoria.modalidad === "FACIL" && typeof narrarEvento === "function") {
+      narrarEvento("¡CASI! SEGUÍ BUSCANDO");
+    }
+
+    const retrasoMs = cfg.retrasoMs || 1200;
+
+    setTimeout(() => {
+      // En FÁCIL las cartas NO se voltean de vuelta (pedagógico)
+      if (_memoria.modalidad !== "FACIL") {
+        [primera, segunda].forEach(c => {
+          c.revelada = false;
+          const el = document.querySelector(`[data-carta-id="${c.id}"] .carta`);
+          if (el) el.classList.remove('revelada');
+        });
+      }
+
+      _memoria.cartaVolteada = null;
+      _memoria.bloqueado     = false;
+      _actualizarMarcador();
+
+      // Cambiar turno al siguiente jugador
+      _memoria.turnoActual = (_memoria.turnoActual + 1) % _memoria.jugadores.length;
+      mostrarTurno(
+        _memoria.jugadores[_memoria.turnoActual].nombre,
+        _memoria.turnoActual
+      );
+
+      guardarEstadoMemoria(_memoria);
+    }, retrasoMs);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. MARCADOR
+// ────────────────────────────────────────────────────────────
+function _renderizarMarcador() {
+  const marcadorEl = document.getElementById('marcador-memoria');
+  if (!marcadorEl) return;
+
+  marcadorEl.innerHTML = _memoria.jugadores.map((j, idx) => `
+    <div class="marcador-jugador" style="border-bottom: 3px solid ${j.color}">
+      <span class="marcador-jugador-nombre" style="color:${j.color}">${j.nombre}</span>
+      <span class="marcador-jugador-pts" id="pts-jugador-${idx}">${j.puntos}</span>
+    </div>
+  `).join('') +
+  `<div class="marcador-jugador">
+     <span class="marcador-jugador-nombre">PARES</span>
+     <span class="marcador-jugador-pts" id="pares-contador">
+       ${_memoria.pairesEncontrados}/${_memoria.totalPares}
+     </span>
+   </div>`;
+}
+
+function _actualizarMarcador() {
+  _memoria.jugadores.forEach((j, idx) => {
+    const el = document.getElementById(`pts-jugador-${idx}`);
+    if (el) {
+      if (typeof animarContadorPuntos === "function") animarContadorPuntos(el, j.puntos);
+      else el.textContent = j.puntos;
+    }
+  });
+  const paresEl = document.getElementById('pares-contador');
+  if (paresEl) paresEl.textContent = `${_memoria.pairesEncontrados}/${_memoria.totalPares}`;
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. TIMER (MEDIO y DIFÍCIL)
+// ────────────────────────────────────────────────────────────
+function _iniciarTimer() {
+  clearInterval(_memoria.timerInterval);
+  _memoria.timerInterval = setInterval(() => {
+    if (window._juegoEnPausa) return;
+    _memoria.tiempoRestanteMs -= 1000;
+    _actualizarTimerDisplay();
+    if (_memoria.tiempoRestanteMs <= 0) {
+      clearInterval(_memoria.timerInterval);
+      _finalizarPartidaMemoria(true); // true = tiempo agotado
+    }
+  }, 1000);
+}
+
+function _actualizarTimerDisplay() {
+  const mins = Math.floor(_memoria.tiempoRestanteMs / 60000);
+  const segs = Math.floor((_memoria.tiempoRestanteMs % 60000) / 1000);
+  const txt  = `${String(mins).padStart(2,'0')}:${String(segs).padStart(2,'0')}`;
+
+  // Mostrar en el marcador (agregar si no existe)
+  let timerEl = document.getElementById('memoria-timer');
+  if (!timerEl) {
+    timerEl = document.createElement('div');
+    timerEl.id        = 'memoria-timer';
+    timerEl.className = 'marcador-jugador';
+    timerEl.innerHTML = `<span class="marcador-jugador-nombre">TIEMPO</span>
+                         <span class="marcador-jugador-pts" id="memoria-timer-valor"></span>`;
+    document.getElementById('marcador-memoria')?.appendChild(timerEl);
+  }
+  const valorEl = document.getElementById('memoria-timer-valor');
+  if (valorEl) {
+    valorEl.textContent = txt;
+    // Rojo en últimos 60 segundos
+    valorEl.style.color = _memoria.tiempoRestanteMs < 60000
+      ? 'var(--color-acento-rojo)' : 'var(--color-acento-oro)';
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 6. FIN DE PARTIDA
+// ────────────────────────────────────────────────────────────
+function _finalizarPartidaMemoria(timeoutAgotado = false) {
+  clearInterval(_memoria.timerInterval);
+  _memoria.activa = false;
+  localStorage.removeItem('memoria_partida_activa');
+
+  // Ordenar jugadores por puntos
+  const ranking = [..._memoria.jugadores]
+    .map((j, idx) => ({ ...j, idx }))
+    .sort((a, b) => b.puntos - a.puntos);
+
+  const ganador   = ranking[0];
+  const esEmpate  = ranking.length > 1 && ranking[0].puntos === ranking[1].puntos;
+
+  if (typeof lanzarConfetti === "function") lanzarConfetti();
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  const tituloModal = timeoutAgotado
+    ? (esEmpate ? "⏱ ¡TIEMPO AGOTADO! EMPATE" : `⏱ ¡TIEMPO AGOTADO! GANÓ ${ganador.nombre.toUpperCase()}`)
+    : (esEmpate ? "🤝 ¡EMPATE!" : `🏆 ¡GANÓ ${ganador.nombre.toUpperCase()}!`);
+
+  const mostrarResultado = typeof mostrarPodio === "function" ? mostrarPodio : null;
+
+  if (mostrarResultado) {
+    mostrarResultado(
+      tituloModal,
+      ranking, // ya tiene { nombre, puntos, color, idx }
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        document.getElementById('btn-pausa')?.classList.add('oculto');
+        ocultarTurno();
+        document.getElementById('marcador-memoria')?.classList.add('oculto');
+        if (opcion === 0) navegarA('pantalla-memoria-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  } else {
+    // Fallback al modal de texto si mostrarPodio no está disponible
+    const puntajesTexto = ranking.map(j => `${j.nombre}: ${j.puntos} pts`).join('\n');
+    mostrarModal(
+      `${tituloModal}\n\n${puntajesTexto}`,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        document.getElementById('btn-pausa')?.classList.add('oculto');
+        ocultarTurno();
+        document.getElementById('marcador-memoria')?.classList.add('oculto');
+        if (opcion === 0) navegarA('pantalla-memoria-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  }
+
+  // Narración del resultado
+  const textoPuntos = ranking.map(j => `${j.nombre} con ${j.puntos} puntos`).join(', ');
+  if (typeof narrar === "function") {
+    const texto = esEmpate
+      ? `¡Empate! Los dos jugaron increíble. ${textoPuntos}.`
+      : `¡Felicitaciones ${ganador.nombre}! Ganaste el juego de memoria con ${ganador.puntos} puntos. ${textoPuntos}.`;
+    narrar(texto);
+  }
+
+  // Evaluar rendimiento para sugerir cambio de dificultad
+  if (typeof evaluarRendimientoPostPartida === "function") {
+    evaluarRendimientoPostPartida(_memoria.modalidad);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 7. GUARDADO / RESTAURACIÓN
+// ────────────────────────────────────────────────────────────
+function guardarEstadoMemoria(estado) {
+  const guardar = () => {
+    try {
+      // Solo guardamos IDs y estado mínimo — los personajes se reconstruyen desde BD_GLOBAL
+      localStorage.setItem('memoria_partida_activa', JSON.stringify({
+        modalidad:         estado.modalidad,
+        turnoActual:       estado.turnoActual,
+        pairesEncontrados: estado.pairesEncontrados,
+        totalPares:        estado.totalPares,
+        tiempoRestanteMs:  estado.tiempoRestanteMs,
+        jugadores:         estado.jugadores.map(j => ({
+          nombre: j.nombre, puntos: j.puntos, color: j.color
+        })),
+        // Estado de cada carta (revelada/encontrada/pareId/personajeNombre)
+        tablero: estado.tablero.map(c => ({
+          id:         c.id,
+          pareId:     c.pareId,
+          revelada:   c.revelada,
+          encontrada: c.encontrada,
+          nombre:     c.personaje.PERSONAJE,
+        })),
+        timestamp: Date.now(),
+      }));
+    } catch(e) { console.warn("No se pudo guardar memoria:", e); }
+  };
+  if (typeof requestIdleCallback !== "undefined") requestIdleCallback(guardar);
+  else setTimeout(guardar, 0);
+}
+
+function restaurarEstadoMemoria(guardado) {
+  if (!window.BD_GLOBAL) { mostrarToast("BD NO CARGADA — NO SE PUEDE RESTAURAR"); return; }
+
+  // Reconstruir tablero desde nombres (buscando en BD_GLOBAL)
+  const tablero = guardado.tablero.map(c => {
+    const personaje = buscarPersonaje(c.nombre) || { PERSONAJE: c.nombre, IMAGEN: "" };
+    return {
+      id:         c.id,
+      pareId:     c.pareId,
+      personaje,
+      revelada:   c.revelada && !c.encontrada, // solo mantener reveladas las no-encontradas
+      encontrada: c.encontrada,
+    };
+  });
+
+  Object.assign(_memoria, {
+    activa:            true,
+    modalidad:         guardado.modalidad,
+    jugadores:         guardado.jugadores,
+    turnoActual:       guardado.turnoActual,
+    tablero,
+    cartaVolteada:     null,
+    bloqueado:         false,
+    pairesEncontrados: guardado.pairesEncontrados,
+    totalPares:        guardado.totalPares,
+    tiempoRestanteMs:  guardado.tiempoRestanteMs,
+    timestamp:         Date.now(),
+  });
+
+  navegarA('pantalla-memoria-juego');
+  _renderizarTablero();
+  _renderizarMarcador();
+  document.getElementById('marcador-memoria')?.classList.remove('oculto');
+  document.getElementById('btn-pausa')?.classList.remove('oculto');
+  mostrarTurno(_memoria.jugadores[_memoria.turnoActual].nombre, _memoria.turnoActual);
+
+  if (_memoria.tiempoRestanteMs) _iniciarTimer();
+  mostrarToast("PARTIDA RESTAURADA");
+}
+
+// ────────────────────────────────────────────────────────────
+// 8. RECALCULAR GRID AL ROTAR PANTALLA
+// ────────────────────────────────────────────────────────────
+function recalcularGridCartas() {
+  if (!_memoria.activa) return;
+  const landscape = window.innerWidth > window.innerHeight;
+  const cols      = _calcularColumnas(_memoria.modalidad, landscape);
+  const tablero   = document.getElementById('tablero-memoria');
+  if (tablero) {
+    tablero.style.gridTemplateColumns =
+      `repeat(${cols}, minmax(${CONFIG.CARTA_MIN_PX}px, 1fr))`;
+  }
+}
+</script>

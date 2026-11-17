@@ -1,0 +1,692 @@
+<script>
+// ============================================================
+// MotorUI.html — DOM, animaciones, galería Info, giroscopio
+// Juego de Cartas MARVEL / DC — v4.0
+// Depende de: MotorBD.html (CONFIG, BD_GLOBAL, normalizarNombre)
+// ============================================================
+
+
+// ────────────────────────────────────────────────────────────
+// 1. GIROSCOPIO Y TILT 3D
+// ────────────────────────────────────────────────────────────
+let _gyroFrame = null;
+
+function activarGiroscopio() {
+  window.addEventListener('deviceorientation', (e) => {
+    if (_gyroFrame) return;
+    _gyroFrame = requestAnimationFrame(() => {
+      const tiltX = Math.max(-CONFIG.GIROSCOPIO_TILT_MAX,
+                    Math.min( CONFIG.GIROSCOPIO_TILT_MAX, e.beta  || 0));
+      const tiltY = Math.max(-CONFIG.GIROSCOPIO_TILT_MAX,
+                    Math.min( CONFIG.GIROSCOPIO_TILT_MAX, e.gamma || 0));
+      document.documentElement.style.setProperty('--tilt-x', `${tiltX}deg`);
+      document.documentElement.style.setProperty('--tilt-y', `${tiltY}deg`);
+      _gyroFrame = null;
+    });
+  }, { passive: true });
+}
+
+// Fallback táctil por carta (siempre activo además del giroscopio)
+function activarFallbackTactil(carta) {
+  carta.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    const rect  = carta.getBoundingClientRect();
+    const x = ((touch.clientX - rect.left) / rect.width  - 0.5) * 40;
+    const y = ((touch.clientY - rect.top)  / rect.height - 0.5) * -40;
+    carta.style.setProperty('--tilt-x', `${y}deg`);
+    carta.style.setProperty('--tilt-y', `${x}deg`);
+  }, { passive: true });
+  carta.addEventListener('touchend', () => {
+    carta.style.setProperty('--tilt-x', '0deg');
+    carta.style.setProperty('--tilt-y', '0deg');
+  }, { passive: true });
+}
+
+function inicializarControles3D() {
+  if ('DeviceOrientationEvent' in window) {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ — requiere permiso explícito (se llama desde un tap)
+      DeviceOrientationEvent.requestPermission()
+        .then(perm => { if (perm === 'granted') activarGiroscopio(); })
+        .catch(() => {});
+    } else {
+      activarGiroscopio();
+    }
+  }
+  // Fallback táctil siempre activo en todas las cartas presentes
+  document.querySelectorAll('.carta').forEach(activarFallbackTactil);
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 2. ORIENTACIÓN
+// ────────────────────────────────────────────────────────────
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    document.body.classList.toggle('landscape', window.innerWidth > window.innerHeight);
+    document.body.classList.toggle('portrait',  window.innerWidth <= window.innerHeight);
+    recalcularGridCartas();
+  }, 300);
+});
+
+function recalcularGridCartas() {
+  // Recalcula las columnas del tablero de Memoria cuando cambia la orientación.
+  // MotorMemoria puede sobreescribir esta función con lógica más específica.
+  const tablero = document.getElementById('tablero-memoria');
+  if (!tablero) return;
+  // El CSS ya maneja el grid via media query; forzar reflow limpio.
+  tablero.style.display = 'none';
+  requestAnimationFrame(() => { tablero.style.display = ''; });
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 3. LAZY LOADING ADAPTATIVO
+// ────────────────────────────────────────────────────────────
+let _lazyObserver = null;
+
+function configurarLazyLoading() {
+  if (_lazyObserver) _lazyObserver.disconnect();
+
+  const tipo      = navigator.connection?.effectiveType;
+  const threshold = tipo === '4g' ? CONFIG.LAZY_THRESHOLD_4G
+                  : tipo === '3g' ? CONFIG.LAZY_THRESHOLD_3G
+                  : CONFIG.LAZY_THRESHOLD_SLOW;
+
+  _lazyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      if (img.dataset.src) {
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+      }
+      _lazyObserver.unobserve(img);
+    });
+  }, { rootMargin: threshold });
+
+  document.querySelectorAll('img[data-src]').forEach(img => _lazyObserver.observe(img));
+}
+
+// Registrar nuevas imágenes generadas dinámicamente
+function observarImagen(imgEl) {
+  if (_lazyObserver && imgEl.dataset.src) _lazyObserver.observe(imgEl);
+}
+
+// Pre-carga de imágenes (Batalla — antes de habilitar el botón iniciar)
+async function precargarImagenesBatalla(equipoA, equipoB) {
+  const urls = [...equipoA, ...equipoB].map(p => p.IMAGEN).filter(Boolean);
+  await Promise.all(urls.map(url => new Promise(resolve => {
+    const img = new Image();
+    img.onload = resolve; img.onerror = resolve;
+    img.src = url;
+  })));
+  document.getElementById('btn-iniciar-batalla')?.removeAttribute('disabled');
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 4. INDICADOR DE TURNO
+// ────────────────────────────────────────────────────────────
+function mostrarTurno(nombreJugador, jugadorIdx) {
+  const el = document.getElementById('indicador-turno');
+  if (el) {
+    const letra = ['a','b','c','d'][jugadorIdx] || 'a';
+    el.textContent = `TURNO DE ${nombreJugador}`;
+    el.className   = `jugador-${letra}`;
+    el.classList.remove('oculto');
+  }
+
+  // Resaltar el chip del jugador activo en el marcador (Memoria/Trivia)
+  document.querySelectorAll('.marcador-jugador').forEach(chip => chip.classList.remove('marcador-activo'));
+  const chips = document.querySelectorAll('.marcador-jugador');
+  if (chips[jugadorIdx]) chips[jugadorIdx].classList.add('marcador-activo');
+
+  if (typeof narrarEvento === "function") narrarEvento(`TURNO DE ${nombreJugador}`);
+}
+
+function ocultarTurno() {
+  document.getElementById('indicador-turno')?.classList.add('oculto');
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 5. CONFETTI DE VICTORIA
+// ────────────────────────────────────────────────────────────
+function lanzarConfetti() {
+  const colores = ['#ffd60a','#e63946','#4cc9f0','#ffffff','#7bff00'];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement('div');
+    p.style.cssText =
+      `position:fixed;width:8px;height:8px;border-radius:2px;z-index:999;` +
+      `left:${Math.random() * 100}vw;top:-10px;` +
+      `background:${colores[Math.floor(Math.random() * colores.length)]};` +
+      `animation:confetti ${1.5 + Math.random() * 2}s ease-in ` +
+      `${Math.random() * 0.5}s forwards;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 3500);
+  }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 6. ANIMACIONES DE CARTA
+// ────────────────────────────────────────────────────────────
+function animarCartaMatch(cartaEl) {
+  cartaEl.classList.remove('match-ok', 'match-fail');
+  void cartaEl.offsetWidth; // forzar reflow para reiniciar animación
+  cartaEl.classList.add('match-ok');
+  cartaEl.addEventListener('animationend', () => cartaEl.classList.remove('match-ok'), { once: true });
+}
+
+function animarCartaFail(cartaEl) {
+  cartaEl.classList.remove('match-ok', 'match-fail');
+  void cartaEl.offsetWidth;
+  cartaEl.classList.add('match-fail');
+  cartaEl.addEventListener('animationend', () => cartaEl.classList.remove('match-fail'), { once: true });
+}
+
+function animarExtraccion(cartaEl) {
+  cartaEl.classList.add('extrayendo');
+  cartaEl.addEventListener('animationend', () => cartaEl.classList.remove('extrayendo'), { once: true });
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 7. BARRA DE PROGRESO DE NARRACIÓN
+// ────────────────────────────────────────────────────────────
+function actualizarBarraProgreso(actual, total) {
+  const barra = document.getElementById('barra-narracion');
+  const prog  = document.getElementById('barra-narracion-progreso');
+  if (!barra || !prog) return;
+
+  if (total <= 0) { barra.classList.add('oculto'); return; }
+  barra.classList.remove('oculto');
+  barra.setAttribute('aria-valuenow', Math.round((actual / total) * 100));
+  prog.style.setProperty('--progreso', `${(actual / total) * 100}%`);
+}
+
+function ocultarBarraProgreso() {
+  document.getElementById('barra-narracion')?.classList.add('oculto');
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 8. DIFICULTAD ADAPTATIVA
+// ────────────────────────────────────────────────────────────
+const historialSesion = { intentos: 0, aciertos: 0 };
+
+function sugerirDificultad(edadAnios) {
+  if (edadAnios <= 5) return "FACIL";
+  if (edadAnios <= 8) return "MEDIO";
+  return "DIFICIL";
+}
+
+function evaluarRendimientoPostPartida(modalidadActual) {
+  const tasa = historialSesion.aciertos / Math.max(historialSesion.intentos, 1);
+  if (tasa > 0.80 && modalidadActual !== "DIFICIL") {
+    mostrarModal(
+      "¡MUY BIEN! ¿PROBAMOS DIFICULTAD DIFÍCIL?",
+      ["SÍ, VAMOS", "SEGUIR IGUAL"],
+      (opcion) => { if (opcion === 0) _sugerirCambioModalidad("DIFICIL"); }
+    );
+  } else if (tasa < 0.30 && modalidadActual !== "FACIL") {
+    mostrarModal(
+      "¿PROBAMOS DIFICULTAD FÁCIL PARA EMPEZAR?",
+      ["SÍ", "SEGUIR IGUAL"],
+      (opcion) => { if (opcion === 0) _sugerirCambioModalidad("FACIL"); }
+    );
+  }
+}
+
+function _sugerirCambioModalidad(modalidad) {
+  // Preseleccionar la modalidad sugerida en el config de Memoria
+  const pantalla = document.getElementById('pantalla-memoria-config');
+  if (!pantalla) return;
+  pantalla.querySelectorAll('.btn-opcion[data-grupo="modalidad"]').forEach(btn => {
+    const esActivo = btn.dataset.valor === modalidad;
+    btn.classList.toggle('activo', esActivo);
+    btn.setAttribute('aria-pressed', esActivo ? 'true' : 'false');
+  });
+  _opcionesConfig['modalidad'] = modalidad;
+  navegarA('pantalla-memoria-config');
+}
+
+
+// ────────────────────────────────────────────────────────────
+// TOGGLE TEMA OSCURO / CLARO
+// ────────────────────────────────────────────────────────────
+function toggleTema() {
+  const esTemaClaro = document.body.classList.toggle('tema-claro');
+  const btn = document.getElementById('btn-tema');
+  if (btn) btn.textContent = esTemaClaro ? '☀️' : '🌙';
+  try { localStorage.setItem('tema', esTemaClaro ? 'claro' : 'oscuro'); } catch(e) {}
+}
+
+function _aplicarTemaGuardado() {
+  try {
+    const tema = localStorage.getItem('tema');
+    if (tema === 'claro') {
+      document.body.classList.add('tema-claro');
+      const btn = document.getElementById('btn-tema');
+      if (btn) btn.textContent = '☀️';
+    }
+  } catch(e) {}
+}
+// Actualiza el estado del botón de BD y habilita los modos.
+// ────────────────────────────────────────────────────────────
+function renderizarMenu() {
+  const bdOk = window.BD_GLOBAL && window.BD_GLOBAL.length > 0;
+
+  // Habilitar/deshabilitar botones de modo según si la BD está cargada
+  document.querySelectorAll('.btn-modo').forEach(btn => {
+    btn.disabled = !bdOk;
+    btn.style.opacity = bdOk ? '1' : '0.4';
+  });
+
+  // Actualizar estado de BD
+  const estadoEl = document.getElementById('menu-estado-bd');
+  if (estadoEl) estadoEl.classList.toggle('oculto', bdOk);
+
+  // Actualizar contador
+  if (bdOk) {
+    const el = document.getElementById('menu-total-personajes');
+    if (el) el.textContent = window.BD_GLOBAL.length;
+  }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 10. MODO INFO — GALERÍA CON PAGINACIÓN DE A 50
+// ────────────────────────────────────────────────────────────
+let _infoQueryActual         = "";
+let _infoUniversoActual      = "TODOS";
+let _infoPaginaActual        = 0;
+const _INFO_POR_PAGINA       = 50;
+let _infoPersonajesFiltrados = [];
+
+function filtrarPersonajesInfo(query) {
+  _infoQueryActual  = query || "";
+  _infoPaginaActual = 0;
+  renderizarGaleriaInfo(_infoQueryActual, _infoUniversoActual);
+}
+
+function filtrarUniversoInfo(universo) {
+  _infoUniversoActual = universo;
+  _infoPaginaActual   = 0;
+  document.querySelectorAll('.btn-filtro[data-universo]').forEach(btn => {
+    btn.classList.toggle('activo', btn.dataset.universo === universo);
+  });
+  renderizarGaleriaInfo(_infoQueryActual, _infoUniversoActual);
+}
+
+function renderizarGaleriaInfo(query, universo) {
+  const galeria = document.getElementById('info-galeria');
+  if (!galeria) return;
+
+  _infoPersonajesFiltrados = filtrarBD(query || "", universo || "TODOS");
+  const total  = _infoPersonajesFiltrados.length;
+  const inicio = _infoPaginaActual * _INFO_POR_PAGINA;
+  const pagina = _infoPersonajesFiltrados.slice(inicio, inicio + _INFO_POR_PAGINA);
+
+  if (total === 0) {
+    galeria.innerHTML =
+      `<p style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.35);
+                 padding:40px;font-size:14px;">SIN RESULTADOS PARA "${(query||"").toUpperCase()}"</p>`;
+    return;
+  }
+
+  if (_infoPaginaActual === 0) {
+    galeria.innerHTML = pagina.map(p => _htmlCardGaleria(p)).join('');
+  } else {
+    pagina.forEach(p => galeria.insertAdjacentHTML('beforeend', _htmlCardGaleria(p)));
+  }
+
+  // Botón "Ver más"
+  const btnExistente = document.getElementById('info-btn-mas');
+  if (btnExistente) btnExistente.remove();
+
+  if (inicio + _INFO_POR_PAGINA < total) {
+    const btn = document.createElement('button');
+    btn.id          = 'info-btn-mas';
+    btn.className   = 'btn-secundario';
+    btn.style.cssText = 'width:100%;margin:12px 0;padding:12px 32px;';
+    btn.textContent = `VER MÁS (${total - inicio - _INFO_POR_PAGINA} RESTANTES)`;
+    btn.onclick = () => { _infoPaginaActual++; renderizarGaleriaInfo(_infoQueryActual, _infoUniversoActual); };
+    galeria.appendChild(btn);
+  }
+}
+
+function _htmlCardGaleria(p) {
+  const rareza   = _htmlBadgeRareza(p.RAREZA_DE_CARTA);
+  const universo = p.UNIVERSO === "MARVEL"
+    ? '<span class="info-card-universo universo-marvel">MARVEL</span>'
+    : '<span class="info-card-universo universo-dc">DC</span>';
+
+  // Imagen: src directo si existe, ícono de fallback si no
+  // No usamos lazy loading en la galería (el IFRAME de GAS tiene restricciones
+  // con IntersectionObserver en iframes cross-origin)
+  const imgTag = p.IMAGEN
+    ? `<img class="info-card-img" src="${p.IMAGEN}" alt="${_escapeAttr(p.PERSONAJE)}"
+            loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+       <div class="info-card-img-fallback" style="display:none;">🦸</div>`
+    : `<img class="info-card-img" src="" alt="" style="display:none">
+       <div class="info-card-img-fallback">🦸</div>`;
+
+  return `<div class="info-card" role="listitem" tabindex="0"
+               onclick="mostrarDetallePersonaje('${_escapeAttr(p.PERSONAJE)}')"
+               onkeydown="if(event.key==='Enter')mostrarDetallePersonaje('${_escapeAttr(p.PERSONAJE)}')">
+    ${imgTag}
+    <div class="info-card-body">
+      <div class="info-card-nombre">${_escape(p.PERSONAJE)}</div>
+      ${universo}
+      ${rareza}
+    </div>
+  </div>`;
+}
+
+function _htmlBadgeRareza(rareza) {
+  const clases = {
+    "COMÚN":      "badge-comun",
+    "INFRECUENTE":"badge-infrecuente",
+    "RARA":       "badge-rara",
+    "ÉPICA":      "badge-epica",
+    "LEGENDARIA": "badge-legendaria",
+  };
+  const clase = clases[rareza] || "badge-comun";
+  return rareza
+    ? `<span class="badge ${clase}" style="margin-top:4px">${_escape(rareza)}</span>`
+    : '';
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 11. MODO INFO — MODAL DE DETALLE
+// ────────────────────────────────────────────────────────────
+function mostrarDetallePersonaje(nombrePersonaje) {
+  const p = buscarPersonaje(nombrePersonaje);
+  if (!p) return;
+
+  const overlay  = document.getElementById('info-modal-detalle');
+  const contenido = document.getElementById('info-modal-contenido-inner');
+  if (!overlay || !contenido) return;
+
+  // Mostrar esqueleto mientras carga la biografía
+  contenido.innerHTML = _htmlEsqueletoDetalle(p);
+  overlay.classList.remove('oculto');
+
+  // Cargar biografía (caché cliente → servidor → fallback)
+  obtenerBiografia(p, (resultado) => {
+    _actualizarBiografiaEnModal(p, resultado);
+  });
+
+  // Inicializar giroscopio en la imagen del modal (si aplica)
+  const imgModal = contenido.querySelector('.detalle-imagen');
+  if (imgModal) activarFallbackTactil(imgModal);
+}
+
+function cerrarDetallePersonaje() {
+  document.getElementById('info-modal-detalle')?.classList.add('oculto');
+  if (typeof detenerNarracion === "function") detenerNarracion();
+}
+
+// HTML inicial del modal (sin biografía todavía)
+function _htmlEsqueletoDetalle(p) {
+  const CAMPOS_STATS = [
+    ["FUERZA",           "💪"],
+    ["AGILIDAD",         "🏃"],
+    ["VELOCIDAD",        "⚡"],
+    ["INTELIGENCIA",     "🧠"],
+    ["RESISTENCIA",      "🛡"],
+    ["ARMADURA/DEFENSA", "🔰"],
+    ["DAÑO",             "⚔️"],
+    ["NIVEL_DE_AMENAZA", "☠"],
+    ["LIDERAZGO",        "👑"],
+    ["TACTICA",          "🎯"],
+    ["TRABAJO_EN_EQUIPO","🤝"],
+    ["FACTOR_MIEDO",     "😱"],
+    ["PODER_ESPECIAL",   "✨"],
+    ["REGENERACION",     "💊"],
+    ["SIGILO",           "👤"],
+  ];
+
+  const imgTag = p.IMAGEN
+    ? `<img src="${p.IMAGEN}" alt="${_escapeAttr(p.PERSONAJE)}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:12px;"
+            onerror="this.style.display='none';this.parentElement.querySelector('.cara-dorso').textContent='🦸'">`
+    : '';
+
+  const universoClass  = p.UNIVERSO === "MARVEL" ? "universo-marvel" : "universo-dc";
+  const categoriaDebil = p.DEBILIDAD_CATEGORIA && p.DEBILIDAD_CATEGORIA !== "NINGUNA"
+    ? `<span style="color:var(--color-acento-rojo);font-size:11px;">⚠ DEBILIDAD: ${p.DEBILIDAD_CATEGORIA}</span>`
+    : '';
+  const categoriaPoder = p.PODER_ESPECIAL_CATEGORIA && p.PODER_ESPECIAL_CATEGORIA !== "NINGUNA"
+    ? `<span style="color:var(--color-acento-azul);font-size:11px;">✨ PODER: ${p.PODER_ESPECIAL_CATEGORIA}</span>`
+    : '';
+  const alcance = p.ALCANCE
+    ? `<span style="font-size:11px;color:rgba(255,255,255,0.5);">📏 ${p.ALCANCE}</span>`
+    : '';
+  const habilidad = p.HABILIDAD_ESPECIAL
+    ? `<div style="margin-top:8px;font-size:12px;color:var(--color-acento-oro);
+                   background:rgba(255,214,10,0.08);padding:8px 10px;border-radius:6px;
+                   border-left:3px solid var(--color-acento-oro);">
+         💡 ${_escape(p.HABILIDAD_ESPECIAL)}
+       </div>`
+    : '';
+
+  const statsHTML = CAMPOS_STATS.map(([campo, icono]) => {
+    const val        = p[campo] || 0;
+    const nombreMostrar = campo.replace(/_/g, ' ').replace('/', ' / ');
+    return `<div class="info-stat-item">
+      <div class="info-stat-nombre">${icono} ${nombreMostrar}</div>
+      <div class="info-stat-valor">${val}</div>
+      <div class="stat-barra-fondo">
+        <div class="stat-barra-relleno" style="width:${val}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const aliados = p.ALIADOS_CLAVE
+    ? `<div style="margin-top:12px;font-size:12px;">
+         <span style="color:rgba(255,255,255,0.5);">ALIADOS: </span>
+         ${p.ALIADOS_CLAVE.split(',').map(a =>
+           `<span style="background:rgba(255,255,255,0.08);padding:2px 8px;
+                         border-radius:4px;margin:2px;display:inline-block;">
+              ${_escape(a.trim())}
+            </span>`).join('')}
+       </div>`
+    : '';
+
+  return `
+    <!-- Cabecera: imagen + datos básicos -->
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+      <div class="carta-contenedor" style="width:140px;height:190px;flex-shrink:0;">
+        <div class="carta revelada">
+          <div class="cara-frente">
+            ${imgTag}
+          </div>
+          <div class="cara-dorso"></div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:6px;">
+        <h2 style="font-size:20px;font-weight:800;line-height:1.2;">${_escape(p.PERSONAJE)}</h2>
+        <span class="${universoClass}" style="font-weight:700;font-size:13px;">${p.UNIVERSO}</span>
+        ${_htmlBadgeRareza(p.RAREZA_DE_CARTA)}
+        <span style="font-size:12px;color:rgba(255,255,255,0.5);">REPUTACIÓN: ${_escape(p.REPUTACION)}</span>
+        ${categoriaDebil}
+        ${categoriaPoder}
+        ${alcance}
+        ${habilidad}
+        ${aliados}
+      </div>
+    </div>
+
+    <!-- Biografía (placeholder mientras carga) -->
+    <div id="detalle-bio-contenedor">
+      <div style="height:60px;background:rgba(255,255,255,0.05);border-radius:8px;
+                  display:flex;align-items:center;justify-content:center;
+                  color:rgba(255,255,255,0.25);font-size:13px;">
+        CARGANDO BIOGRAFÍA...
+      </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div>
+      <h3 style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.5);
+                 letter-spacing:0.1em;margin-bottom:10px;">ESTADÍSTICAS</h3>
+      <div class="info-stats-grid">${statsHTML}</div>
+    </div>
+  `;
+}
+
+// Actualiza la sección de biografía cuando llega la respuesta
+function _actualizarBiografiaEnModal(p, resultado) {
+  const contenedor = document.getElementById('detalle-bio-contenedor');
+  if (!contenedor) return;
+
+  const { biografia, fuente } = resultado;
+
+  const badgeHTML = fuente === "wikipedia"
+    ? '<span class="badge-fuente badge-wikipedia">📖 WIKIPEDIA</span>'
+    : fuente === "local"
+    ? '<span class="badge-fuente badge-local">📚 LOCAL</span>'
+    : '<span class="badge-fuente badge-fallback">📝 BD</span>';
+
+  const textoFinal = biografia || p.HISTORIA_BREVE || "SIN INFORMACIÓN DISPONIBLE.";
+
+  contenedor.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <h3 style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.5);
+                 letter-spacing:0.1em;">BIOGRAFÍA</h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        ${badgeHTML}
+        <button class="btn-secundario" style="font-size:12px;padding:5px 12px;"
+                onclick="narrarBiografiaInfo('${_escapeAttr(textoFinal)}')">
+          🔊 NARRAR
+        </button>
+      </div>
+    </div>
+    <p style="font-size:13px;line-height:1.6;color:rgba(255,255,255,0.8);">
+      ${_escape(textoFinal)}
+    </p>
+  `;
+
+  // Si había una imagen con data-src en el modal, cargarla ahora
+  const imgModal = document.querySelector('#info-modal-contenido-inner img[data-src]');
+  if (imgModal) {
+    imgModal.src = imgModal.dataset.src;
+    imgModal.removeAttribute('data-src');
+  }
+}
+
+function narrarBiografiaInfo(texto) {
+  if (typeof narrar === "function") {
+    narrar(texto, { rate: CONFIG.AUDIO_RATE_INFO, pitch: CONFIG.AUDIO_PITCH });
+  }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 12. FUNCIONES INICIADORAS DE MODOS (stub para Fases 4-6)
+// Estas se reemplazarán por implementaciones completas en
+// MotorMemoria.html y MotorBatalla.html.
+// ────────────────────────────────────────────────────────────
+function iniciarModoMemoria() {
+  const pantalla   = document.getElementById('pantalla-memoria-config');
+  const modalidad  = getOpcion('modalidad', 'FACIL');
+  const universo   = getOpcion('universo', 'TODOS');
+  const nombres    = getNombresJugadores(pantalla);
+
+  if (!window.BD_GLOBAL || window.BD_GLOBAL.length === 0) {
+    mostrarToast("⚠ BASE DE DATOS AÚN CARGANDO...");
+    return;
+  }
+
+  if (typeof guardarPerfilesJugadores === "function") guardarPerfilesJugadores(nombres);
+
+  // Delegar a MotorMemoria
+  if (typeof arrancarJuegoMemoria === "function") {
+    arrancarJuegoMemoria({ modalidad, universo, nombres });
+  } else {
+    mostrarToast("MODO MEMORIA — PRÓXIMAMENTE");
+  }
+}
+
+function iniciarModoBatalla() {
+  const pantalla  = document.getElementById('pantalla-batalla-config');
+  const formato   = parseInt(getOpcion('formato', '3'));
+  const universo  = getOpcion('universo-batalla', 'TODOS');
+  const rondas    = getOpcion('rondas', '5');
+  const nombreA   = document.getElementById('batalla-nombre-a')?.value.trim() || 'JUGADOR A';
+  const nombreB   = document.getElementById('batalla-nombre-b')?.value.trim() || 'JUGADOR B';
+
+  if (!window.BD_GLOBAL || window.BD_GLOBAL.length === 0) {
+    mostrarToast("⚠ BASE DE DATOS AÚN CARGANDO...");
+    return;
+  }
+
+  if (typeof guardarPerfilesJugadores === "function") guardarPerfilesJugadores([nombreA, nombreB]);
+
+  if (typeof arrancarJuegoBatalla === "function") {
+    arrancarJuegoBatalla({ formato, universo, rondas, nombreA, nombreB });
+  } else {
+    mostrarToast("MODO BATALLA — PRÓXIMAMENTE");
+  }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 13. UTILIDADES DE ESCAPE HTML
+// ────────────────────────────────────────────────────────────
+function _escape(str) {
+  return String(str || "")
+    .replace(/&/g,  "&amp;")
+    .replace(/</g,  "&lt;")
+    .replace(/>/g,  "&gt;")
+    .replace(/"/g,  "&quot;")
+    .replace(/'/g,  "&#39;");
+}
+
+// Para atributos onclick con comillas simples
+function _escapeAttr(str) {
+  return String(str || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g,  "\\'")
+    .replace(/"/g,  "&quot;");
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 14. INICIALIZACIÓN TARDÍA (después de que MotorBD carga la BD)
+// ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Aplicar tema guardado (claro/oscuro) antes de cualquier otra cosa
+  _aplicarTemaGuardado();
+
+  // Giroscopio: inicializar en primer touchstart (requiere gesto de usuario)
+  document.addEventListener('touchstart', () => {
+    inicializarControles3D();
+  }, { once: true });
+
+  // Configurar orientación inicial
+  document.body.classList.toggle('landscape', window.innerWidth > window.innerHeight);
+  document.body.classList.toggle('portrait',  window.innerWidth <= window.innerHeight);
+
+  // Cerrar modal info al hacer click en el overlay (fuera del contenido)
+  const overlayInfo = document.getElementById('info-modal-detalle');
+  if (overlayInfo) {
+    overlayInfo.addEventListener('click', (e) => {
+      if (e.target === overlayInfo) cerrarDetallePersonaje();
+    });
+  }
+
+  // Cerrar modal genérico al hacer click fuera
+  const modalOverlay = document.getElementById('modal-overlay');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) cerrarModal();
+    });
+  }
+});
+</script>

@@ -1,0 +1,310 @@
+<script>
+// ============================================================
+// MotorAudio.html — Web Speech + Web Audio API v4.0
+// Juego de Cartas MARVEL / DC
+// Depende de: MotorBD.html (CONFIG)
+// ============================================================
+
+// ── ESTADO GLOBAL DE AUDIO ───────────────────────────────────
+let CTX_AUDIO      = null;   // AudioContext único de sesión
+let _vozSeleccionada = null; // Mejor voz disponible en el dispositivo
+let _wakeLockRef   = null;   // Wake Lock durante narración larga
+let _narracionActiva = false;
+
+// ────────────────────────────────────────────────────────────
+// 1. INICIALIZACIÓN — requiere gesto de usuario (autoplay policy)
+// ────────────────────────────────────────────────────────────
+function inicializarAudio() {
+  if (CTX_AUDIO) return;
+  try {
+    CTX_AUDIO = new (window.AudioContext || window.webkitAudioContext)();
+    // Algunos browsers lo crean en estado "suspended"
+    if (CTX_AUDIO.state === 'suspended') CTX_AUDIO.resume();
+  } catch(e) {
+    console.warn("AudioContext no disponible:", e);
+  }
+}
+
+// Llamar en el primer touchstart del documento
+document.addEventListener('touchstart', inicializarAudio, { once: true });
+document.addEventListener('click',      inicializarAudio, { once: true });
+
+// ────────────────────────────────────────────────────────────
+// 2. SELECCIÓN DE VOZ — masculina, grave, español
+// ────────────────────────────────────────────────────────────
+function _cargarVoces() {
+  if (!window.speechSynthesis) return;
+
+  const intentar = () => {
+    const voces = window.speechSynthesis.getVoices();
+    if (voces.length === 0) return; // aún no cargaron
+    _vozSeleccionada = _elegirMejorVoz(voces);
+    console.log("Voz seleccionada:", _vozSeleccionada?.name || "default del sistema");
+  };
+
+  window.speechSynthesis.onvoiceschanged = intentar;
+  intentar(); // por si ya están disponibles
+}
+
+function _elegirMejorVoz(voces) {
+  // Preferencia: voces masculinas de calidad en español
+  const preferidas = [
+    "Google español",
+    "Google Español",
+    "es-US-Neural2-B",
+    "es-ES-Neural2-B",
+    "Microsoft Raul",
+    "es_MX-male",
+  ];
+
+  for (const pref of preferidas) {
+    const voz = voces.find(v =>
+      v.name.toLowerCase().includes(pref.toLowerCase())
+    );
+    if (voz) return voz;
+  }
+
+  // Cualquier voz en español que no sea femenina explícita
+  const vozES = voces.find(v =>
+    v.lang.startsWith("es") &&
+    !v.name.toLowerCase().includes("female") &&
+    !v.name.toLowerCase().includes("mujer") &&
+    !v.name.toLowerCase().includes("woman")
+  );
+  if (vozES) return vozES;
+
+  // Fallback: cualquier voz en español
+  return voces.find(v => v.lang.startsWith("es")) || null;
+}
+
+// Inicializar voces al cargar
+_cargarVoces();
+
+// ────────────────────────────────────────────────────────────
+// 3. SONIDOS PROCEDURALES — sin archivos externos
+// ────────────────────────────────────────────────────────────
+const _NOTAS = {
+  match:      [{ f: 523, d: 0, dur: 0.4 }, { f: 659, d: 0.1, dur: 0.4 }],
+  fail:       [{ f: 220, d: 0, dur: 0.3 }, { f: 180, d: 0.15, dur: 0.3 }],
+  victoria:   [{ f: 523, d: 0, dur: 0.3 }, { f: 659, d: 0.15, dur: 0.3 },
+               { f: 784, d: 0.30, dur: 0.3 }, { f: 1047, d: 0.50, dur: 0.6 }],
+  extraccion: [{ f: 440, d: 0, dur: 0.15 }, { f: 330, d: 0.08, dur: 0.2 }],
+  inicio:     [{ f: 400, d: 0, dur: 0.2 }, { f: 500, d: 0.12, dur: 0.2 },
+               { f: 650, d: 0.25, dur: 0.3 }],
+  // Click sutil — Mejora UX #5: feedback inmediato al tocar una opción,
+  // antes de saber si es correcta o no.
+  click:      [{ f: 600, d: 0, dur: 0.06 }],
+};
+
+// Patrones de vibración por tipo de evento — Mejora UX #9.
+// Feedback físico extra en Android para reforzar el sonido/visual.
+const _PATRONES_VIBRACION = {
+  match:      [40],
+  fail:       [30, 40, 30],
+  victoria:   [60, 50, 60, 50, 120],
+  extraccion: [20],
+  inicio:     [30, 30, 60],
+};
+
+function _vibrar(tipo) {
+  if (!('vibrate' in navigator)) return;
+  const patron = _PATRONES_VIBRACION[tipo];
+  if (patron) {
+    try { navigator.vibrate(patron); } catch(e) {}
+  }
+}
+
+function reproducirSonido(tipo) {
+  _vibrar(tipo);
+  if (!CTX_AUDIO) return;
+  // Intentar reanudar si estaba suspendido
+  if (CTX_AUDIO.state === 'suspended') {
+    CTX_AUDIO.resume().then(() => _tocarNotas(tipo));
+    return;
+  }
+  _tocarNotas(tipo);
+}
+
+function _tocarNotas(tipo) {
+  const notas = _NOTAS[tipo];
+  if (!notas || !CTX_AUDIO) return;
+
+  const t = CTX_AUDIO.currentTime;
+
+  notas.forEach(({ f, d, dur }) => {
+    try {
+      const osc  = CTX_AUDIO.createOscillator();
+      const gain = CTX_AUDIO.createGain();
+      const dur_ = dur || 0.4;
+
+      osc.type            = tipo === 'fail' ? 'sawtooth' : 'sine';
+      osc.frequency.value = f;
+
+      // Envelope: attack rápido, decay suave
+      gain.gain.setValueAtTime(0, t + d);
+      gain.gain.linearRampToValueAtTime(0.28, t + d + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + d + dur_);
+
+      osc.connect(gain);
+      gain.connect(CTX_AUDIO.destination);
+      osc.start(t + d);
+      osc.stop(t + d + dur_ + 0.05);
+    } catch(e) {
+      // AudioContext puede fallar en segundo plano — ignorar silenciosamente
+    }
+  });
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. NARRACIÓN — Web Speech API con fragmentación y Wake Lock
+// ────────────────────────────────────────────────────────────
+
+// narrar() — para textos largos (biografías, resultados de batalla)
+// Fragmenta en oraciones para evitar el bug de Android que corta
+// la narración después de ~14 segundos.
+async function narrar(texto, opciones = {}) {
+  if (!window.speechSynthesis || !texto) return;
+  window.speechSynthesis.cancel();
+  _narracionActiva = true;
+
+  // Wake Lock: evita que la pantalla se apague durante narración larga
+  if ('wakeLock' in navigator) {
+    try { _wakeLockRef = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+
+  const chunks  = _fragmentarTexto(texto, 180); // máx 180 chars por chunk
+  let   indice  = 0;
+
+  function leerChunk() {
+    if (!_narracionActiva || indice >= chunks.length) {
+      _liberarWakeLock();
+      ocultarBarraProgreso();
+      return;
+    }
+
+    const utt    = new SpeechSynthesisUtterance(chunks[indice]);
+    utt.lang     = opciones.lang  || 'es-AR';
+    utt.rate     = opciones.rate  || 0.82;
+    utt.pitch    = opciones.pitch || 0.85;
+    utt.volume   = 1.0;
+    if (_vozSeleccionada) utt.voice = _vozSeleccionada;
+
+    utt.onend   = () => { indice++; actualizarBarraProgreso(indice, chunks.length); leerChunk(); };
+    utt.onerror = (e) => {
+      // 'interrupted' es normal cuando se cancela — no es un error real
+      if (e.error !== 'interrupted') console.warn("TTS error:", e.error);
+      indice++; leerChunk();
+    };
+
+    window.speechSynthesis.speak(utt);
+    actualizarBarraProgreso(indice, chunks.length);
+  }
+
+  leerChunk();
+}
+
+// narrarEvento() — para textos cortos e inmediatos (turno, match, etc.)
+// No usa chunking ni Wake Lock para ser instantáneo.
+function narrarEvento(texto, opciones = {}) {
+  if (!window.speechSynthesis || !texto) return;
+
+  // No cancelar la narración larga si está activa
+  // Los eventos cortos se encolan detrás
+  const utt    = new SpeechSynthesisUtterance(texto);
+  utt.lang     = 'es-AR';
+  utt.rate     = opciones.rate  || 1.05;
+  utt.pitch    = opciones.pitch || 0.9;
+  utt.volume   = 1.0;
+  if (_vozSeleccionada) utt.voice = _vozSeleccionada;
+
+  window.speechSynthesis.speak(utt);
+}
+
+function pausarNarracion() {
+  window.speechSynthesis?.pause();
+}
+
+function reanudarNarracion() {
+  window.speechSynthesis?.resume();
+}
+
+function detenerNarracion() {
+  _narracionActiva = false;
+  window.speechSynthesis?.cancel();
+  _liberarWakeLock();
+  ocultarBarraProgreso();
+}
+
+function _liberarWakeLock() {
+  if (_wakeLockRef) {
+    _wakeLockRef.release().catch(() => {});
+    _wakeLockRef = null;
+  }
+}
+
+// Fragmentar texto en chunks que no corten palabras ni oraciones
+function _fragmentarTexto(texto, maxChars) {
+  // Intentar fragmentar por oraciones primero
+  const oraciones = texto.split(/(?<=[.!?])\s+/);
+  const chunks = [];
+  let chunk = "";
+
+  for (const oracion of oraciones) {
+    if ((chunk + " " + oracion).trim().length <= maxChars) {
+      chunk = (chunk + " " + oracion).trim();
+    } else {
+      if (chunk) chunks.push(chunk);
+      // Si la oración sola es más larga que maxChars, fragmentar por palabras
+      if (oracion.length > maxChars) {
+        const palabras = oracion.split(" ");
+        let sub = "";
+        for (const p of palabras) {
+          if ((sub + " " + p).trim().length <= maxChars) {
+            sub = (sub + " " + p).trim();
+          } else {
+            if (sub) chunks.push(sub);
+            sub = p;
+          }
+        }
+        if (sub) chunk = sub;
+      } else {
+        chunk = oracion;
+      }
+    }
+  }
+  if (chunk) chunks.push(chunk);
+
+  return chunks.filter(c => c.trim().length > 0);
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. BARRA DE PROGRESO DE NARRACIÓN
+// ────────────────────────────────────────────────────────────
+function actualizarBarraProgreso(actual, total) {
+  const barra = document.getElementById('barra-narracion');
+  const prog  = document.getElementById('barra-narracion-progreso');
+  if (!barra || !prog) return;
+
+  if (!total || total <= 1) {
+    barra.classList.add('oculto');
+    return;
+  }
+
+  barra.classList.remove('oculto');
+  barra.setAttribute('aria-valuenow', Math.round((actual / total) * 100));
+  prog.style.setProperty('--progreso', `${Math.min((actual / total) * 100, 100)}%`);
+}
+
+function ocultarBarraProgreso() {
+  document.getElementById('barra-narracion')?.classList.add('oculto');
+}
+
+// Re-adquirir Wake Lock si la página vuelve al foco durante narración
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && _narracionActiva && !_wakeLockRef) {
+    if ('wakeLock' in navigator) {
+      try { _wakeLockRef = await navigator.wakeLock.request('screen'); } catch(e) {}
+    }
+  }
+});
+</script>

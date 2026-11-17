@@ -1,0 +1,536 @@
+<script>
+// ============================================================
+// MotorDraft.html — Modo Draft v4.0
+// Igual que Batalla pero el jugador ELIGE sus cartas de
+// un pool de 5 opciones en turno snake.
+// Reutiliza calcularPoderTotal, sonAliados, etc. de MotorBatalla.
+// ============================================================
+
+const _draft = {
+  activa:          false,
+  formato:         3,
+  modoRondas:      "5",
+  jugadores:       ["JUGADOR A", "JUGADOR B"],
+  equipoA:         [],
+  equipoB:         [],
+  poolCompleto:    [],
+  puntaje:         { A: 0, B: 0 },
+  rondaActual:     0,
+  historialRondas: [],
+  fase:            "DRAFT",   // DRAFT | COMBATE | FIN
+  turnoActual:     "A",       // quién elige ahora
+  cartasElegidas:  0,         // total elegidas en esta ronda de draft
+  opcionesActuales:[], // las 5 cartas mostradas ahora
+};
+
+// ────────────────────────────────────────────────────────────
+// 1. ARRANQUE
+// ────────────────────────────────────────────────────────────
+function iniciarModoDraft() {
+  const formato  = parseInt(getOpcion('formato-draft', '3'));
+  const universo = getOpcion('universo-draft', 'TODOS');
+  const rondas   = getOpcion('rondas-draft', '5');
+  const nombreA  = document.getElementById('draft-nombre-a')?.value.trim() || 'JUGADOR A';
+  const nombreB  = document.getElementById('draft-nombre-b')?.value.trim() || 'JUGADOR B';
+
+  if (!window.BD_GLOBAL || window.BD_GLOBAL.length === 0) {
+    mostrarToast("⚠ BASE DE DATOS AÚN CARGANDO...");
+    return;
+  }
+
+  if (typeof guardarPerfilesJugadores === "function") guardarPerfilesJugadores([nombreA, nombreB]);
+
+  const pool = barajar(obtenerPersonajesPorUniverso(universo));
+  const necesarios = formato * 2 + 5; // equipos + buffer de opciones
+  if (pool.length < necesarios) {
+    mostrarModal(
+      `NO HAY SUFICIENTES PERSONAJES.\nNECESITÁS AL MENOS ${necesarios} EN ${universo}.`,
+      ["VOLVER"], () => {}
+    );
+    return;
+  }
+
+  Object.assign(_draft, {
+    activa: true, formato, modoRondas: String(rondas),
+    jugadores: [nombreA, nombreB],
+    equipoA: [], equipoB: [],
+    poolCompleto: pool,
+    puntaje: { A: 0, B: 0 },
+    rondaActual: 0, historialRondas: [],
+    fase: "DRAFT", turnoActual: "A", cartasElegidas: 0,
+    opcionesActuales: [],
+  });
+
+  navegarA('pantalla-draft-juego');
+  _renderizarArenaDraft();
+  if (typeof reproducirSonido === "function") reproducirSonido('inicio');
+  if (typeof narrar === "function") narrar("¡QUE EMPIECE EL DRAFT!");
+
+  _iniciarTurnoDraft();
+}
+
+// ────────────────────────────────────────────────────────────
+// 2. FASE DRAFT — selección snake con 5 opciones
+// ────────────────────────────────────────────────────────────
+function _iniciarTurnoDraft() {
+  const totalNecesario = _draft.formato * 2;
+  if (_draft.cartasElegidas >= totalNecesario) {
+    // Draft completo → combate
+    setTimeout(_resolverCombateDraft, 500);
+    return;
+  }
+
+  // Calcular turno snake: A,B,B,A,A,B,B,A...
+  _draft.turnoActual = _calcularTurnoSnake(_draft.cartasElegidas, _draft.formato);
+  const jugador = _draft.turnoActual === "A" ? _draft.jugadores[0] : _draft.jugadores[1];
+
+  _actualizarHeaderDraft();
+  _mostrarTurnoDraft(jugador, _draft.turnoActual);
+
+  // Generar 5 opciones del pool (sin repetir cartas ya elegidas)
+  const elegidas = new Set([
+    ..._draft.equipoA.map(p => p.PERSONAJE),
+    ..._draft.equipoB.map(p => p.PERSONAJE),
+  ]);
+  const disponibles = _draft.poolCompleto.filter(p => !elegidas.has(p.PERSONAJE));
+  _draft.opcionesActuales = barajar(disponibles).slice(0, 5);
+
+  _renderizarOpcionesDraft(_draft.opcionesActuales, jugador);
+}
+
+function _calcularTurnoSnake(elegidas, formato) {
+  // A, B, B, A, A, B, B, A ...
+  const ciclo = Math.floor(elegidas / 2) % 2;
+  const dentroDelCiclo = elegidas % 2;
+  if (ciclo === 0) return dentroDelCiclo === 0 ? "A" : "B";
+  else             return dentroDelCiclo === 0 ? "B" : "A";
+}
+
+// El jugador elige una carta de las 5 opciones
+function elegirCartaDraft(nombrePersonaje) {
+  if (_draft.fase !== "DRAFT" || window._juegoEnPausa) return;
+
+  const personaje = _draft.opcionesActuales.find(p => p.PERSONAJE === nombrePersonaje);
+  if (!personaje) return;
+
+  // Ocultar overlay inmediatamente
+  _ocultarOverlaySeleccion();
+
+  // Asignar al equipo
+  if (_draft.turnoActual === "A") _draft.equipoA.push(personaje);
+  else                            _draft.equipoB.push(personaje);
+
+  _draft.cartasElegidas++;
+
+  // Agregar carta a la zona visualmente
+  _agregarCartaEnZonaDraft(personaje, _draft.turnoActual);
+  if (typeof reproducirSonido === "function") reproducirSonido('extraccion');
+  if (typeof narrarEvento === "function") {
+    narrarEvento(`${_draft.turnoActual === "A" ? _draft.jugadores[0] : _draft.jugadores[1]} eligió ${pronunciarNombre(personaje.PERSONAJE)}`);
+  }
+
+  setTimeout(_iniciarTurnoDraft, 500);
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. COMBATE — idéntica lógica a MotorBatalla
+// ────────────────────────────────────────────────────────────
+function _resolverCombateDraft() {
+  _draft.fase = "COMBATE";
+  _draft.rondaActual++;
+
+  const poderA = calcularPoderTotal(_draft.equipoA, _draft.equipoB);
+  const poderB = calcularPoderTotal(_draft.equipoB, _draft.equipoA);
+
+  let ganador;
+  if      (poderA > poderB) ganador = "A";
+  else if (poderB > poderA) ganador = "B";
+  else                      ganador = resolverEmpate(_draft.equipoA, _draft.equipoB);
+
+  _draft.puntaje[ganador]++;
+
+  const paresA   = _contarParesAliadosDraft(_draft.equipoA);
+  const paresB   = _contarParesAliadosDraft(_draft.equipoB);
+
+  const entrada = {
+    ronda: _draft.rondaActual, poderA, poderB, ganador,
+    nombreGanador: ganador === "A" ? _draft.jugadores[0] : _draft.jugadores[1],
+    equipoA: [..._draft.equipoA], equipoB: [..._draft.equipoB],
+    paresA, paresB, puntaje: { ..._draft.puntaje },
+  };
+  _draft.historialRondas.push(entrada);
+
+  _agregarLogDraft(entrada);
+  _actualizarScoresDraft();
+  _destacarZonaDraft(ganador);
+  _actualizarStatusDraft(`RONDA ${_draft.rondaActual} → ${entrada.nombreGanador}`);
+  if (typeof actualizarProgresoArena === "function") {
+    const max = _limiteVictoriasDraft();
+    actualizarProgresoArena('draft-progreso', Math.max(_draft.puntaje.A, _draft.puntaje.B), max, 'VICTORIAS');
+  }
+
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  // Mostrar estado "generando narración" y bloquear avance hasta que termine
+  _mostrarEsperandoNarracionDraft();
+  _narrarDraftConIA(entrada, false, () => {
+    // Callback al terminar la narración (éxito o fallback)
+    if (_verificarFinDraft()) return;
+    _mostrarBotonSiguienteRondaDraft();
+  });
+
+  const btnNarrar = document.getElementById('draft-btn-narrar');
+  if (btnNarrar) btnNarrar.disabled = false;
+}
+
+function _verificarFinDraft() {
+  const modo = _draft.modoRondas;
+  if (modo === "LIBRE") return false;
+  const limite = _limiteVictoriasDraft();
+
+  if (_draft.puntaje.A >= limite || _draft.puntaje.B >= limite) {
+    setTimeout(_finalizarDraft, 800);
+    return true;
+  }
+  return false;
+}
+
+function _limiteVictoriasDraft() {
+  const modo = _draft.modoRondas;
+  if (modo === "LIBRE") return Infinity;
+  if (modo.startsWith("CUSTOM:")) return parseInt(modo.split(":")[1]) || 5;
+  return Math.ceil(parseInt(modo) / 2);
+}
+
+// Mientras se genera la narración, deshabilitar avance y mostrar estado
+function _mostrarEsperandoNarracionDraft() {
+  const log = document.getElementById('draft-log');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.id = 'draft-esperando-narracion';
+  div.style.cssText =
+    'display:flex;align-items:center;justify-content:center;gap:8px;' +
+    'padding:10px;font-size:12px;color:rgba(255,255,255,0.4);';
+  div.innerHTML =
+    `<span style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.25);
+     border-top-color:rgba(255,214,10,0.8);border-radius:50%;
+     animation:girarSpinner 0.7s linear infinite;"></span>
+     GENERANDO NARRACIÓN...`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// Botón de confirmación — el jugador valida que vio/escuchó el resultado
+// antes de pasar a la ronda siguiente (fix: ya no avanza solo).
+function _mostrarBotonSiguienteRondaDraft() {
+  document.getElementById('draft-esperando-narracion')?.remove();
+
+  const log = document.getElementById('draft-log');
+  if (!log) return;
+
+  const btnExistente = document.getElementById('draft-btn-siguiente-ronda');
+  if (btnExistente) btnExistente.remove();
+
+  const btn = document.createElement('button');
+  btn.id        = 'draft-btn-siguiente-ronda';
+  btn.className = 'btn-primario';
+  btn.style.cssText = 'width:100%;margin-top:10px;';
+  btn.textContent = `RONDA ${_draft.rondaActual + 1} →`;
+  btn.onclick = () => {
+    btn.remove();
+    _prepararSiguienteRondaDraft();
+  };
+  log.appendChild(btn);
+  log.scrollTop = log.scrollHeight;
+}
+
+function _prepararSiguienteRondaDraft() {
+  _draft.equipoA      = [];
+  _draft.equipoB      = [];
+  _draft.cartasElegidas = 0;
+  _draft.fase         = "DRAFT";
+  _draft.turnoActual  = "A";
+
+  // Limpiar zonas de cartas
+  document.getElementById('draft-cartas-a').innerHTML = "";
+  document.getElementById('draft-cartas-b').innerHTML = "";
+  document.querySelectorAll('.zona-jugador').forEach(z => z.classList.remove('zona-ganadora'));
+
+  const btnNarrar = document.getElementById('draft-btn-narrar');
+  if (btnNarrar) btnNarrar.disabled = true;
+
+  mostrarToast(`RONDA ${_draft.rondaActual + 1} — NUEVO DRAFT`);
+  _iniciarTurnoDraft();
+}
+
+function _finalizarDraft() {
+  _draft.fase   = "FIN";
+  _draft.activa = false;
+
+  const ganador       = _draft.puntaje.A >= _draft.puntaje.B ? "A" : "B";
+  const nombreGanador = ganador === "A" ? _draft.jugadores[0] : _draft.jugadores[1];
+
+  const ranking = [
+    { nombre: _draft.jugadores[0], puntos: _draft.puntaje.A, color: 'var(--turno-color-a)' },
+    { nombre: _draft.jugadores[1], puntos: _draft.puntaje.B, color: 'var(--turno-color-b)' },
+  ].sort((a, b) => b.puntos - a.puntos);
+
+  if (typeof lanzarConfetti === "function") lanzarConfetti();
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  const titulo = `🏆 ¡GANÓ ${nombreGanador.toUpperCase()}!`;
+
+  if (typeof mostrarPodio === "function") {
+    mostrarPodio(
+      titulo, ranking,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        if (opcion === 0) navegarA('pantalla-draft-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  } else {
+    mostrarModal(
+      `${titulo}\n${_draft.jugadores[0]}: ${_draft.puntaje.A} — ${_draft.jugadores[1]}: ${_draft.puntaje.B}`,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        if (opcion === 0) navegarA('pantalla-draft-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  }
+
+  // Narración final épica
+  const ultimaEntrada = _draft.historialRondas[_draft.historialRondas.length - 1];
+  if (ultimaEntrada) _narrarDraftConIA(ultimaEntrada, true);
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. NARRACIÓN (reutiliza generarNarracionBatalla del servidor)
+// ────────────────────────────────────────────────────────────
+function _narrarDraftConIA(entrada, esFinal, onComplete) {
+  const jugadorA    = _draft.jugadores[0];
+  const jugadorB    = _draft.jugadores[1];
+  const ganadorNom  = entrada.ganador === "A" ? jugadorA : jugadorB;
+  const perdedorNom = entrada.ganador === "A" ? jugadorB : jugadorA;
+  const eqGanador   = entrada.ganador === "A" ? entrada.equipoA : entrada.equipoB;
+  const eqPerdedor  = entrada.ganador === "A" ? entrada.equipoB : entrada.equipoA;
+  const marcador    = jugadorA + " " + _draft.puntaje.A + " - " + _draft.puntaje.B + " " + jugadorB;
+  const topHeroes   = [...eqGanador]
+    .sort((a, b) => calcularSumaBase([b]) - calcularSumaBase([a]))
+    .slice(0, 2).map(p => p.PERSONAJE).join(" y ");
+
+  const datos = {
+    ganadorNom, perdedorNom,
+    nombresG:  eqGanador.map(p => p.PERSONAJE).join(", "),
+    nombresP:  eqPerdedor.map(p => p.PERSONAJE).join(", "),
+    paresG:    entrada.ganador === "A" ? (entrada.paresA || 0) : (entrada.paresB || 0),
+    marcador, topHeroes,
+    ronda:     entrada.ronda,
+    esFinal:   !!esFinal,
+  };
+
+  google.script.run
+    .withSuccessHandler(resultado => {
+      const texto = resultado?.narracion || `¡Punto para ${ganadorNom}! Marcador: ${marcador}.`;
+      _mostrarNarracionDraftEnLog(texto);
+      if (typeof narrar === "function") narrar(texto, { rate: CONFIG.AUDIO_RATE_BATALLA });
+      if (typeof onComplete === "function") onComplete();
+    })
+    .withFailureHandler(() => {
+      const texto = `¡Punto para ${ganadorNom}! Marcador: ${marcador}.`;
+      _mostrarNarracionDraftEnLog(texto);
+      if (typeof narrar === "function") narrar(texto, { rate: CONFIG.AUDIO_RATE_BATALLA });
+      if (typeof onComplete === "function") onComplete();
+    })
+    .generarNarracionBatalla(datos);
+}
+
+function narrarResultadoDraft() {
+  const entrada = _draft.historialRondas[_draft.historialRondas.length - 1];
+  if (!entrada) return;
+  _narrarDraftConIA(entrada, false);
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. RENDERIZADO DOM
+// ────────────────────────────────────────────────────────────
+function _renderizarArenaDraft() {
+  const elA = document.getElementById('draft-nombre-jugador-a');
+  const elB = document.getElementById('draft-nombre-jugador-b');
+  if (elA) elA.textContent = _draft.jugadores[0];
+  if (elB) elB.textContent = _draft.jugadores[1];
+  _actualizarScoresDraft();
+  document.getElementById('draft-cartas-a').innerHTML = "";
+  document.getElementById('draft-cartas-b').innerHTML = "";
+  document.getElementById('draft-log').innerHTML = "";
+  document.getElementById('draft-opciones').innerHTML = "";
+  const btnNarrar = document.getElementById('draft-btn-narrar');
+  if (btnNarrar) btnNarrar.disabled = true;
+}
+
+function _mostrarTurnoDraft(nombreJugador, turno) {
+  const overlay = document.getElementById('draft-overlay-seleccion');
+  const label   = document.getElementById('draft-turno-label');
+  if (!overlay || !label) return;
+
+  const color = turno === "A" ? "var(--turno-color-a)" : "var(--turno-color-b)";
+  label.textContent   = `TURNO DE ${nombreJugador}`;
+  label.style.color   = color;
+  label.style.borderColor = color;
+
+  overlay.classList.remove('oculto');
+}
+
+function _ocultarOverlaySeleccion() {
+  document.getElementById('draft-overlay-seleccion')?.classList.add('oculto');
+}
+
+function _renderizarOpcionesDraft(opciones, jugador) {
+  const contenedor = document.getElementById('draft-opciones');
+  if (!contenedor) return;
+
+  contenedor.innerHTML = opciones.map(p => {
+    const pwr = calcularSumaBase([p]);
+    const img = p.IMAGEN
+      ? `<img src="${p.IMAGEN}" alt="${_escape(p.PERSONAJE)}"
+              onerror="this.style.display='none'">`
+      : `<div style="aspect-ratio:3/4;display:flex;align-items:center;
+                     justify-content:center;font-size:40px;
+                     background:var(--color-fondo-card);">🦸</div>`;
+
+    return `<div class="draft-opcion" onclick="elegirCartaDraft('${_escapeAttr(p.PERSONAJE)}')">
+      ${img}
+      <div class="draft-opcion-info">
+        <div class="draft-opcion-nombre">${_escape(p.PERSONAJE)}</div>
+        <div class="draft-opcion-pwr">PWR ${pwr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _agregarCartaEnZonaDraft(personaje, turno) {
+  const zonaId = turno === "A" ? 'draft-cartas-a' : 'draft-cartas-b';
+  const zona   = document.getElementById(zonaId);
+  if (!zona) return;
+
+  const div = document.createElement('div');
+  div.className = 'carta-contenedor carta-batalla';
+
+  const imgHTML = personaje.IMAGEN
+    ? `<img src="${personaje.IMAGEN}" alt="${personaje.PERSONAJE}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+            onerror="this.style.display='none'">`
+    : `<div style="display:flex;align-items:center;justify-content:center;
+                   width:100%;height:100%;font-size:28px;">🦸</div>`;
+
+  div.innerHTML = `
+    <div class="carta revelada extrayendo" style="width:90px;height:125px;">
+      <div class="cara-frente" style="background:var(--color-fondo-card);
+           border-radius:10px;border:1.5px solid var(--color-borde);">
+        ${imgHTML}
+        <div class="carta-batalla-stats">
+          <div style="font-size:9px;font-weight:700;line-height:1.2;margin-bottom:2px;">
+            ${personaje.PERSONAJE}
+          </div>
+          <div style="font-size:8px;color:var(--color-acento-oro);">
+            PWR ${calcularSumaBase([personaje])}
+          </div>
+        </div>
+      </div>
+      <div class="cara-dorso"></div>
+    </div>`;
+
+  zona.appendChild(div);
+  if (typeof activarFallbackTactil === "function") {
+    activarFallbackTactil(div.querySelector('.carta'));
+  }
+}
+
+function _actualizarHeaderDraft() {
+  const elA = document.getElementById('draft-nombre-jugador-a');
+  const elB = document.getElementById('draft-nombre-jugador-b');
+  if (elA) elA.textContent = _draft.jugadores[0];
+  if (elB) elB.textContent = _draft.jugadores[1];
+}
+
+function _actualizarScoresDraft() {
+  const sA = document.getElementById('draft-score-a');
+  const sB = document.getElementById('draft-score-b');
+  if (typeof animarContadorPuntos === "function") {
+    if (sA) animarContadorPuntos(sA, _draft.puntaje.A);
+    if (sB) animarContadorPuntos(sB, _draft.puntaje.B);
+  } else {
+    if (sA) sA.textContent = _draft.puntaje.A;
+    if (sB) sB.textContent = _draft.puntaje.B;
+  }
+}
+
+function _actualizarStatusDraft(texto) {
+  const el = document.getElementById('draft-status');
+  if (el) el.textContent = texto;
+}
+
+function _destacarZonaDraft(ganador) {
+  document.getElementById('draft-zona-a')?.classList.toggle('zona-ganadora', ganador === "A");
+  document.getElementById('draft-zona-b')?.classList.toggle('zona-ganadora', ganador === "B");
+}
+
+function _agregarLogDraft(entrada) {
+  const log = document.getElementById('draft-log');
+  if (!log) return;
+  const diff   = Math.abs(entrada.poderA - entrada.poderB);
+  const renido = diff < Math.max(entrada.poderA, entrada.poderB) * 0.05;
+  const div    = document.createElement('div');
+  div.className = `log-entrada ganador-${entrada.ganador.toLowerCase()}`;
+  div.innerHTML =
+    `<span style="font-weight:700;">RONDA ${entrada.ronda}</span> — ` +
+    `${entrada.nombreGanador} GANA${renido ? " 🔥" : ""}` +
+    `<br><span style="font-size:10px;opacity:0.7;">${entrada.poderA} VS ${entrada.poderB}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  _limitarLog(log, 10);
+}
+
+function _mostrarNarracionDraftEnLog(texto) {
+  const log = document.getElementById('draft-log');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'log-narracion';
+  div.style.cssText = `background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.2);
+    border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.5;
+    color:rgba(255,255,255,0.85);margin-top:6px;`;
+  div.textContent = texto;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  _limitarLog(log, 10);
+}
+
+// Reutiliza _limitarLog de MotorBatalla.html — si por algún motivo no está
+// disponible (orden de carga), se define aquí como respaldo.
+if (typeof _limitarLog !== "function") {
+  window._limitarLog = function(logEl, maxBloques) {
+    while (logEl.children.length > maxBloques) {
+      logEl.removeChild(logEl.firstElementChild);
+    }
+  };
+}
+
+function _contarParesAliadosDraft(equipo) {
+  let pares = 0;
+  for (let i = 0; i < equipo.length; i++)
+    for (let j = i + 1; j < equipo.length; j++)
+      if (sonAliados(equipo[i], equipo[j]) || sonAliados(equipo[j], equipo[i])) pares++;
+  return pares;
+}
+
+// Helpers de escape (ya están en MotorUI pero los duplico para independencia)
+function _escapeAttr(str) {
+  return String(str || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;");
+}
+function _escape(str) {
+  return String(str || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+</script>

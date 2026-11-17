@@ -1,0 +1,669 @@
+<script>
+// ============================================================
+// MotorBatalla.html — Modo Batalla v4.1
+// BATALLA: cartas repartidas AUTOMÁTICAMENTE al azar.
+//          No hay draft, no hay turno de elección.
+//          El jugador toca el mazo → se reparten TODAS las
+//          cartas de golpe → se calcula el ganador.
+// ============================================================
+
+// ── ESTADO ──────────────────────────────────────────────────
+const _batalla = {
+  activa:          false,
+  formato:         3,
+  modoRondas:      "5",    // "3","5","7","LIBRE","CUSTOM:N"
+  jugadores:       ["JUGADOR A", "JUGADOR B"],
+  equipoA:         [],
+  equipoB:         [],
+  poolCompleto:    [],     // todas las cartas del universo elegido
+  puntaje:         { A: 0, B: 0 },
+  rondaActual:     0,
+  historialRondas: [],
+  fase:            "LISTO", // LISTO | COMBATE | FIN
+};
+
+// ── CAMPOS NUMÉRICOS PARA SUMATORIA ─────────────────────────
+const _CAMPOS_BATALLA = [
+  "AGILIDAD","ARMADURA/DEFENSA","DAÑO","FUERZA","RESISTENCIA",
+  "VELOCIDAD","NIVEL_DE_AMENAZA","INTELIGENCIA","LIDERAZGO",
+  "TACTICA","TRABAJO_EN_EQUIPO","FACTOR_MIEDO","PODER_ESPECIAL",
+  "REGENERACION","SIGILO"
+];
+
+// ────────────────────────────────────────────────────────────
+// 1. CÁLCULO DE PODER (sin cambios de lógica)
+// ────────────────────────────────────────────────────────────
+function calcularSumaBase(equipo) {
+  return equipo.reduce((total, p) =>
+    total + _CAMPOS_BATALLA.reduce((s, c) => s + (parseInt(p[c]) || 0), 0)
+  , 0);
+}
+
+function sonAliados(pA, pB) {
+  if (!pA.ALIADOS_CLAVE) return false;
+  return pA.ALIADOS_CLAVE.split(",").some(a =>
+    normalizarNombre(a.trim()) === normalizarNombre(pB.PERSONAJE)
+  );
+}
+
+function calcularBonusAliados(equipo) {
+  let pares = 0;
+  for (let i = 0; i < equipo.length; i++)
+    for (let j = i + 1; j < equipo.length; j++)
+      if (sonAliados(equipo[i], equipo[j]) || sonAliados(equipo[j], equipo[i])) pares++;
+  const lideres = equipo.filter(p => (p.LIDERAZGO || 0) > CONFIG.BONUS_LIDERAZGO_UMBRAL).length;
+  let bonus = Math.min(pares * CONFIG.BONUS_ALIADOS_POR_PAR, CONFIG.BONUS_ALIADOS_MAX);
+  if (lideres >= CONFIG.BONUS_LIDERAZGO_COUNT) bonus += CONFIG.BONUS_LIDERAZGO_VALOR;
+  return bonus;
+}
+
+function calcularMatchupElemental(atacante, defensor) {
+  const tabla = window.BD_SINERGIA || [];
+  let bonusA = 0, penD = 0;
+  atacante.forEach(pA => {
+    defensor.forEach(pD => {
+      const poder = pA.PODER_ESPECIAL_CATEGORIA;
+      const debil = pD.DEBILIDAD_CATEGORIA;
+      if (!poder || poder === "NINGUNA" || !debil || debil === "NINGUNA") return;
+      const regla = tabla.find(r => r.poder === poder && r.debilidad === debil);
+      if (regla) { bonusA += regla.bonusAtacante; penD += regla.penalizacion; }
+    });
+  });
+  return {
+    bonusAtacante:        Math.min(bonusA, 0.20),
+    penalizacionDefensor: Math.min(penD, CONFIG.PENALIZACION_MAX),
+  };
+}
+
+function calcularBonusReputacion(equipo) {
+  const prom = equipo.reduce((s, p) => s + (MAPEO_REPUTACION[p.REPUTACION] || 5), 0) / equipo.length;
+  if (prom > CONFIG.REPUTACION_UMBRAL_ALTO) return  CONFIG.BONUS_REPUTACION_ALTO;
+  if (prom < CONFIG.REPUTACION_UMBRAL_BAJO) return -CONFIG.PENALIZACION_REPUTACION;
+  return 0;
+}
+
+function calcularPoderTotal(equipo, rival) {
+  const base    = calcularSumaBase(equipo);
+  const aliados = calcularBonusAliados(equipo);
+  const matchup = calcularMatchupElemental(equipo, rival);
+  const rep     = calcularBonusReputacion(equipo);
+  const mult    = 1 + aliados + matchup.bonusAtacante + rep - matchup.penalizacionDefensor;
+  return Math.floor(base * mult);
+}
+
+function resolverEmpate(eqA, eqB) {
+  const lidA = eqA.reduce((s, p) => s + (p.LIDERAZGO || 0), 0);
+  const lidB = eqB.reduce((s, p) => s + (p.LIDERAZGO || 0), 0);
+  if (lidA !== lidB) return lidA > lidB ? "A" : "B";
+  const intA = eqA.reduce((s, p) => s + (p.INTELIGENCIA || 0), 0);
+  const intB = eqB.reduce((s, p) => s + (p.INTELIGENCIA || 0), 0);
+  if (intA !== intB) return intA > intB ? "A" : "B";
+  return "A";
+}
+
+// ────────────────────────────────────────────────────────────
+// 2. ARRANQUE
+// ────────────────────────────────────────────────────────────
+function arrancarJuegoBatalla({ formato, universo, rondas, nombreA, nombreB }) {
+  const pool = barajar(obtenerPersonajesPorUniverso(universo));
+  if (pool.length < formato * 2) {
+    mostrarModal(
+      `NO HAY SUFICIENTES PERSONAJES.\nNECESITÁS AL MENOS ${formato * 2} EN ${universo}.`,
+      ["VOLVER"],
+      () => navegarA('pantalla-batalla-config')
+    );
+    return;
+  }
+
+  Object.assign(_batalla, {
+    activa: true, formato, modoRondas: String(rondas),
+    jugadores: [nombreA, nombreB],
+    equipoA: [], equipoB: [],
+    poolCompleto: pool,
+    puntaje: { A: 0, B: 0 },
+    rondaActual: 0, historialRondas: [],
+    fase: "EXTRACCION",  // jugador saca cartas de a una
+    cartasPorSacar: formato * 2,  // total de cartas que faltan sacar esta ronda
+  });
+
+  navegarA('pantalla-batalla-juego');
+  _renderizarArenaBatalla();
+  if (typeof reproducirSonido === "function") reproducirSonido('inicio');
+  if (typeof narrar === "function") narrar("¡QUE EMPIECE LA BATALLA!");
+
+  _prepararExtraccion();
+}
+
+// Prepara una nueva ronda: baraja y habilita el mazo para sacar de a una
+function _prepararExtraccion() {
+  const pool = barajar([..._batalla.poolCompleto]);
+  // pool barajado de esta ronda — iremos sacando de a una
+  _batalla._poolRonda    = pool;
+  _batalla._cartasRestantes = _batalla.formato * 2;
+  _batalla.equipoA       = [];
+  _batalla.equipoB       = [];
+  _batalla.fase          = "EXTRACCION";
+
+  // Limpiar zonas y log de estado
+  const zA = document.getElementById('cartas-equipo-a');
+  const zB = document.getElementById('cartas-equipo-b');
+  if (zA) zA.innerHTML = "";
+  if (zB) zB.innerHTML = "";
+
+  document.querySelectorAll('.zona-jugador').forEach(z => z.classList.remove('zona-ganadora'));
+
+  _actualizarMazoExtraccion();
+  _actualizarStatus(`SACÁ ${_batalla.formato * 2} CARTAS ↓`);
+
+  // Anunciar inicio de ronda en voz alta — fix: Batalla nunca narraba nada
+  // al arrancar una ronda, solo al terminarla.
+  if (typeof narrarEvento === "function") {
+    narrarEvento(`RONDA ${_batalla.rondaActual + 1}. SACÁ LAS CARTAS.`);
+  }
+}
+
+// Mazo mostrando cuántas cartas quedan por sacar
+function _actualizarMazoExtraccion() {
+  const mazo = document.getElementById('mazo-batalla');
+  if (!mazo) return;
+  const restantes = _batalla._cartasRestantes || 0;
+  mazo.innerHTML = `
+    <div class="mazo-dorso"></div>
+    <span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;
+                 font-size:11px;font-weight:800;color:var(--color-acento-oro);">
+      ${restantes > 0 ? `🃏 ${restantes}` : '⚔️ COMBATIR'}
+    </span>`;
+  mazo.style.opacity = "1";
+  mazo.style.cursor  = "pointer";
+  mazo.onclick       = extraerCartaBatalla;
+}
+
+// Mazo → NUEVA RONDA
+function _actualizarMazoANuevaRonda() {
+  const mazo = document.getElementById('mazo-batalla');
+  if (!mazo) return;
+  mazo.innerHTML = `
+    <div class="mazo-dorso"></div>
+    <span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;
+                 font-size:10px;font-weight:800;color:var(--color-acento-verde);">
+      🔄 NUEVA
+    </span>`;
+  mazo.style.opacity = "1";
+  mazo.style.cursor  = "pointer";
+  mazo.onclick       = _prepararSiguienteRonda;
+}
+
+// TAP EN EL MAZO — comportamiento según fase
+function extraerCartaBatalla() {
+  if (window._juegoEnPausa) return;
+
+  if (_batalla.fase === "EXTRACCION") {
+    // Sacar una carta del pool de esta ronda
+    if (!_batalla._poolRonda || _batalla._poolRonda.length === 0) return;
+
+    // Bloquear brevemente para evitar doble tap
+    const mazo = document.getElementById('mazo-batalla');
+    if (mazo) { mazo.style.opacity = "0.5"; mazo.onclick = null; }
+
+    const carta = _batalla._poolRonda.shift();
+
+    // Asignar al equipo con menos cartas (A primero, luego B, alternado)
+    const totalA = _batalla.equipoA.length;
+    const totalB = _batalla.equipoB.length;
+
+    if (totalA <= totalB && totalA < _batalla.formato) {
+      _batalla.equipoA.push(carta);
+      _agregarCartaEnZona(carta, "A");
+    } else if (totalB < _batalla.formato) {
+      _batalla.equipoB.push(carta);
+      _agregarCartaEnZona(carta, "B");
+    }
+
+    _batalla._cartasRestantes--;
+
+    // Narrar nombre del personaje con pronunciación fonética
+    if (typeof narrarEvento === "function") {
+      narrarEvento(pronunciarNombre(carta.PERSONAJE));
+    }
+
+    if (typeof reproducirSonido === "function") reproducirSonido('extraccion');
+
+    // ¿Ya están todos los equipos completos?
+    const todosCompletos = _batalla.equipoA.length >= _batalla.formato &&
+                           _batalla.equipoB.length >= _batalla.formato;
+
+    if (todosCompletos) {
+      // Cambiar mazo a COMBATIR
+      setTimeout(() => {
+        _batalla.fase = "LISTO";
+        _batalla._cartasRestantes = 0;
+        _actualizarMazoExtraccion();
+        _actualizarStatus("TAP PARA COMBATIR ⚔️");
+      }, 350);
+    } else {
+      // Siguiente carta disponible
+      setTimeout(() => {
+        _actualizarMazoExtraccion();
+      }, 350);
+    }
+
+  } else if (_batalla.fase === "LISTO") {
+    // Combatir
+    const mazo = document.getElementById('mazo-batalla');
+    if (mazo) { mazo.style.opacity = "0.4"; mazo.onclick = null; }
+    _resolverCombate();
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. RESOLVER COMBATE
+// ────────────────────────────────────────────────────────────
+function _resolverCombate() {
+  _batalla.fase = "COMBATE";
+  _batalla.rondaActual++;
+
+  const poderA = calcularPoderTotal(_batalla.equipoA, _batalla.equipoB);
+  const poderB = calcularPoderTotal(_batalla.equipoB, _batalla.equipoA);
+
+  let ganador;
+  if      (poderA > poderB) ganador = "A";
+  else if (poderB > poderA) ganador = "B";
+  else                      ganador = resolverEmpate(_batalla.equipoA, _batalla.equipoB);
+
+  _batalla.puntaje[ganador]++;
+
+  // Bonus de aliados para narración
+  const paresA   = _contarParesAliados(_batalla.equipoA);
+  const paresB   = _contarParesAliados(_batalla.equipoB);
+  const matchupA = calcularMatchupElemental(_batalla.equipoA, _batalla.equipoB);
+  const matchupB = calcularMatchupElemental(_batalla.equipoB, _batalla.equipoA);
+
+  const entrada = {
+    ronda:     _batalla.rondaActual,
+    poderA, poderB, ganador,
+    nombreGanador: ganador === "A" ? _batalla.jugadores[0] : _batalla.jugadores[1],
+    equipoA:   [..._batalla.equipoA],
+    equipoB:   [..._batalla.equipoB],
+    paresA, paresB,
+    matchupA, matchupB,
+    puntaje:   { ..._batalla.puntaje },
+  };
+  _batalla.historialRondas.push(entrada);
+
+  _agregarLogRonda(entrada);
+  _actualizarScores();
+  _destacarEquipoGanador(ganador);
+  _actualizarStatus(`RONDA ${_batalla.rondaActual} → ${entrada.nombreGanador}`);
+  if (typeof actualizarProgresoArena === "function") {
+    const max = _limiteVictoriasBatalla();
+    actualizarProgresoArena('arena-progreso', Math.max(_batalla.puntaje.A, _batalla.puntaje.B), max, 'VICTORIAS');
+  }
+  guardarEstadoBatalla(_batalla);
+
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  // Narrar resultado de esta ronda automáticamente
+  _narrarRondaConIA(entrada, false);
+
+  // Habilitar botón para re-narrar si quiere
+  const btnNarrar = document.getElementById('btn-narrar-resultado');
+  if (btnNarrar) btnNarrar.disabled = false;
+
+  // ¿Hay ganador de la partida?
+  if (_verificarFinPartida()) return;
+
+  // Mazo para siguiente ronda (con delay para que termine la narración corta)
+  setTimeout(_actualizarMazoANuevaRonda, 1000);
+}
+
+function _verificarFinPartida() {
+  const modo = _batalla.modoRondas;
+
+  if (modo === "LIBRE") {
+    // Fin solo si el usuario lo decide (no hay límite)
+    return false;
+  }
+
+  const limiteVictorias = _limiteVictoriasBatalla();
+
+  if (_batalla.puntaje.A >= limiteVictorias || _batalla.puntaje.B >= limiteVictorias) {
+    setTimeout(_finalizarPartida, 1200);
+    return true;
+  }
+  return false;
+}
+
+// Calcula cuántas victorias hacen falta para ganar la partida —
+// reutilizado tanto para chequear el fin como para mostrar el progreso.
+function _limiteVictoriasBatalla() {
+  const modo = _batalla.modoRondas;
+  if (modo === "LIBRE") return Infinity;
+  if (modo.startsWith("CUSTOM:")) return parseInt(modo.split(":")[1]) || 5;
+  return Math.ceil(parseInt(modo) / 2);
+}
+
+function _prepararSiguienteRonda() {
+  if (window._juegoEnPausa) return;
+  const btnNarrar = document.getElementById('btn-narrar-resultado');
+  if (btnNarrar) btnNarrar.disabled = true;
+  _prepararExtraccion();
+}
+
+function _finalizarPartida() {
+  _batalla.fase   = "FIN";
+  _batalla.activa = false;
+
+  const ganador       = _batalla.puntaje.A >= _batalla.puntaje.B ? "A" : "B";
+  const nombreGanador = ganador === "A" ? _batalla.jugadores[0] : _batalla.jugadores[1];
+
+  const ranking = [
+    { nombre: _batalla.jugadores[0], puntos: _batalla.puntaje.A, color: 'var(--turno-color-a)' },
+    { nombre: _batalla.jugadores[1], puntos: _batalla.puntaje.B, color: 'var(--turno-color-b)' },
+  ].sort((a, b) => b.puntos - a.puntos);
+
+  lanzarConfetti();
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  const titulo = `🏆 ¡GANÓ ${nombreGanador.toUpperCase()}!`;
+
+  if (typeof mostrarPodio === "function") {
+    mostrarPodio(
+      titulo, ranking,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        localStorage.removeItem('batalla_partida_activa');
+        if (opcion === 0) navegarA('pantalla-batalla-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  } else {
+    mostrarModal(
+      `${titulo}\n${_batalla.jugadores[0]}: ${_batalla.puntaje.A} — ${_batalla.jugadores[1]}: ${_batalla.puntaje.B}`,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        localStorage.removeItem('batalla_partida_activa');
+        if (opcion === 0) navegarA('pantalla-batalla-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  }
+
+  // Narración épica final con IA
+  const ultimaEntrada = _batalla.historialRondas[_batalla.historialRondas.length - 1];
+  if (ultimaEntrada) _narrarRondaConIA(ultimaEntrada, true);
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. NARRACIÓN ÉPICA CON IA (Anthropic API)
+// ────────────────────────────────────────────────────────────
+
+// Llamada automática después de cada ronda — usa servidor GAS (UrlFetchApp)
+// porque el cliente está bloqueado por CSP para llamadas externas
+function _narrarRondaConIA(entrada, esFinal) {
+  const jugadorA    = _batalla.jugadores[0];
+  const jugadorB    = _batalla.jugadores[1];
+  const ganadorNom  = entrada.ganador === "A" ? jugadorA : jugadorB;
+  const perdedorNom = entrada.ganador === "A" ? jugadorB : jugadorA;
+  const eqGanador   = entrada.ganador === "A" ? entrada.equipoA : entrada.equipoB;
+  const eqPerdedor  = entrada.ganador === "A" ? entrada.equipoB : entrada.equipoA;
+  const nombresG    = eqGanador.map(p => p.PERSONAJE).join(", ");
+  const nombresP    = eqPerdedor.map(p => p.PERSONAJE).join(", ");
+  const paresG      = entrada.ganador === "A" ? entrada.paresA : entrada.paresB;
+  const marcador    = jugadorA + " " + _batalla.puntaje.A + " - " + _batalla.puntaje.B + " " + jugadorB;
+  const topHeroes   = [...eqGanador]
+    .sort((a, b) => calcularSumaBase([b]) - calcularSumaBase([a]))
+    .slice(0, 2).map(p => p.PERSONAJE).join(" y ");
+
+  const datosServidor = {
+    ganadorNom, perdedorNom,
+    nombresG, nombresP,
+    paresG: paresG || 0,
+    marcador, topHeroes,
+    ronda: entrada.ronda,
+    esFinal: !!esFinal,
+  };
+
+  google.script.run
+    .withSuccessHandler(resultado => {
+      const texto = resultado?.narracion || _narracionFallback(entrada, esFinal);
+      _mostrarNarracionEnLog(texto);
+      if (typeof narrar === "function") narrar(texto, { rate: CONFIG.AUDIO_RATE_BATALLA });
+    })
+    .withFailureHandler(() => {
+      const texto = _narracionFallback(entrada, esFinal);
+      _mostrarNarracionEnLog(texto);
+      if (typeof narrar === "function") narrar(texto, { rate: CONFIG.AUDIO_RATE_BATALLA });
+    })
+    .generarNarracionBatalla(datosServidor);
+}
+
+// Botón NARRAR RESULTADO — re-narra la última ronda
+function narrarResultadoBatalla() {
+  const entrada = _batalla.historialRondas[_batalla.historialRondas.length - 1];
+  if (!entrada) return;
+  const btnNarrar = document.getElementById('btn-narrar-resultado');
+  if (btnNarrar) {
+    btnNarrar.disabled = true;
+    btnNarrar.classList.add('btn-cargando');
+    btnNarrar.textContent = "GENERANDO...";
+  }
+  _narrarRondaConIA(entrada, false);
+  setTimeout(() => {
+    if (btnNarrar) {
+      btnNarrar.disabled = false;
+      btnNarrar.classList.remove('btn-cargando');
+      btnNarrar.textContent = "🔊 NARRAR RESULTADO";
+    }
+  }, 3000);
+}
+
+// Fallback si la API no responde
+function _narracionFallback(entrada, esFinal) {
+  const ganadorNom  = entrada.ganador === "A" ? _batalla.jugadores[0] : _batalla.jugadores[1];
+  const perdedorNom = entrada.ganador === "A" ? _batalla.jugadores[1] : _batalla.jugadores[0];
+  const eqG = entrada.ganador === "A" ? entrada.equipoA : entrada.equipoB;
+  const top = eqG.slice(0, 2).map(p => p.PERSONAJE).join(" Y ");
+  const marcador = `${_batalla.jugadores[0]} ${_batalla.puntaje.A} - ${_batalla.puntaje.B} ${_batalla.jugadores[1]}`;
+
+  if (esFinal) {
+    return `¡${ganadorNom} GANÓ LA BATALLA FINAL! SU EQUIPO CON ${top} FUE IMPARABLE. ` +
+           `${perdedorNom} PELEÓ MUY BIEN PERO NO PUDO DETENERLOS. ` +
+           `MARCADOR FINAL: ${marcador}. ¡CAMPEONES!`;
+  }
+  return `¡PUNTO PARA ${ganadorNom}! ${top} LO HICIERON INCREÍBLE EN LA RONDA ${entrada.ronda}. ` +
+         `MARCADOR: ${marcador}.`;
+}
+
+function _mostrarNarracionEnLog(texto) {
+  const log = document.getElementById('log-batalla');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'log-narracion';
+  div.style.cssText = `
+    background: rgba(255,214,10,0.08);
+    border: 1px solid rgba(255,214,10,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.85);
+    margin-top: 6px;
+  `;
+  div.textContent = texto;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  _limitarLog(log, 10);
+}
+
+// Mantiene el log con un máximo de N "bloques" (entrada + narración cuentan
+// como bloques separados, pero se podan de a 2 para no cortar narraciones
+// a la mitad de su ronda correspondiente).
+function _limitarLog(logEl, maxBloques) {
+  while (logEl.children.length > maxBloques) {
+    logEl.removeChild(logEl.firstElementChild);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. GUARDADO / RESTAURACIÓN
+// ────────────────────────────────────────────────────────────
+function guardarEstadoBatalla(estado) {
+  const guardar = () => {
+    try {
+      localStorage.setItem('batalla_partida_activa', JSON.stringify({
+        formato:         estado.formato,
+        modoRondas:      estado.modoRondas,
+        jugadores:       estado.jugadores,
+        equipoA:         estado.equipoA,
+        equipoB:         estado.equipoB,
+        puntaje:         estado.puntaje,
+        rondaActual:     estado.rondaActual,
+        historialRondas: estado.historialRondas,
+        fase:            estado.fase,
+        timestamp:       Date.now(),
+      }));
+    } catch(e) { console.warn("No se pudo guardar batalla:", e); }
+  };
+  if (typeof requestIdleCallback !== "undefined") requestIdleCallback(guardar);
+  else setTimeout(guardar, 0);
+}
+
+function restaurarEstadoBatalla(guardado) {
+  Object.assign(_batalla, {
+    activa: true,
+    formato:         guardado.formato,
+    modoRondas:      guardado.modoRondas || "5",
+    jugadores:       guardado.jugadores,
+    equipoA:         guardado.equipoA  || [],
+    equipoB:         guardado.equipoB  || [],
+    poolCompleto:    [...(guardado.equipoA || []), ...(guardado.equipoB || [])],
+    puntaje:         guardado.puntaje  || { A: 0, B: 0 },
+    rondaActual:     guardado.rondaActual || 0,
+    historialRondas: guardado.historialRondas || [],
+    fase:            "LISTO",
+  });
+
+  navegarA('pantalla-batalla-juego');
+  _renderizarArenaBatalla();
+  _batalla.equipoA.forEach(p => _agregarCartaEnZona(p, "A"));
+  _batalla.equipoB.forEach(p => _agregarCartaEnZona(p, "B"));
+  _actualizarScores();
+  _batalla.historialRondas.forEach(e => _agregarLogRonda(e));
+  _actualizarMazoACombatir();
+  mostrarToast("PARTIDA RESTAURADA");
+}
+
+// ────────────────────────────────────────────────────────────
+// 6. RENDERIZADO DOM
+// ────────────────────────────────────────────────────────────
+function _renderizarArenaBatalla() {
+  const elA = document.getElementById('nombre-jugador-a');
+  const elB = document.getElementById('nombre-jugador-b');
+  if (elA) elA.textContent = _batalla.jugadores[0];
+  if (elB) elB.textContent = _batalla.jugadores[1];
+  _actualizarScores();
+  _actualizarStatus("REPARTIENDO CARTAS...");
+
+  const log = document.getElementById('log-batalla');
+  if (log) log.innerHTML = "";
+  const zA = document.getElementById('cartas-equipo-a');
+  const zB = document.getElementById('cartas-equipo-b');
+  if (zA) zA.innerHTML = "";
+  if (zB) zB.innerHTML = "";
+
+  const mazo = document.getElementById('mazo-batalla');
+  if (mazo) { mazo.style.opacity = "0.4"; mazo.onclick = null; }
+
+  const btnNarrar = document.getElementById('btn-narrar-resultado');
+  if (btnNarrar) btnNarrar.disabled = true;
+}
+
+function _actualizarScores() {
+  const sA = document.getElementById('score-a');
+  const sB = document.getElementById('score-b');
+  if (typeof animarContadorPuntos === "function") {
+    if (sA) animarContadorPuntos(sA, _batalla.puntaje.A);
+    if (sB) animarContadorPuntos(sB, _batalla.puntaje.B);
+  } else {
+    if (sA) sA.textContent = _batalla.puntaje.A;
+    if (sB) sB.textContent = _batalla.puntaje.B;
+  }
+}
+
+function _actualizarStatus(texto) {
+  const el = document.getElementById('arena-status');
+  if (el) el.textContent = texto;
+}
+
+function _agregarCartaEnZona(personaje, turno) {
+  const zonaId = turno === "A" ? 'cartas-equipo-a' : 'cartas-equipo-b';
+  const zona   = document.getElementById(zonaId);
+  if (!zona) return;
+
+  const div = document.createElement('div');
+  div.className = 'carta-contenedor carta-batalla';
+
+  const imgHTML = personaje.IMAGEN
+    ? `<img src="${personaje.IMAGEN}" alt="${personaje.PERSONAJE}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+            onerror="this.style.display='none'">`
+    : `<div style="width:100%;height:100%;display:flex;align-items:center;
+                   justify-content:center;font-size:28px;">🦸</div>`;
+
+  div.innerHTML = `
+    <div class="carta revelada extrayendo" style="width:90px;height:125px;">
+      <div class="cara-frente" style="background:var(--color-fondo-card);
+           border-radius:10px;border:1.5px solid var(--color-borde);">
+        ${imgHTML}
+        <div class="carta-batalla-stats">
+          <div style="font-size:9px;font-weight:700;line-height:1.2;margin-bottom:2px;">
+            ${personaje.PERSONAJE}
+          </div>
+          <div style="font-size:8px;color:var(--color-acento-oro);">
+            PWR ${calcularSumaBase([personaje])}
+          </div>
+        </div>
+      </div>
+      <div class="cara-dorso"></div>
+    </div>`;
+
+  zona.appendChild(div);
+
+  if (typeof activarFallbackTactil === "function") {
+    activarFallbackTactil(div.querySelector('.carta'));
+  }
+}
+
+function _agregarLogRonda(entrada) {
+  const log = document.getElementById('log-batalla');
+  if (!log) return;
+  const diff     = Math.abs(entrada.poderA - entrada.poderB);
+  const total    = Math.max(entrada.poderA, entrada.poderB);
+  const reñido   = diff < total * 0.05;
+  const div      = document.createElement('div');
+  div.className  = `log-entrada ganador-${entrada.ganador.toLowerCase()}`;
+  div.innerHTML  =
+    `<span style="font-weight:700;">RONDA ${entrada.ronda}</span> — ` +
+    `${entrada.nombreGanador} GANA${reñido ? " 🔥 ¡REÑIDO!" : ""}` +
+    `<br><span style="font-size:10px;opacity:0.7;">` +
+    `${entrada.poderA} VS ${entrada.poderB}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  _limitarLog(log, 10);
+}
+
+function _destacarEquipoGanador(ganador) {
+  const zA = document.getElementById('zona-jugador-a');
+  const zB = document.getElementById('zona-jugador-b');
+  if (zA) zA.classList.toggle('zona-ganadora', ganador === "A");
+  if (zB) zB.classList.toggle('zona-ganadora', ganador === "B");
+}
+
+function _contarParesAliados(equipo) {
+  let pares = 0;
+  for (let i = 0; i < equipo.length; i++)
+    for (let j = i + 1; j < equipo.length; j++)
+      if (sonAliados(equipo[i], equipo[j]) || sonAliados(equipo[j], equipo[i])) pares++;
+  return pares;
+}
+</script>

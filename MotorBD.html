@@ -1,0 +1,857 @@
+<script>
+// ============================================================
+// MotorBD.html — Carga, caché y acceso a datos
+// Juego de Cartas MARVEL / DC — v4.0
+// DEBE cargarse primero (define CONFIG y BD_GLOBAL usados
+// por todos los demás motores).
+// ============================================================
+
+
+// ────────────────────────────────────────────────────────────
+// 1. CONFIG GLOBAL
+// ────────────────────────────────────────────────────────────
+const CONFIG = {
+  // Batalla
+  BONUS_ALIADOS_POR_PAR:    0.15,
+  BONUS_ALIADOS_MAX:        0.30,
+  BONUS_LIDERAZGO_UMBRAL:   80,
+  BONUS_LIDERAZGO_COUNT:    3,
+  BONUS_LIDERAZGO_VALOR:    0.10,
+  PENALIZACION_MAX:         0.15,
+  BONUS_REPUTACION_ALTO:    0.08,
+  PENALIZACION_REPUTACION:  0.05,
+  REPUTACION_UMBRAL_ALTO:   8,
+  REPUTACION_UMBRAL_BAJO:   3,
+
+  // Memoria
+  CARTA_MIN_PX:             80,
+  CARTA_RETRASO_VOLTEAR_MS: 2000,
+  CARTA_RETRASO_DIFICIL_MS: 1500,
+  SCORING: {
+    FACIL:   { match: 10, fallo:  0 },
+    MEDIO:   { match: 15, fallo: -3 },
+    DIFICIL: { match: 20, fallo: -5 },
+  },
+
+  // Caché
+  WIKI_CACHE_MS:            86400000,
+  PARTIDA_CACHE_MS:          7200000,
+
+  // Audio
+  AUDIO_RATE_BATALLA:       0.9,
+  AUDIO_RATE_INFO:          0.85,
+  AUDIO_PITCH:              1.1,
+
+  // Rendimiento
+  GIROSCOPIO_TILT_MAX:      20,
+  LAZY_THRESHOLD_4G:        "200px",
+  LAZY_THRESHOLD_3G:        "100px",
+  LAZY_THRESHOLD_SLOW:      "50px",
+
+  // Inactividad
+  INACTIVIDAD_MS:           1800000,
+};
+
+const MAPEO_REPUTACION = {
+  "LEYENDA":    10,
+  "HÉROE":       8,
+  "NEUTRAL":     5,
+  "VILLANO":     3,
+  "DESCONOCIDO": 1,
+};
+
+const COLORES_JUGADOR = {
+  0: "#e63946",
+  1: "#4cc9f0",
+  2: "#57cc99",
+  3: "#f4a261",
+};
+
+
+// ────────────────────────────────────────────────────────────
+// 2. ESTADO GLOBAL DE SESIÓN
+// ────────────────────────────────────────────────────────────
+window.BD_GLOBAL      = null;
+window.BD_SINERGIA    = null;
+window._pantallaActual = "pantalla-menu";
+window._juegoEnPausa  = false;
+let _timerInactividad  = null;
+let _cantJugadoresMemoria = 2;
+const _opcionesConfig  = {};
+
+
+// ────────────────────────────────────────────────────────────
+// 3. INICIALIZACIÓN
+// ────────────────────────────────────────────────────────────
+function inicializarApp() {
+  document.body.classList.toggle('landscape', window.innerWidth > window.innerHeight);
+  document.body.classList.toggle('portrait',  window.innerWidth <= window.innerHeight);
+
+  const lastModifiedLocal    = localStorage.getItem('bd_lastModified');
+  const totalPersonajesLocal = localStorage.getItem('bd_totalPersonajes');
+
+  if (lastModifiedLocal && window.BD_GLOBAL) {
+    _actualizarContadorMenu(parseInt(totalPersonajesLocal) || 0);
+    renderizarMenu();
+    verificarPartidaGuardada();
+    _verificarActualizacionEnBackground(lastModifiedLocal);
+    return;
+  }
+
+  mostrarSpinner("CARGANDO PERSONAJES...");
+  google.script.run
+    .withSuccessHandler(_onBDCargada)
+    .withFailureHandler(_onBDError)
+    .leerBaseDatos();
+}
+
+function _onBDCargada(datos) {
+  if (datos.status === "ERROR") {
+    ocultarSpinner();
+    mostrarError("ERROR AL CARGAR LA BASE DE DATOS.\nVERIFICÁ TU CONEXIÓN.");
+    console.error("leerBaseDatos() error:", datos.error);
+    return;
+  }
+  window.BD_GLOBAL   = datos.datos;
+  window.BD_SINERGIA = datos.sinergia;
+  window.BD_PRONUNCIACIONES = {}; // se llena abajo de forma asíncrona
+
+  try {
+    localStorage.setItem('bd_lastModified',    datos.lastModified);
+    localStorage.setItem('bd_totalPersonajes', datos.totalPersonajes);
+  } catch(e) { console.warn("localStorage no disponible:", e); }
+
+  ocultarSpinner();
+  _actualizarContadorMenu(datos.totalPersonajes);
+  verificarPartidaGuardada();
+  renderizarMenu();
+  _iniciarTimerInactividad();
+
+  // Cargar pronunciaciones en background (no bloquea el juego)
+  _cargarPronunciaciones();
+}
+
+function _onBDError(err) {
+  ocultarSpinner();
+  mostrarError("SIN CONEXIÓN.\nREINTENTÁ EN UNOS SEGUNDOS.");
+  console.error("GAS error:", err);
+  const estadoEl = document.getElementById('menu-estado-bd');
+  if (estadoEl) {
+    estadoEl.innerHTML =
+      '⚠️ SIN CONEXIÓN &nbsp;' +
+      '<button class="btn-secundario" onclick="inicializarApp()" ' +
+      'style="font-size:12px;padding:6px 12px;">REINTENTAR</button>';
+  }
+}
+
+function _verificarActualizacionEnBackground(fechaLocal) {
+  google.script.run
+    .withSuccessHandler(datos => {
+      if (datos.status !== "OK") return;
+      if (datos.lastModified !== fechaLocal) {
+        window.BD_GLOBAL   = datos.datos;
+        window.BD_SINERGIA = datos.sinergia;
+        try {
+          localStorage.setItem('bd_lastModified',    datos.lastModified);
+          localStorage.setItem('bd_totalPersonajes', datos.totalPersonajes);
+        } catch(e) {}
+        _actualizarContadorMenu(datos.totalPersonajes);
+        mostrarToast("✓ PERSONAJES ACTUALIZADOS");
+      }
+    })
+    .leerBaseDatos();
+}
+
+function _actualizarContadorMenu(total) {
+  const el = document.getElementById('menu-total-personajes');
+  if (el) el.textContent = total;
+  const estadoEl = document.getElementById('menu-estado-bd');
+  if (estadoEl) estadoEl.classList.add('oculto');
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 4. PARTIDAS GUARDADAS
+// ────────────────────────────────────────────────────────────
+function verificarPartidaGuardada() {
+  ["memoria_partida_activa", "batalla_partida_activa", "trivia_partida_activa"].forEach(key => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const guardado = JSON.parse(raw);
+      if (!guardado || !guardado.timestamp) { localStorage.removeItem(key); return; }
+      const mins = (Date.now() - guardado.timestamp) / 60000;
+      if (mins >= 120) { localStorage.removeItem(key); return; }
+      const modo = key.includes("memoria") ? "MEMORIA"
+                 : key.includes("trivia")  ? "TRIVIA"
+                 : "BATALLA";
+      const mensaje = `HAY UNA PARTIDA DE ${modo} GUARDADA\n` +
+                      `(HACE ${Math.floor(mins)} MIN)\n¿CONTINUARLA?`;
+      mostrarModal(mensaje, ["SÍ, CONTINUAR", "NO, NUEVA PARTIDA"], (opcion) => {
+        if (opcion === 0) _restaurarPartida(key, guardado);
+        else              localStorage.removeItem(key);
+      });
+    } catch(e) { localStorage.removeItem(key); }
+  });
+}
+
+function _restaurarPartida(key, guardado) {
+  if (key.includes("memoria")) {
+    if (typeof restaurarEstadoMemoria === "function") restaurarEstadoMemoria(guardado);
+  } else if (key.includes("trivia")) {
+    if (typeof restaurarEstadoTrivia === "function") restaurarEstadoTrivia(guardado);
+  } else {
+    if (typeof restaurarEstadoBatalla === "function") restaurarEstadoBatalla(guardado);
+  }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 5. ACCESO Y FILTRADO DE LA BD
+// ────────────────────────────────────────────────────────────
+function obtenerPersonajesPorUniverso(universo) {
+  if (!window.BD_GLOBAL) return [];
+  if (universo === "TODOS") return [...window.BD_GLOBAL];
+  return window.BD_GLOBAL.filter(p => p.UNIVERSO === universo);
+}
+
+function buscarPersonaje(nombre) {
+  if (!window.BD_GLOBAL) return null;
+  const norm = normalizarNombre(nombre);
+  return window.BD_GLOBAL.find(p => normalizarNombre(p.PERSONAJE) === norm) || null;
+}
+
+function filtrarBD(query, universo) {
+  if (!window.BD_GLOBAL) return [];
+  const norm = normalizarNombre(query);
+  return window.BD_GLOBAL.filter(p => {
+    if (universo && universo !== "TODOS" && p.UNIVERSO !== universo) return false;
+    if (!norm) return true;
+    // Solo busca por nombre del personaje (columna A de la BD)
+    return normalizarNombre(p.PERSONAJE).includes(norm);
+  });
+}
+
+function barajar(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function normalizarNombre(nombre) {
+  return String(nombre || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 6. PRONUNCIACIONES FONÉTICAS (Gemini, en background)
+// ────────────────────────────────────────────────────────────
+
+function _cargarPronunciaciones() {
+  if (!window.BD_GLOBAL || window.BD_GLOBAL.length === 0) return;
+
+  const indicador = document.getElementById('menu-estado-pron');
+
+  // Intentar desde localStorage primero (cache de 24h)
+  try {
+    const cached = localStorage.getItem('bd_pronunciaciones');
+    if (cached) {
+      const obj = JSON.parse(cached);
+      if (obj.totalPersonajes === window.BD_GLOBAL.length) {
+        window.BD_PRONUNCIACIONES = obj.data;
+        console.log("Pronunciaciones cargadas desde cache:", Object.keys(obj.data).length);
+        return; // ya están listas, no mostrar indicador
+      }
+    }
+  } catch(e) {}
+
+  // No había cache válido — mostrar indicador mientras Gemini procesa
+  if (indicador) indicador.classList.remove('oculto');
+
+  const nombres = window.BD_GLOBAL.map(p => p.PERSONAJE);
+
+  google.script.run
+    .withSuccessHandler(resultado => {
+      if (resultado.status === "OK" || resultado.status === "CACHE") {
+        window.BD_PRONUNCIACIONES = resultado.pronunciaciones;
+        try {
+          localStorage.setItem('bd_pronunciaciones', JSON.stringify({
+            data:            resultado.pronunciaciones,
+            totalPersonajes: window.BD_GLOBAL.length,
+            ts:              Date.now(),
+          }));
+        } catch(e) {}
+        console.log("Pronunciaciones OK:", Object.keys(resultado.pronunciaciones).length, "nombres");
+      }
+      // Ocultar indicador con un pequeño delay para que se note el check
+      if (indicador) {
+        indicador.textContent = "✓ VOCES LISTAS";
+        setTimeout(() => indicador.classList.add('oculto'), 1500);
+      }
+    })
+    .withFailureHandler(() => {
+      if (indicador) indicador.classList.add('oculto');
+      console.warn("Pronunciaciones: usando fallback local.");
+    })
+    .generarPronunciaciones(nombres);
+}
+
+// Pronunciaciones locales para nombres comunes en inglés
+// Se usan mientras Gemini carga (o si falla)
+const _PRONUNCIACIONES_LOCAL = {
+  "Spider-Man":     "Spáiderman",
+  "Wolverine":      "Güolverín",
+  "Iron Man":       "Áiron Man",
+  "Black Widow":    "Black Güidou",
+  "Black Panther":  "Black Pánther",
+  "Captain America":"Cápitan América",
+  "Thor":           "Thor",
+  "Hulk":           "Jalk",
+  "Deadpool":       "Déidpul",
+  "Thanos":         "Tános",
+  "Venom":          "Bénom",
+  "Cyclops":        "Sáiklops",
+  "Wolverine":      "Güolverín",
+  "Hawkeye":        "Jókai",
+  "Nightcrawler":   "Náitcrouler",
+  "Sabretooth":     "Seibrtu",
+  "The Beyonder":   "De Biónder",
+  "Sentinel":       "Séntinel",
+  "Dawnbreaker":    "Dónbreiker",
+  "Batcatcher":     "Bátcacher",
+  "Ebony Maw":      "Éboni Mo",
+  "Onslaught":      "Ónslaught",
+  "Living Tribunal":"Líving Tribuunal",
+  "Drowned":        "Dráund",
+  "Last Bruce Wayne":"Last Brus Güein",
+  "Lex Luthor":     "Leks Lúzor",
+  "Dawnbreaker":    "Dónbreiker",
+  "Emperor Joker":  "Émperor Yóker",
+};
+
+// Devuelve la pronunciación fonética de un nombre, o el original si no hay
+function pronunciarNombre(nombre) {
+  if (!nombre) return "";
+  // 1. Diccionario de Gemini (más completo)
+  if (window.BD_PRONUNCIACIONES && window.BD_PRONUNCIACIONES[nombre]) {
+    return window.BD_PRONUNCIACIONES[nombre];
+  }
+  // 2. Diccionario local (disponible inmediatamente)
+  if (_PRONUNCIACIONES_LOCAL[nombre]) {
+    return _PRONUNCIACIONES_LOCAL[nombre];
+  }
+  // 3. Original
+  return nombre;
+}
+
+function _getWikiCache(nombre) {
+  try {
+    const raw = localStorage.getItem('wiki_' + normalizarNombre(nombre));
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (Date.now() - obj.ts > CONFIG.WIKI_CACHE_MS) {
+      localStorage.removeItem('wiki_' + normalizarNombre(nombre));
+      return null;
+    }
+    return obj.data;
+  } catch(e) { return null; }
+}
+
+function _setWikiCache(nombre, data) {
+  try {
+    localStorage.setItem(
+      'wiki_' + normalizarNombre(nombre),
+      JSON.stringify({ data, ts: Date.now() })
+    );
+  } catch(e) {}
+}
+
+// Flujo: caché cliente → servidor/Wikipedia → fallback HISTORIA_BREVE
+function obtenerBiografia(personaje, callback) {
+  const nombre = personaje.PERSONAJE;
+  const clienteCache = _getWikiCache(nombre);
+  if (clienteCache) { callback(clienteCache); return; }
+
+  google.script.run
+    .withSuccessHandler(resultado => {
+      if (resultado.fuente === "wikipedia" && resultado.biografia) {
+        _setWikiCache(nombre, resultado);
+      }
+      if (!resultado.biografia && personaje.HISTORIA_BREVE) {
+        resultado = { biografia: personaje.HISTORIA_BREVE, fuente: "local" };
+      }
+      callback(resultado);
+    })
+    .withFailureHandler(() => {
+      callback({ biografia: personaje.HISTORIA_BREVE || "", fuente: "local" });
+    })
+    .obtenerBiografiaWikipedia(nombre);
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 7. NAVEGACIÓN
+// ────────────────────────────────────────────────────────────
+// Mapa de pantalla de juego → variable de estado "activa" del motor
+// correspondiente. Se usa para preguntar antes de abandonar partida.
+function _hayPartidaActiva() {
+  const pantalla = window._pantallaActual;
+  if (pantalla === 'pantalla-memoria-juego') return typeof _memoria !== "undefined" && _memoria.activa;
+  if (pantalla === 'pantalla-batalla-juego') return typeof _batalla !== "undefined" && _batalla.activa;
+  if (pantalla === 'pantalla-draft-juego')   return typeof _draft   !== "undefined" && _draft.activa;
+  if (pantalla === 'pantalla-trivia-juego')  return typeof _trivia  !== "undefined" && _trivia.activa;
+  if (pantalla === 'pantalla-bingo')         return typeof _bingo   !== "undefined" && _bingo.activa;
+  return false;
+}
+
+function navegarA(idPantalla, forzar) {
+  // Confirmación al intentar salir de una partida activa hacia el menú —
+  // Mejora UX #3: evita perder progreso por un tap accidental.
+  if (!forzar && idPantalla === 'pantalla-menu' && _hayPartidaActiva()) {
+    mostrarModal(
+      "¿SEGURO QUE QUERÉS SALIR?\nSE VA A PERDER EL PROGRESO DE ESTA PARTIDA.",
+      ["SÍ, SALIR", "SEGUIR JUGANDO"],
+      (opcion) => { if (opcion === 0) navegarA(idPantalla, true); }
+    );
+    return;
+  }
+
+  const anterior  = document.getElementById(window._pantallaActual);
+  const siguiente = document.getElementById(idPantalla);
+  if (!siguiente) { console.error("Pantalla no encontrada:", idPantalla); return; }
+
+  if (anterior) anterior.classList.remove('activa');
+
+  const esJuego = idPantalla.includes('-juego');
+  document.getElementById('btn-pausa')?.classList.toggle('oculto', !esJuego);
+  document.getElementById('indicador-turno')?.classList.add('oculto');
+  document.getElementById('barra-narracion')?.classList.add('oculto');
+
+  siguiente.classList.add('activa');
+  siguiente.classList.toggle('pantalla-juego-activa', esJuego);
+  window._pantallaActual = idPantalla;
+  _resetearTimerInactividad();
+
+  if (idPantalla === 'pantalla-info') {
+    if (typeof renderizarGaleriaInfo === "function") renderizarGaleriaInfo("", "TODOS");
+  }
+
+  // Precargar nombres guardados en cualquier pantalla de configuración
+  // con inputs de jugador — Mejora UX #7.
+  if (idPantalla.includes('-config') || idPantalla === 'pantalla-bingo') {
+    if (typeof precargarNombresJugadores === "function") {
+      precargarNombresJugadores(siguiente);
+    }
+  }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 8. SPINNER, MODAL Y TOAST
+// ────────────────────────────────────────────────────────────
+// Actualiza una barra de progreso de rondas/preguntas dentro de un
+// contenedor dado — Mejora UX #4. Reutilizable por Batalla/Draft/Trivia.
+function actualizarProgresoArena(contenedorId, actual, total, etiqueta) {
+  const cont = document.getElementById(contenedorId);
+  if (!cont) return;
+
+  if (!total || total === Infinity) {
+    // Modo LIBRE — sin total conocido, mostrar solo el número actual
+    cont.innerHTML = `<span class="arena-progreso-texto">${etiqueta || 'RONDA'} ${actual}</span>`;
+    return;
+  }
+
+  const pct = Math.min((actual / total) * 100, 100);
+  cont.innerHTML = `
+    <span class="arena-progreso-texto">${etiqueta || 'RONDA'} ${actual} DE ${total}</span>
+    <div class="arena-progreso-barra">
+      <div class="arena-progreso-relleno" style="width:${pct}%"></div>
+    </div>
+  `;
+}
+
+// Animación de conteo ascendente para puntajes — Mejora UX #6.
+// En vez de cambiar el número instantáneo, lo anima desde el valor
+// anterior hasta el nuevo en ~500ms. Reutilizable por todos los modos.
+function animarContadorPuntos(el, valorNuevo, duracionMs = 500) {
+  if (!el) return;
+  const valorAnterior = parseInt(el.textContent) || 0;
+  if (valorAnterior === valorNuevo) return;
+
+  const diferencia = valorNuevo - valorAnterior;
+  const inicio = performance.now();
+
+  // Pulso visual breve en el número mientras sube
+  el.classList.add('puntos-animando');
+
+  function paso(ahora) {
+    const progreso = Math.min((ahora - inicio) / duracionMs, 1);
+    // Ease-out para que desacelere al final, más natural
+    const easedProgreso = 1 - Math.pow(1 - progreso, 3);
+    const valorActual = Math.round(valorAnterior + diferencia * easedProgreso);
+    el.textContent = valorActual;
+
+    if (progreso < 1) {
+      requestAnimationFrame(paso);
+    } else {
+      el.textContent = valorNuevo;
+      el.classList.remove('puntos-animando');
+    }
+  }
+  requestAnimationFrame(paso);
+}
+
+// ────────────────────────────────────────────────────────────
+// 8b. PODIO VISUAL DE FIN DE PARTIDA — Mejora UX #11.
+// Reemplaza el modal de texto plano con un podio con medallas
+// 🥇🥈🥉 y los colores de cada jugador. Usado por Memoria, Batalla,
+// Draft, Trivia y Bingo al finalizar.
+//
+// ranking: [{ nombre, puntos, color }] YA ORDENADO de mayor a menor.
+// opciones: array de strings para los botones.
+// callback: recibe el índice de la opción elegida.
+// ────────────────────────────────────────────────────────────
+function mostrarPodio(titulo, ranking, opciones, callback) {
+  const overlay = document.getElementById('modal-overlay');
+  const caja    = document.getElementById('modal-caja-interior');
+  if (!overlay || !caja) return;
+
+  const medallas = ['🥇', '🥈', '🥉', '🏅'];
+
+  const filasHTML = ranking.map((j, idx) => `
+    <div class="podio-fila ${idx === 0 ? 'podio-primero' : ''}">
+      <span class="podio-medalla">${medallas[idx] || '🏅'}</span>
+      <span class="podio-nombre" style="color:${j.color || 'var(--color-texto)'}">${_escapeGenerico(j.nombre)}</span>
+      <span class="podio-puntos">${j.puntos} PTS</span>
+    </div>
+  `).join('');
+
+  const botonesHTML = opciones.map((texto, idx) => `
+    <button class="${idx === 0 ? 'btn-primario' : 'btn-secundario'}" data-opcion="${idx}">
+      ${_escapeGenerico(texto)}
+    </button>
+  `).join('');
+
+  caja.innerHTML = `
+    <div class="podio-titulo">${_escapeGenerico(titulo)}</div>
+    <div class="podio-filas">${filasHTML}</div>
+    <div class="modal-botones">${botonesHTML}</div>
+  `;
+
+  caja.querySelectorAll('[data-opcion]').forEach(btn => {
+    btn.onclick = () => {
+      overlay.classList.add('oculto');
+      if (typeof callback === "function") callback(parseInt(btn.dataset.opcion));
+    };
+  });
+
+  overlay.classList.remove('oculto');
+}
+
+// Escape genérico de HTML (duplicado liviano para no depender de MotorUI)
+function _escapeGenerico(str) {
+  return String(str || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function mostrarSpinner(mensaje) {
+  const spinner = document.getElementById('spinner-global');
+  const msgEl   = document.getElementById('spinner-mensaje');
+  if (!spinner) return;
+  if (msgEl) msgEl.textContent = mensaje || "CARGANDO...";
+  spinner.classList.remove('oculto');
+}
+
+function ocultarSpinner() {
+  document.getElementById('spinner-global')?.classList.add('oculto');
+}
+
+function mostrarError(mensaje) {
+  mostrarModal(mensaje, ["REINTENTAR"], () => inicializarApp());
+}
+
+function mostrarModal(mensaje, opciones, callback) {
+  const overlay = document.getElementById('modal-overlay');
+  const caja    = document.getElementById('modal-caja-interior');
+  if (!overlay || !caja) return;
+
+  // Restaurar estructura estándar por si mostrarPodio() la sobreescribió
+  // en una llamada anterior (evita romper el modal genérico).
+  if (!document.getElementById('modal-mensaje')) {
+    caja.innerHTML = `
+      <p id="modal-mensaje" class="modal-mensaje"></p>
+      <div id="modal-botones" class="modal-botones"></div>
+    `;
+  }
+
+  const msgEl     = document.getElementById('modal-mensaje');
+  const botonesEl = document.getElementById('modal-botones');
+
+  msgEl.textContent  = mensaje;
+  botonesEl.innerHTML = "";
+  opciones.forEach((texto, idx) => {
+    const btn = document.createElement('button');
+    btn.textContent = texto;
+    btn.className   = idx === 0 ? 'btn-primario' : 'btn-secundario';
+    btn.onclick = () => {
+      overlay.classList.add('oculto');
+      if (typeof callback === "function") callback(idx);
+    };
+    botonesEl.appendChild(btn);
+  });
+  overlay.classList.remove('oculto');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay')?.classList.add('oculto');
+}
+
+function mostrarToast(mensaje, duracionMs = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className   = 'toast';
+  toast.textContent = mensaje;
+  container.classList.remove('oculto');
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+    if (!container.children.length) container.classList.add('oculto');
+  }, duracionMs);
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 9. TIMER DE INACTIVIDAD
+// ────────────────────────────────────────────────────────────
+function _iniciarTimerInactividad() {
+  _resetearTimerInactividad();
+  document.addEventListener('touchstart', _resetearTimerInactividad, { passive: true });
+  document.addEventListener('click',      _resetearTimerInactividad);
+}
+
+function _resetearTimerInactividad() {
+  clearTimeout(_timerInactividad);
+  _timerInactividad = setTimeout(() => {
+    if (typeof detenerNarracion === "function") detenerNarracion();
+    navegarA('pantalla-menu');
+    mostrarToast("⏱ VOLVISTE AL MENÚ POR INACTIVIDAD");
+  }, CONFIG.INACTIVIDAD_MS);
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 10. PAUSA
+// ────────────────────────────────────────────────────────────
+// Mapa de pantalla de juego → ID de su overlay de pausa correspondiente
+const _OVERLAYS_PAUSA = {
+  'pantalla-memoria-juego': 'overlay-pausa',
+  'pantalla-batalla-juego': 'overlay-pausa-batalla',
+  'pantalla-draft-juego':   'overlay-pausa-draft',
+  'pantalla-trivia-juego':  'overlay-pausa-trivia',
+};
+
+function togglePausa() {
+  window._juegoEnPausa = !window._juegoEnPausa;
+  const overlayId = _OVERLAYS_PAUSA[window._pantallaActual] || 'overlay-pausa-batalla';
+  document.getElementById(overlayId)?.classList.toggle('oculto', !window._juegoEnPausa);
+  if (window._juegoEnPausa && typeof pausarNarracion === "function") pausarNarracion();
+}
+
+function reanudarJuego() {
+  window._juegoEnPausa = false;
+  Object.values(_OVERLAYS_PAUSA).forEach(id => {
+    document.getElementById(id)?.classList.add('oculto');
+  });
+  if (typeof reanudarNarracion === "function") reanudarNarracion();
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 11. OPCIONES DE CONFIGURACIÓN (btn-opcion con data-grupo)
+// ────────────────────────────────────────────────────────────
+function inicializarOpcionesConfig(pantalla) {
+  pantalla.querySelectorAll('.btn-opcion').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const grupo = btn.dataset.grupo;
+      if (!grupo) return;
+      pantalla.querySelectorAll(`.btn-opcion[data-grupo="${grupo}"]`).forEach(b => {
+        b.classList.remove('activo');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      btn.classList.add('activo');
+      btn.setAttribute('aria-pressed', 'true');
+      _opcionesConfig[grupo] = btn.dataset.valor;
+
+      // Mostrar input custom solo si se elige LIBRE (no aplica en este caso)
+      // El CUSTOM se maneja por el input directo en el HTML
+      if (grupo === 'rondas') {
+        const customWrapper = document.getElementById('rondas-custom-wrapper');
+        if (customWrapper) {
+          customWrapper.style.display = 'none'; // LIBRE no necesita input
+        }
+      }
+    });
+  });
+  pantalla.querySelectorAll('.btn-opcion.activo').forEach(btn => {
+    if (btn.dataset.grupo) _opcionesConfig[btn.dataset.grupo] = btn.dataset.valor;
+  });
+}
+
+function getOpcion(grupo, defecto) {
+  return _opcionesConfig[grupo] || defecto;
+}
+
+function getNombresJugadores(pantalla) {
+  return Array.from(pantalla.querySelectorAll('.jugador-nombre-input'))
+    .map((input, idx) => input.value.trim() || `JUGADOR ${idx + 1}`);
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 12. GESTIÓN DE JUGADORES (Config Memoria)
+// ────────────────────────────────────────────────────────────
+function agregarJugadorMemoria() {
+  if (_cantJugadoresMemoria >= 4) return;
+  _cantJugadoresMemoria++;
+  _renderizarInputsJugadores();
+}
+
+function quitarJugadorMemoria() {
+  if (_cantJugadoresMemoria <= 2) return;
+  _cantJugadoresMemoria--;
+  _renderizarInputsJugadores();
+}
+
+function _renderizarInputsJugadores() {
+  const lista = document.getElementById('memoria-jugadores-lista');
+  if (!lista) return;
+  lista.innerHTML = "";
+  for (let i = 0; i < _cantJugadoresMemoria; i++) {
+    const colorClave = ['a','b','c','d'][i];
+    const fila = document.createElement('div');
+    fila.className = 'jugador-input-fila';
+    fila.innerHTML =
+      `<span class="jugador-color jugador-color-${colorClave}"></span>` +
+      `<input type="text" class="jugador-nombre-input" ` +
+      `placeholder="JUGADOR ${i + 1}" maxlength="20" data-jugador="${i}">`;
+    lista.appendChild(fila);
+  }
+  const btnAgregar = document.getElementById('btn-agregar-jugador-mem');
+  const btnQuitar  = document.getElementById('btn-quitar-jugador-mem');
+  if (btnAgregar) btnAgregar.disabled = _cantJugadoresMemoria >= 4;
+  if (btnQuitar)  btnQuitar.disabled  = _cantJugadoresMemoria <= 2;
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 13c. PERFILES DE JUGADOR PERSISTENTES — Mejora UX #7.
+// Guarda nombre + color elegido una vez y los precarga en todos
+// los formularios de configuración de los distintos modos, para
+// no tener que re-tipear el nombre cada vez.
+// ────────────────────────────────────────────────────────────
+function guardarPerfilesJugadores(nombres) {
+  try {
+    localStorage.setItem('perfiles_jugadores', JSON.stringify(nombres.filter(Boolean)));
+  } catch(e) {}
+}
+
+function obtenerPerfilesJugadores() {
+  try {
+    const raw = localStorage.getItem('perfiles_jugadores');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+// Precarga los inputs de nombre de una pantalla con los últimos
+// nombres usados, si los inputs están vacíos.
+function precargarNombresJugadores(pantalla) {
+  const perfiles = obtenerPerfilesJugadores();
+  if (perfiles.length === 0) return;
+  const inputs = pantalla.querySelectorAll('.jugador-nombre-input');
+  inputs.forEach((input, idx) => {
+    if (!input.value && perfiles[idx]) input.value = perfiles[idx];
+  });
+}
+
+// Guarda los nombres actuales de una pantalla al iniciar cualquier modo.
+function guardarNombresDesdesPantalla(pantalla) {
+  const nombres = Array.from(pantalla.querySelectorAll('.jugador-nombre-input'))
+    .map(input => input.value.trim())
+    .filter(Boolean);
+  if (nombres.length > 0) guardarPerfilesJugadores(nombres);
+}
+
+// ────────────────────────────────────────────────────────────
+// 13. SUGERENCIA DE DIFICULTAD POR EDAD
+// ────────────────────────────────────────────────────────────
+function actualizarSugerenciaEdad(valor) {
+  const edad     = parseInt(valor);
+  const sugerida = edad <= 5 ? "FÁCIL" : edad <= 8 ? "MEDIO" : "DIFÍCIL";
+  const el = document.getElementById('edad-sugerencia');
+  if (el) el.textContent = `EDAD: ${edad} AÑOS → MODALIDAD SUGERIDA: ${sugerida}`;
+}
+
+// ────────────────────────────────────────────────────────────
+// 13b. GESTIÓN DE JUGADORES — TRIVIA (1 a 4 jugadores)
+// ────────────────────────────────────────────────────────────
+let _cantJugadoresTrivia = 2;
+
+function agregarJugadorTrivia() {
+  if (_cantJugadoresTrivia >= 4) return;
+  _cantJugadoresTrivia++;
+  _renderizarInputsJugadoresTrivia();
+}
+
+function quitarJugadorTrivia() {
+  if (_cantJugadoresTrivia <= 1) return;
+  _cantJugadoresTrivia--;
+  _renderizarInputsJugadoresTrivia();
+}
+
+function _renderizarInputsJugadoresTrivia() {
+  const lista = document.getElementById('trivia-jugadores-lista');
+  if (!lista) return;
+  lista.innerHTML = "";
+  const colores = ['a','b','c','d'];
+  for (let i = 0; i < _cantJugadoresTrivia; i++) {
+    const fila = document.createElement('div');
+    fila.className = 'jugador-input-fila';
+    fila.innerHTML =
+      `<span class="jugador-color jugador-color-${colores[i]}"></span>` +
+      `<input type="text" class="jugador-nombre-input" ` +
+      `placeholder="JUGADOR ${i + 1}" maxlength="20" data-jugador="${i}">`;
+    lista.appendChild(fila);
+  }
+  const btnAgregar = document.getElementById('btn-agregar-jugador-trivia');
+  const btnQuitar  = document.getElementById('btn-quitar-jugador-trivia');
+  if (btnAgregar) btnAgregar.disabled = _cantJugadoresTrivia >= 4;
+  if (btnQuitar)  btnQuitar.disabled  = _cantJugadoresTrivia <= 1;
+}
+
+
+// ────────────────────────────────────────────────────────────
+// 14. PUNTO DE ENTRADA
+// ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const pantallaMemConfig   = document.getElementById('pantalla-memoria-config');
+  const pantallaBatConfig   = document.getElementById('pantalla-batalla-config');
+  const pantallaDraftConfig = document.getElementById('pantalla-draft-config');
+  const pantallaBingo       = document.getElementById('pantalla-bingo');
+  const pantallaTriviaConfig= document.getElementById('pantalla-trivia-config');
+  if (pantallaMemConfig)    inicializarOpcionesConfig(pantallaMemConfig);
+  if (pantallaBatConfig)    inicializarOpcionesConfig(pantallaBatConfig);
+  if (pantallaDraftConfig)  inicializarOpcionesConfig(pantallaDraftConfig);
+  if (pantallaBingo)        inicializarOpcionesConfig(pantallaBingo);
+  if (pantallaTriviaConfig) inicializarOpcionesConfig(pantallaTriviaConfig);
+  inicializarApp();
+});
+</script>

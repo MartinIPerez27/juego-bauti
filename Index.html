@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>JUEGO MARVEL &amp; DC</title>
+
+  <!--
+    FONTS — Poppins (tipografía principal pedagógica)
+    Se carga aquí en <head> para evitar FOUT en la primera pantalla.
+    GAS sirve desde https:// → sin bloqueo de mixed-content.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ESTILOS GLOBALES (scriptlet GAS) -->
+  <?!= HtmlService.createHtmlOutputFromFile('Estilos').getContent(); ?>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PANTALLAS — solo 1 visible por vez (clase .activa via JS)
+       Todas arrancan vacías; el MotorUI inyecta el HTML interno.
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!-- ── MENÚ PRINCIPAL ── -->
+  <div id="pantalla-menu" class="pantalla activa">
+
+    <!-- Toggle tema oscuro/claro -->
+    <button class="btn-toggle-tema" onclick="toggleTema()" id="btn-tema" aria-label="Cambiar tema">🌙</button>
+
+    <!-- Logo / título -->
+    <header class="menu-header">
+      <h1 class="menu-titulo">
+        <span class="titulo-marvel">MARVEL</span>
+        <span class="titulo-separador">&amp;</span>
+        <span class="titulo-dc">DC</span>
+      </h1>
+      <p class="menu-subtitulo">JUEGO DE CARTAS INTERACTIVO</p>
+    </header>
+
+    <!-- Botones de modo de juego -->
+    <nav class="menu-botones" role="navigation" aria-label="Modos de juego">
+
+      <button class="btn-modo btn-memoria"
+              onclick="navegarA('pantalla-memoria-config')"
+              aria-label="Ir al modo Memoria">
+        <span class="btn-icono">🧠</span>
+        <span class="btn-texto">MEMORIA</span>
+        <span class="btn-desc">ENCONTRÁ LOS PARES</span>
+      </button>
+
+      <button class="btn-modo btn-batalla"
+              onclick="navegarA('pantalla-batalla-config')"
+              aria-label="Ir al modo Batalla">
+        <span class="btn-icono">⚔️</span>
+        <span class="btn-texto">BATALLA</span>
+        <span class="btn-desc">3V3 · 5V5 · 7V7</span>
+      </button>
+
+      <button class="btn-modo btn-draft"
+              onclick="navegarA('pantalla-draft-config')"
+              aria-label="Ir al modo Draft">
+        <span class="btn-icono">🎯</span>
+        <span class="btn-texto">DRAFT</span>
+        <span class="btn-desc">ELEGÍ TUS CARTAS</span>
+      </button>
+
+      <button class="btn-modo btn-bingo"
+              onclick="navegarA('pantalla-bingo')"
+              aria-label="Ir al modo Bingo">
+        <span class="btn-icono">🎰</span>
+        <span class="btn-texto">BINGO</span>
+        <span class="btn-desc">COMPLETÁ EL CARTÓN</span>
+      </button>
+
+      <button class="btn-modo btn-trivia"
+              onclick="navegarA('pantalla-trivia-config')"
+              aria-label="Ir al modo Trivia">
+        <span class="btn-icono">🧩</span>
+        <span class="btn-texto">TRIVIA</span>
+        <span class="btn-desc">PONÉ A PRUEBA TU MEMORIA</span>
+      </button>
+
+      <button class="btn-modo btn-info"
+              onclick="navegarA('pantalla-info')"
+              aria-label="Ir al modo Info">
+        <span class="btn-icono">📖</span>
+        <span class="btn-texto">INFO</span>
+        <span class="btn-desc">CONOCÉ TUS HÉROES</span>
+      </button>
+
+    </nav>
+
+    <!-- Indicador de carga de BD -->
+    <div id="menu-estado-bd" class="menu-estado-bd" aria-live="polite">
+      CARGANDO PERSONAJES...
+    </div>
+
+    <!-- Indicador de pronunciaciones -->
+    <div id="menu-estado-pron" class="menu-estado-pron oculto" aria-live="polite">
+      ⏳ CARGANDO PRONUNCIACIONES...
+    </div>
+
+    <footer class="menu-footer">
+      <span id="menu-total-personajes">—</span> PERSONAJES CARGADOS
+      &nbsp;·&nbsp;
+      <span id="menu-pronunciaciones-estado">⏳ VOCES...</span>
+    </footer>
+
+  </div><!-- /pantalla-menu -->
+
+
+  <!-- ── CONFIGURACIÓN DE MEMORIA ── -->
+  <div id="pantalla-memoria-config" class="pantalla">
+
+    <header class="pantalla-header">
+      <button class="btn-volver" onclick="navegarA('pantalla-menu')" aria-label="Volver al menú">
+        &#8592; VOLVER
+      </button>
+      <h2 class="pantalla-titulo">MODO MEMORIA</h2>
+    </header>
+
+    <section class="config-seccion">
+
+      <!-- Paso 1 — Modalidad -->
+      <div class="config-grupo">
+        <h3 class="config-label">MODALIDAD</h3>
+        <div class="config-opciones" role="group" aria-label="Elegir modalidad">
+          <button class="btn-opcion activo" data-grupo="modalidad" data-valor="FACIL"
+                  aria-pressed="true">
+            <span class="opcion-titulo">FÁCIL</span>
+            <span class="opcion-detalle">30 PARES · SIN TIEMPO</span>
+          </button>
+          <button class="btn-opcion" data-grupo="modalidad" data-valor="MEDIO"
+                  aria-pressed="false">
+            <span class="opcion-titulo">MEDIO</span>
+            <span class="opcion-detalle">70 PARES · 45 MIN</span>
+          </button>
+          <button class="btn-opcion" data-grupo="modalidad" data-valor="DIFICIL"
+                  aria-pressed="false">
+            <span class="opcion-titulo">DIFÍCIL</span>
+            <span class="opcion-detalle">120 PARES · 90 MIN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 2 — Universo -->
+      <div class="config-grupo">
+        <h3 class="config-label">UNIVERSO</h3>
+        <div class="config-opciones" role="group" aria-label="Elegir universo">
+          <button class="btn-opcion activo" data-grupo="universo" data-valor="TODOS"
+                  aria-pressed="true">TODOS</button>
+          <button class="btn-opcion" data-grupo="universo" data-valor="MARVEL"
+                  aria-pressed="false">MARVEL</button>
+          <button class="btn-opcion" data-grupo="universo" data-valor="DC"
+                  aria-pressed="false">DC</button>
+        </div>
+      </div>
+
+      <!-- Paso 3 — Jugadores -->
+      <div class="config-grupo">
+        <h3 class="config-label">JUGADORES</h3>
+        <div class="jugadores-lista" id="memoria-jugadores-lista">
+          <!-- Se generan dinámicamente (1–4 jugadores) -->
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-a"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR 1"
+                   maxlength="20" data-jugador="0">
+          </div>
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-b"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR 2"
+                   maxlength="20" data-jugador="1">
+          </div>
+        </div>
+        <div class="config-acciones-jugadores">
+          <button class="btn-secundario" id="btn-agregar-jugador-mem"
+                  onclick="agregarJugadorMemoria()">+ JUGADOR</button>
+          <button class="btn-secundario" id="btn-quitar-jugador-mem"
+                  onclick="quitarJugadorMemoria()">− JUGADOR</button>
+        </div>
+      </div>
+
+      <!-- Sugerencia de dificultad por edad -->
+      <div class="config-grupo config-edad">
+        <h3 class="config-label">EDAD DEL JUGADOR MÁS JOVEN</h3>
+        <input type="range" id="slider-edad" min="4" max="15" value="8"
+               oninput="actualizarSugerenciaEdad(this.value)">
+        <p id="edad-sugerencia" class="edad-sugerencia">EDAD: 8 AÑOS → MODALIDAD SUGERIDA: MEDIO</p>
+      </div>
+
+    </section>
+
+    <div class="config-footer">
+      <button class="btn-primario btn-grande" id="btn-iniciar-memoria"
+              onclick="iniciarModoMemoria()">
+        🎮 INICIAR MEMORIA
+      </button>
+    </div>
+
+  </div><!-- /pantalla-memoria-config -->
+
+
+  <!-- ── TABLERO DE MEMORIA (juego activo) ── -->
+  <div id="pantalla-memoria-juego" class="pantalla">
+
+    <!-- Marcador + turno ARRIBA (no tapa cartas) -->
+    <div id="marcador-memoria" class="marcador-memoria oculto">
+      <!-- Scores + indicador de turno generados por MotorMemoria -->
+      <div id="indicador-turno" class="oculto" role="status" aria-live="polite"></div>
+    </div>
+
+    <!-- Tablero scrolleable -->
+    <div id="tablero-memoria-wrapper" class="tablero-memoria-wrapper">
+      <div id="tablero-memoria" class="tablero-memoria" role="grid"
+           aria-label="Tablero de memoria">
+        <!-- Cartas generadas dinámicamente -->
+      </div>
+    </div>
+
+    <!-- Pausa -->
+    <div id="overlay-pausa" class="overlay-pausa oculto" role="dialog"
+         aria-modal="true" aria-label="Juego en pausa">
+      <div class="pausa-contenido">
+        <h2 class="pausa-titulo">⏸ PAUSA</h2>
+        <button class="btn-primario" onclick="reanudarJuego()">▶ CONTINUAR</button>
+        <button class="btn-secundario" onclick="navegarA('pantalla-menu')">🏠 MENÚ PRINCIPAL</button>
+      </div>
+    </div>
+
+  </div><!-- /pantalla-memoria-juego -->
+
+
+  <!-- ── CONFIGURACIÓN DE BATALLA ── -->
+  <div id="pantalla-batalla-config" class="pantalla">
+
+    <header class="pantalla-header">
+      <button class="btn-volver" onclick="navegarA('pantalla-menu')" aria-label="Volver al menú">
+        &#8592; VOLVER
+      </button>
+      <h2 class="pantalla-titulo">MODO BATALLA</h2>
+    </header>
+
+    <section class="config-seccion">
+
+      <!-- Formato del equipo -->
+      <div class="config-grupo">
+        <h3 class="config-label">FORMATO</h3>
+        <div class="config-opciones" role="group" aria-label="Elegir formato de batalla">
+          <button class="btn-opcion activo" data-grupo="formato" data-valor="3"
+                  aria-pressed="true">3 VS 3</button>
+          <button class="btn-opcion" data-grupo="formato" data-valor="5"
+                  aria-pressed="false">5 VS 5</button>
+          <button class="btn-opcion" data-grupo="formato" data-valor="7"
+                  aria-pressed="false">7 VS 7</button>
+        </div>
+      </div>
+
+      <!-- Universo del pool de extracción -->
+      <div class="config-grupo">
+        <h3 class="config-label">UNIVERSO</h3>
+        <div class="config-opciones" role="group" aria-label="Elegir universo">
+          <button class="btn-opcion activo" data-grupo="universo-batalla" data-valor="TODOS"
+                  aria-pressed="true">TODOS</button>
+          <button class="btn-opcion" data-grupo="universo-batalla" data-valor="MARVEL"
+                  aria-pressed="false">MARVEL</button>
+          <button class="btn-opcion" data-grupo="universo-batalla" data-valor="DC"
+                  aria-pressed="false">DC</button>
+        </div>
+      </div>
+
+      <!-- Nombres de jugadores -->
+      <div class="config-grupo">
+        <h3 class="config-label">JUGADORES</h3>
+        <div class="batalla-jugadores">
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-a"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR A"
+                   maxlength="20" id="batalla-nombre-a">
+          </div>
+          <div class="vs-separador">VS</div>
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-b"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR B"
+                   maxlength="20" id="batalla-nombre-b">
+          </div>
+        </div>
+      </div>
+
+      <!-- Límite de rondas -->
+      <div class="config-grupo">
+        <h3 class="config-label">RONDAS PARA GANAR</h3>
+        <div class="config-opciones" role="group" aria-label="Elegir rondas para ganar">
+          <button class="btn-opcion" data-grupo="rondas" data-valor="3"
+                  aria-pressed="false">MEJOR DE 3</button>
+          <button class="btn-opcion activo" data-grupo="rondas" data-valor="5"
+                  aria-pressed="true">MEJOR DE 5</button>
+          <button class="btn-opcion" data-grupo="rondas" data-valor="7"
+                  aria-pressed="false">MEJOR DE 7</button>
+          <button class="btn-opcion" data-grupo="rondas" data-valor="LIBRE"
+                  aria-pressed="false">
+            <span class="opcion-titulo">LIBRE</span>
+            <span class="opcion-detalle">SIN LÍMITE</span>
+          </button>
+          <button class="btn-opcion" data-grupo="rondas" data-valor="CUSTOM"
+                  aria-pressed="false"
+                  onclick="document.getElementById('rondas-custom-wrapper').style.display='block'">
+            <span class="opcion-titulo">✏️ CUSTOM</span>
+            <span class="opcion-detalle">YO ELIJO</span>
+          </button>
+        </div>
+        <!-- Input personalizado — visible solo al elegir CUSTOM -->
+        <div id="rondas-custom-wrapper" style="margin-top:14px;display:none;">
+          <label style="font-size:12px;color:rgba(255,255,255,0.5);
+                        display:block;margin-bottom:8px;letter-spacing:0.08em;">
+            PRIMERO EN LLEGAR A:
+          </label>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <input type="number" id="rondas-custom-input" min="1" max="99" value="10"
+                   class="jugador-nombre-input" style="width:90px;text-align:center;font-size:22px;"
+                   oninput="_opcionesConfig['rondas']='CUSTOM:'+this.value">
+            <span style="font-size:13px;color:rgba(255,255,255,0.4);">VICTORIAS</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="config-footer">
+      <button class="btn-primario btn-grande" id="btn-iniciar-batalla"
+              onclick="iniciarModoBatalla()">
+        ⚔️ INICIAR BATALLA
+      </button>
+    </div>
+
+  </div><!-- /pantalla-batalla-config -->
+
+
+  <!-- ── ARENA DE BATALLA (juego activo) ── -->
+  <div id="pantalla-batalla-juego" class="pantalla">
+
+    <!-- Header de arena con nombres y scores -->
+    <div id="arena-header" class="arena-header">
+      <div class="arena-header-jugador arena-header-a">
+        <span id="nombre-jugador-a" class="arena-nombre">JUGADOR A</span>
+        <span id="score-a" class="arena-score">0</span>
+      </div>
+      <div class="arena-progreso-wrapper">
+        <div id="arena-status" class="arena-status">⚔️ BATALLA</div>
+        <div id="arena-progreso"></div>
+      </div>
+      <div class="arena-header-jugador arena-header-b">
+        <span id="score-b" class="arena-score">0</span>
+        <span id="nombre-jugador-b" class="arena-nombre">JUGADOR B</span>
+      </div>
+      <!-- Pausa integrada en el header -->
+      <button id="btn-pausa-batalla" class="btn-pausa-header"
+              onclick="togglePausa()" aria-label="Pausar juego">
+        &#9646;&#9646;
+      </button>
+    </div>
+
+    <!-- Cuerpo de la arena -->
+    <div id="arena-batalla" class="arena-batalla">
+
+      <!-- Zona Jugador A -->
+      <div id="zona-jugador-a" class="zona-jugador zona-a">
+        <div class="zona-cartas" id="cartas-equipo-a"
+             role="list" aria-label="Equipo del jugador A">
+        </div>
+      </div>
+
+      <!-- Centro: mazo + log -->
+      <div id="zona-central" class="zona-central">
+        <div id="mazo-batalla" class="mazo-batalla" role="button"
+             aria-label="Repartir cartas" tabindex="0"
+             onclick="extraerCartaBatalla()">
+          <div class="mazo-dorso"></div>
+          <span class="mazo-contador" id="mazo-contador">—</span>
+        </div>
+        <div id="log-batalla" class="log-batalla" role="log" aria-live="polite"></div>
+        <div class="controles-batalla">
+          <button class="btn-secundario btn-narrar" id="btn-narrar-resultado"
+                  onclick="narrarResultadoBatalla()" disabled>
+            🔊 NARRAR RESULTADO
+          </button>
+        </div>
+      </div>
+
+      <!-- Zona Jugador B -->
+      <div id="zona-jugador-b" class="zona-jugador zona-b">
+        <div class="zona-cartas" id="cartas-equipo-b"
+             role="list" aria-label="Equipo del jugador B">
+        </div>
+      </div>
+
+    </div><!-- /arena-batalla -->
+
+    <!-- Pausa -->
+    <div id="overlay-pausa-batalla" class="overlay-pausa oculto" role="dialog"
+         aria-modal="true" aria-label="Batalla en pausa">
+      <div class="pausa-contenido">
+        <h2 class="pausa-titulo">⏸ PAUSA</h2>
+        <button class="btn-primario"  onclick="reanudarJuego()">▶ CONTINUAR</button>
+        <button class="btn-secundario" onclick="navegarA('pantalla-menu')">🏠 MENÚ</button>
+      </div>
+    </div>
+
+  </div><!-- /pantalla-batalla-juego -->
+
+
+  <!-- ── CONFIGURACIÓN DE DRAFT ── -->
+  <div id="pantalla-draft-config" class="pantalla">
+    <header class="pantalla-header">
+      <button class="btn-volver" onclick="navegarA('pantalla-menu')">&#8592; VOLVER</button>
+      <h2 class="pantalla-titulo">MODO DRAFT</h2>
+    </header>
+    <section class="config-seccion">
+
+      <div class="config-grupo">
+        <h3 class="config-label">FORMATO</h3>
+        <div class="config-opciones" role="group">
+          <button class="btn-opcion activo" data-grupo="formato-draft" data-valor="3" aria-pressed="true">3 VS 3</button>
+          <button class="btn-opcion" data-grupo="formato-draft" data-valor="5" aria-pressed="false">5 VS 5</button>
+          <button class="btn-opcion" data-grupo="formato-draft" data-valor="7" aria-pressed="false">7 VS 7</button>
+        </div>
+      </div>
+
+      <div class="config-grupo">
+        <h3 class="config-label">UNIVERSO</h3>
+        <div class="config-opciones" role="group">
+          <button class="btn-opcion activo" data-grupo="universo-draft" data-valor="TODOS" aria-pressed="true">TODOS</button>
+          <button class="btn-opcion" data-grupo="universo-draft" data-valor="MARVEL" aria-pressed="false">MARVEL</button>
+          <button class="btn-opcion" data-grupo="universo-draft" data-valor="DC" aria-pressed="false">DC</button>
+        </div>
+      </div>
+
+      <div class="config-grupo">
+        <h3 class="config-label">JUGADORES</h3>
+        <div class="batalla-jugadores">
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-a"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR A" maxlength="20" id="draft-nombre-a">
+          </div>
+          <div class="vs-separador">VS</div>
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-b"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR B" maxlength="20" id="draft-nombre-b">
+          </div>
+        </div>
+      </div>
+
+      <div class="config-grupo">
+        <h3 class="config-label">RONDAS PARA GANAR</h3>
+        <div class="config-opciones" role="group">
+          <button class="btn-opcion" data-grupo="rondas-draft" data-valor="3" aria-pressed="false">MEJOR DE 3</button>
+          <button class="btn-opcion activo" data-grupo="rondas-draft" data-valor="5" aria-pressed="true">MEJOR DE 5</button>
+          <button class="btn-opcion" data-grupo="rondas-draft" data-valor="7" aria-pressed="false">MEJOR DE 7</button>
+          <button class="btn-opcion" data-grupo="rondas-draft" data-valor="LIBRE" aria-pressed="false">
+            <span class="opcion-titulo">LIBRE</span>
+            <span class="opcion-detalle">SIN LÍMITE</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+    <div class="config-footer">
+      <button class="btn-primario btn-grande" onclick="iniciarModoDraft()">🎯 INICIAR DRAFT</button>
+    </div>
+  </div><!-- /pantalla-draft-config -->
+
+
+  <!-- ── ARENA DE DRAFT (juego activo) ── -->
+  <div id="pantalla-draft-juego" class="pantalla">
+
+    <div id="draft-header" class="arena-header">
+      <div class="arena-header-jugador arena-header-a">
+        <span id="draft-nombre-jugador-a" class="arena-nombre">JUGADOR A</span>
+        <span id="draft-score-a" class="arena-score">0</span>
+      </div>
+      <div class="arena-progreso-wrapper">
+        <div id="draft-status" class="arena-status">🎯 DRAFT</div>
+        <div id="draft-progreso"></div>
+      </div>
+      <div class="arena-header-jugador arena-header-b">
+        <span id="draft-score-b" class="arena-score">0</span>
+        <span id="draft-nombre-jugador-b" class="arena-nombre">JUGADOR B</span>
+      </div>
+      <button class="btn-pausa-header" onclick="togglePausa()" aria-label="Pausar">&#9646;&#9646;</button>
+    </div>
+
+    <!-- Equipos formados -->
+    <div id="arena-draft" class="arena-batalla" style="flex:1;overflow:hidden;">
+
+      <div id="draft-zona-a" class="zona-jugador zona-a">
+        <div class="zona-cartas" id="draft-cartas-a" role="list"></div>
+      </div>
+
+      <!-- Centro: log + narrar -->
+      <div id="draft-zona-central" class="zona-central" style="width:180px;flex-shrink:0;">
+        <div id="draft-log" class="log-batalla" role="log" aria-live="polite"></div>
+        <button class="btn-secundario btn-narrar" id="draft-btn-narrar"
+                onclick="narrarResultadoDraft()" disabled>
+          🔊 NARRAR
+        </button>
+      </div>
+
+      <div id="draft-zona-b" class="zona-jugador zona-b">
+        <div class="zona-cartas" id="draft-cartas-b" role="list"></div>
+      </div>
+
+    </div>
+
+    <!-- OVERLAY DE SELECCIÓN — cubre toda la pantalla con las 5 opciones -->
+    <div id="draft-overlay-seleccion" class="draft-overlay-seleccion oculto">
+      <div class="draft-overlay-header">
+        <div id="draft-turno-label" class="draft-turno-label"></div>
+        <p class="draft-overlay-instruccion">ELEGÍ UNA CARTA PARA TU EQUIPO</p>
+      </div>
+      <div id="draft-opciones" class="draft-opciones-grid"></div>
+    </div>
+
+    <div id="overlay-pausa-draft" class="overlay-pausa oculto" role="dialog" aria-modal="true">
+      <div class="pausa-contenido">
+        <h2 class="pausa-titulo">⏸ PAUSA</h2>
+        <button class="btn-primario" onclick="reanudarJuego()">▶ CONTINUAR</button>
+        <button class="btn-secundario" onclick="navegarA('pantalla-menu')">🏠 MENÚ</button>
+      </div>
+    </div>
+
+  </div><!-- /pantalla-draft-juego -->
+
+
+  <!-- ── MODO BINGO ── -->
+  <div id="pantalla-bingo" class="pantalla">
+    <header class="pantalla-header">
+      <button class="btn-volver" onclick="navegarA('pantalla-menu')">&#8592; VOLVER</button>
+      <h2 class="pantalla-titulo">MODO BINGO</h2>
+    </header>
+
+    <!-- Configuración inline -->
+    <div id="bingo-config" class="config-seccion">
+      <div class="config-grupo">
+        <h3 class="config-label">UNIVERSO</h3>
+        <div class="config-opciones" role="group">
+          <button class="btn-opcion activo" data-grupo="universo-bingo" data-valor="TODOS" aria-pressed="true">TODOS</button>
+          <button class="btn-opcion" data-grupo="universo-bingo" data-valor="MARVEL" aria-pressed="false">MARVEL</button>
+          <button class="btn-opcion" data-grupo="universo-bingo" data-valor="DC" aria-pressed="false">DC</button>
+        </div>
+      </div>
+      <div class="config-grupo">
+        <h3 class="config-label">JUGADORES (1–6)</h3>
+        <div id="bingo-jugadores-lista" class="jugadores-lista">
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-a"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR 1" maxlength="20" data-jugador="0">
+          </div>
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-b"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR 2" maxlength="20" data-jugador="1">
+          </div>
+        </div>
+        <div class="config-acciones-jugadores">
+          <button class="btn-secundario" onclick="agregarJugadorBingo()">+ JUGADOR</button>
+          <button class="btn-secundario" onclick="quitarJugadorBingo()">− JUGADOR</button>
+        </div>
+      </div>
+      <div class="config-footer" style="border:none;padding-top:0;">
+        <button class="btn-primario btn-grande" onclick="iniciarBingo()">🎰 INICIAR BINGO</button>
+      </div>
+    </div>
+
+    <!-- Juego activo — oculto hasta iniciar -->
+    <div id="bingo-juego" class="oculto" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+      <!-- Carta cantada actualmente -->
+      <div id="bingo-carta-actual" class="bingo-carta-actual">
+        <div id="bingo-carta-img-wrapper" class="bingo-carta-img-wrapper bingo-carta-img-vacia">
+          <img id="bingo-carta-img" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:none;">
+          <div id="bingo-carta-placeholder" class="bingo-carta-placeholder">🎴</div>
+          <div id="bingo-carta-nombre" class="bingo-carta-nombre"></div>
+        </div>
+        <div class="bingo-controles">
+          <button class="btn-primario" id="bingo-btn-cantar" onclick="cantarSiguiente()">
+            🎰 CANTAR CARTA
+          </button>
+          <span id="bingo-contador" style="font-size:13px;color:rgba(255,255,255,0.5);">0 CANTADAS</span>
+        </div>
+      </div>
+
+      <!-- Cartones de jugadores -->
+      <div id="bingo-cartones" class="bingo-cartones"></div>
+
+    </div>
+
+  </div><!-- /pantalla-bingo -->
+
+
+  <!-- ── CONFIGURACIÓN DE TRIVIA ── -->
+  <div id="pantalla-trivia-config" class="pantalla">
+    <header class="pantalla-header">
+      <button class="btn-volver" onclick="navegarA('pantalla-menu')">&#8592; VOLVER</button>
+      <h2 class="pantalla-titulo">MODO TRIVIA</h2>
+    </header>
+    <section class="config-seccion">
+
+      <div class="config-grupo">
+        <h3 class="config-label">UNIVERSO</h3>
+        <div class="config-opciones" role="group">
+          <button class="btn-opcion activo" data-grupo="universo-trivia" data-valor="TODOS" aria-pressed="true">TODOS</button>
+          <button class="btn-opcion" data-grupo="universo-trivia" data-valor="MARVEL" aria-pressed="false">MARVEL</button>
+          <button class="btn-opcion" data-grupo="universo-trivia" data-valor="DC" aria-pressed="false">DC</button>
+        </div>
+      </div>
+
+      <div class="config-grupo">
+        <h3 class="config-label">JUGADORES</h3>
+        <div id="trivia-jugadores-lista" class="jugadores-lista">
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-a"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR 1" maxlength="20" data-jugador="0">
+          </div>
+          <div class="jugador-input-fila">
+            <span class="jugador-color jugador-color-b"></span>
+            <input type="text" class="jugador-nombre-input" placeholder="JUGADOR 2" maxlength="20" data-jugador="1">
+          </div>
+        </div>
+        <div class="config-acciones-jugadores">
+          <button class="btn-secundario" id="btn-agregar-jugador-trivia" onclick="agregarJugadorTrivia()">+ JUGADOR</button>
+          <button class="btn-secundario" id="btn-quitar-jugador-trivia" onclick="quitarJugadorTrivia()">− JUGADOR</button>
+        </div>
+      </div>
+
+      <div class="config-grupo">
+        <h3 class="config-label">CANTIDAD DE PREGUNTAS</h3>
+        <div class="config-opciones" role="group">
+          <button class="btn-opcion" data-grupo="rondas-trivia" data-valor="10" aria-pressed="false">10</button>
+          <button class="btn-opcion activo" data-grupo="rondas-trivia" data-valor="15" aria-pressed="true">15</button>
+          <button class="btn-opcion" data-grupo="rondas-trivia" data-valor="20" aria-pressed="false">20</button>
+          <button class="btn-opcion" data-grupo="rondas-trivia" data-valor="LIBRE" aria-pressed="false">
+            <span class="opcion-titulo">LIBRE</span>
+            <span class="opcion-detalle">SIN LÍMITE</span>
+          </button>
+          <button class="btn-opcion" data-grupo="rondas-trivia" data-valor="CUSTOM" aria-pressed="false"
+                  onclick="document.getElementById('trivia-custom-wrapper').style.display='block'">
+            <span class="opcion-titulo">✏️ CUSTOM</span>
+            <span class="opcion-detalle">YO ELIJO</span>
+          </button>
+        </div>
+        <div id="trivia-custom-wrapper" style="margin-top:14px;display:none;">
+          <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:8px;">
+            CANTIDAD DE PREGUNTAS:
+          </label>
+          <input type="number" id="trivia-custom-input" min="1" max="99" value="12"
+                 class="jugador-nombre-input" style="width:90px;text-align:center;font-size:22px;"
+                 oninput="_opcionesConfig['rondas-trivia']='CUSTOM:'+this.value">
+        </div>
+      </div>
+
+    </section>
+    <div class="config-footer">
+      <button class="btn-primario btn-grande" onclick="iniciarModoTrivia()">🧩 INICIAR TRIVIA</button>
+    </div>
+  </div><!-- /pantalla-trivia-config -->
+
+
+  <!-- ── ARENA DE TRIVIA (juego activo) ── -->
+  <div id="pantalla-trivia-juego" class="pantalla">
+
+    <div id="trivia-header" class="arena-header">
+      <div class="arena-progreso-wrapper" style="flex:1;align-items:flex-start;">
+        <div id="trivia-status" class="arena-status" style="text-align:left;">🧩 TRIVIA</div>
+        <div id="trivia-progreso"></div>
+      </div>
+      <button class="btn-pausa-header" onclick="togglePausa()" aria-label="Pausar">&#9646;&#9646;</button>
+    </div>
+
+    <!-- Marcador de jugadores -->
+    <div id="trivia-marcador" class="marcador-memoria oculto"></div>
+
+    <!-- Pregunta + opciones -->
+    <div id="trivia-pregunta-contenedor" class="trivia-pregunta-contenedor"></div>
+
+    <div id="overlay-pausa-trivia" class="overlay-pausa oculto" role="dialog" aria-modal="true">
+      <div class="pausa-contenido">
+        <h2 class="pausa-titulo">⏸ PAUSA</h2>
+        <button class="btn-primario" onclick="reanudarJuego()">▶ CONTINUAR</button>
+        <button class="btn-secundario" onclick="navegarA('pantalla-menu')">🏠 MENÚ</button>
+      </div>
+    </div>
+
+  </div><!-- /pantalla-trivia-juego -->
+
+
+  <!-- ── MODO INFO (galería + Wikipedia) ── -->
+  <div id="pantalla-info" class="pantalla">
+
+    <header class="pantalla-header">
+
+      <button class="btn-volver" onclick="navegarA('pantalla-menu')" aria-label="Volver al menú">
+        &#8592; VOLVER
+      </button>
+      <h2 class="pantalla-titulo">MODO INFO</h2>
+    </header>
+
+    <!-- Controles: buscador + filtros de universo -->
+    <div class="info-controles">
+      <div class="info-buscador-wrapper">
+        <span class="info-buscador-icono" aria-hidden="true">🔍</span>
+        <input type="search" id="info-buscador" class="info-buscador-input"
+               placeholder="BUSCAR PERSONAJE, ALIADO O PODER..."
+               oninput="filtrarPersonajesInfo(this.value)"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div class="info-filtros" role="group" aria-label="Filtrar por universo">
+        <button class="btn-filtro activo" data-universo="TODOS"
+                onclick="filtrarUniversoInfo('TODOS')">TODOS</button>
+        <button class="btn-filtro" data-universo="MARVEL"
+                onclick="filtrarUniversoInfo('MARVEL')">MARVEL</button>
+        <button class="btn-filtro" data-universo="DC"
+                onclick="filtrarUniversoInfo('DC')">DC</button>
+      </div>
+    </div>
+
+    <!-- Galería de personajes -->
+    <div id="info-galeria" class="info-galeria"
+         role="list" aria-label="Galería de personajes">
+      <!-- Cards generados por MotorUI al llamar renderizarGaleriaInfo() -->
+    </div>
+
+    <!-- Modal de detalle de personaje (superpuesto sobre la galería) -->
+    <div id="info-modal-detalle" class="info-modal-overlay oculto"
+         role="dialog" aria-modal="true" aria-label="Detalle del personaje">
+      <div class="info-modal-contenido" id="info-modal-contenido-inner">
+        <!-- Generado dinámicamente por mostrarDetallePersonaje() -->
+      </div>
+      <button class="info-modal-cerrar" onclick="cerrarDetallePersonaje()"
+              aria-label="Cerrar detalle">✕</button>
+    </div>
+
+  </div><!-- /pantalla-info -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       CAPAS GLOBALES — siempre en el DOM, visibilidad via JS
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!--
+    SPINNER GLOBAL — bloquea interacción durante carga inicial de BD.
+    Se muestra/oculta con mostrarSpinner() / ocultarSpinner().
+  -->
+  <div id="spinner-global" class="oculto" role="status" aria-live="assertive">
+    <div class="spinner-circulo"></div>
+    <p id="spinner-mensaje" class="spinner-mensaje">CARGANDO...</p>
+  </div>
+
+  <!--
+    MODAL GENÉRICO — para confirmaciones y avisos (2–3 opciones).
+    Se construye dinámicamente con mostrarModal(texto, opciones, callback).
+  -->
+  <div id="modal-overlay" class="modal-overlay oculto" role="dialog"
+       aria-modal="true" aria-label="Diálogo">
+    <div class="modal-caja" id="modal-caja-interior">
+      <p  id="modal-mensaje"  class="modal-mensaje"></p>
+      <div id="modal-botones" class="modal-botones"></div>
+    </div>
+  </div>
+
+  <!--
+    TOAST CONTAINER — notificaciones efímeras (3 seg).
+    Creados/eliminados dinámicamente por mostrarToast().
+  -->
+  <div id="toast-container" class="toast-container oculto" role="status" aria-live="polite">
+    <!-- Toasts se insertan y eliminan aquí -->
+  </div>
+
+  <!--
+    BOTÓN PAUSA FLOTANTE — visible solo durante juego activo.
+    Posición fija top-right, z-index 200 (sobre todo el contenido).
+  -->
+  <button id="btn-pausa" class="btn-pausa-flotante oculto"
+          onclick="togglePausa()" aria-label="Pausar juego">
+    &#9646;&#9646;
+  </button>
+
+  <!--
+    BARRA DE PROGRESO DE NARRACIÓN — aparece durante narración larga.
+    Actualizada por actualizarBarraProgreso() en MotorAudio.
+  -->
+  <div id="barra-narracion" class="barra-narracion oculto" role="progressbar"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div id="barra-narracion-progreso" class="barra-narracion-progreso"></div>
+    <div class="barra-narracion-controles">
+      <button onclick="pausarNarracion()"   aria-label="Pausar narración">⏸</button>
+      <button onclick="reanudarNarracion()" aria-label="Reanudar narración">▶</button>
+      <button onclick="detenerNarracion()"  aria-label="Detener narración">⏹</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       MÓDULOS JAVASCRIPT — orden de carga obligatorio
+       MotorBD debe ir primero (define CONFIG y BD_GLOBAL)
+       ══════════════════════════════════════════════════════════════ -->
+  <?!= HtmlService.createHtmlOutputFromFile('MotorBD').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorBatalla').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorDraft').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorMemoria').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorBingo').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorTrivia').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorAudio').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('MotorUI').getContent(); ?>
+
+</body>
+</html>

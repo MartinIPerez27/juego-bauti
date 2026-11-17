@@ -1,0 +1,652 @@
+<script>
+// ============================================================
+// MotorTrivia.html — Modo Trivia v4.0
+// Preguntas generadas LOCALMENTE desde BD_GLOBAL (sin IA).
+// Mezcla de tipos: múltiple choice (4 opciones) y verdadero/falso.
+// Mezcla de contenido: stats, biografía, aliados, categorías.
+// Multijugador por turnos, sin reloj, puntos fijos por acierto.
+// ============================================================
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+const _TRIVIA_PUNTOS_ACIERTO = 10;
+
+// Campos numéricos usables para preguntas de stats
+const _TRIVIA_CAMPOS_STATS = [
+  "AGILIDAD","ARMADURA/DEFENSA","DAÑO","FUERZA","RESISTENCIA",
+  "VELOCIDAD","NIVEL_DE_AMENAZA","INTELIGENCIA","LIDERAZGO",
+  "TACTICA","TRABAJO_EN_EQUIPO","FACTOR_MIEDO","PODER_ESPECIAL",
+  "REGENERACION","SIGILO"
+];
+
+const _TRIVIA_NOMBRES_STATS = {
+  "AGILIDAD": "AGILIDAD", "ARMADURA/DEFENSA": "ARMADURA / DEFENSA",
+  "DAÑO": "DAÑO", "FUERZA": "FUERZA", "RESISTENCIA": "RESISTENCIA",
+  "VELOCIDAD": "VELOCIDAD", "NIVEL_DE_AMENAZA": "NIVEL DE AMENAZA",
+  "INTELIGENCIA": "INTELIGENCIA", "LIDERAZGO": "LIDERAZGO",
+  "TACTICA": "TÁCTICA", "TRABAJO_EN_EQUIPO": "TRABAJO EN EQUIPO",
+  "FACTOR_MIEDO": "FACTOR MIEDO", "PODER_ESPECIAL": "PODER ESPECIAL",
+  "REGENERACION": "REGENERACIÓN", "SIGILO": "SIGILO",
+};
+
+// ── ESTADO ────────────────────────────────────────────────────
+const _trivia = {
+  activa:        false,
+  modoRondas:    "10",   // "10","15","20","LIBRE","CUSTOM:N"
+  universo:      "TODOS",
+  jugadores:     [],     // [{ nombre, puntos, color }]
+  turnoActual:   0,
+  preguntaActual:null,
+  rondaActual:   0,
+  poolPersonajes:[],     // personajes disponibles para generar preguntas
+  historial:     [],     // preguntas ya usadas (para no repetir personaje seguido)
+};
+
+// ────────────────────────────────────────────────────────────
+// 1. ARRANQUE
+// ────────────────────────────────────────────────────────────
+function iniciarModoTrivia() {
+  const pantalla = document.getElementById('pantalla-trivia-config');
+  const universo = getOpcion('universo-trivia', 'TODOS');
+  const rondas   = getOpcion('rondas-trivia', '10');
+  const nombres  = getNombresJugadores(pantalla);
+
+  if (!window.BD_GLOBAL || window.BD_GLOBAL.length === 0) {
+    mostrarToast("⚠ BASE DE DATOS AÚN CARGANDO...");
+    return;
+  }
+
+  if (typeof guardarPerfilesJugadores === "function") guardarPerfilesJugadores(nombres);
+
+  const pool = obtenerPersonajesPorUniverso(universo);
+  if (pool.length < 5) {
+    mostrarModal(
+      `NO HAY SUFICIENTES PERSONAJES EN ${universo}.\nNECESITÁS AL MENOS 5.`,
+      ["VOLVER"], () => {}
+    );
+    return;
+  }
+
+  const colores = ['#e63946', '#4cc9f0', '#57cc99', '#f4a261'];
+  const jugadores = nombres.map((nombre, idx) => ({
+    nombre, puntos: 0, color: colores[idx] || colores[0],
+  }));
+
+  Object.assign(_trivia, {
+    activa:        true,
+    modoRondas:    String(rondas),
+    universo,
+    jugadores,
+    turnoActual:   0,
+    preguntaActual:null,
+    rondaActual:   0,
+    poolPersonajes:barajar(pool),
+    historial:     [],
+  });
+
+  navegarA('pantalla-trivia-juego');
+  _renderizarArenaTrivia();
+
+  if (typeof reproducirSonido === "function") reproducirSonido('inicio');
+  if (typeof narrar === "function") narrar("¡QUE EMPIECE LA TRIVIA!");
+
+  _siguienteTurnoTrivia();
+}
+
+// ────────────────────────────────────────────────────────────
+// 2. FLUJO DE TURNOS
+// ────────────────────────────────────────────────────────────
+function _siguienteTurnoTrivia() {
+  if (_verificarFinTrivia()) return;
+
+  _trivia.rondaActual++;
+  const jugador = _trivia.jugadores[_trivia.turnoActual];
+
+  _actualizarStatusTrivia(`PREGUNTA ${_trivia.rondaActual} — TURNO DE ${jugador.nombre}`);
+  if (typeof actualizarProgresoArena === "function") {
+    actualizarProgresoArena('trivia-progreso', _trivia.rondaActual, _limitePreguntasTrivia(), 'PREGUNTA');
+  }
+  mostrarTurno(jugador.nombre, _trivia.turnoActual);
+
+  // Generar pregunta nueva
+  const pregunta = _generarPregunta();
+  if (!pregunta) {
+    mostrarToast("NO SE PUDO GENERAR MÁS PREGUNTAS");
+    _finalizarTrivia();
+    return;
+  }
+  _trivia.preguntaActual = pregunta;
+  _renderizarPregunta(pregunta, jugador);
+}
+
+function _limitePreguntasTrivia() {
+  const modo = _trivia.modoRondas;
+  if (modo === "LIBRE") return Infinity;
+  if (modo.startsWith("CUSTOM:")) return parseInt(modo.split(":")[1]) || 10;
+  return parseInt(modo);
+}
+
+function _verificarFinTrivia() {
+  const modo = _trivia.modoRondas;
+  if (modo === "LIBRE") return false; // el usuario corta manualmente
+
+  const limite = _limitePreguntasTrivia();
+
+  if (_trivia.rondaActual >= limite) {
+    _finalizarTrivia();
+    return true;
+  }
+  return false;
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. GENERACIÓN DE PREGUNTAS (100% local, sin IA)
+// ────────────────────────────────────────────────────────────
+function _generarPregunta() {
+  if (_trivia.poolPersonajes.length === 0) {
+    // Reciclar pool si se agotó (partidas LIBRE largas)
+    _trivia.poolPersonajes = barajar(obtenerPersonajesPorUniverso(_trivia.universo));
+    if (_trivia.poolPersonajes.length === 0) return null;
+  }
+
+  const personaje = _trivia.poolPersonajes.shift();
+  _trivia.historial.push(personaje.PERSONAJE);
+
+  // Elegir tipo de pregunta al azar
+  const tipos = ['stat_mc', 'stat_vf', 'universo_vf', 'aliado_mc', 'poder_mc', 'debilidad_mc', 'rareza_mc'];
+  // Filtrar tipos que no apliquen (ej: sin aliados, sin categoría de poder)
+  const tiposValidos = tipos.filter(t => _tipoEsValido(t, personaje));
+  const tipo = tiposValidos[Math.floor(Math.random() * tiposValidos.length)] || 'stat_mc';
+
+  switch (tipo) {
+    case 'stat_mc':      return _preguntaStatMultiple(personaje);
+    case 'stat_vf':       return _preguntaStatVerdaderoFalso(personaje);
+    case 'universo_vf':   return _preguntaUniversoVerdaderoFalso(personaje);
+    case 'aliado_mc':     return _preguntaAliadoMultiple(personaje);
+    case 'poder_mc':      return _preguntaCategoriaMultiple(personaje, 'PODER_ESPECIAL_CATEGORIA', '¿CUÁL ES SU PODER ESPECIAL?');
+    case 'debilidad_mc':  return _preguntaCategoriaMultiple(personaje, 'DEBILIDAD_CATEGORIA', '¿CUÁL ES SU DEBILIDAD?');
+    case 'rareza_mc':     return _preguntaRarezaMultiple(personaje);
+    default:              return _preguntaStatMultiple(personaje);
+  }
+}
+
+function _tipoEsValido(tipo, personaje) {
+  if (tipo === 'aliado_mc')    return !!(personaje.ALIADOS_CLAVE && personaje.ALIADOS_CLAVE.trim());
+  if (tipo === 'poder_mc')     return !!(personaje.PODER_ESPECIAL_CATEGORIA && personaje.PODER_ESPECIAL_CATEGORIA !== 'NINGUNA');
+  if (tipo === 'debilidad_mc') return !!(personaje.DEBILIDAD_CATEGORIA && personaje.DEBILIDAD_CATEGORIA !== 'NINGUNA');
+  if (tipo === 'rareza_mc')    return !!(personaje.RAREZA_DE_CARTA && personaje.RAREZA_DE_CARTA.trim());
+  return true;
+}
+
+// ── Pregunta tipo: ¿Quién tiene más [STAT]? — muestra 4 imágenes, sin
+// revelar la respuesta en el texto de la pregunta (fix bug crítico) ──
+function _preguntaStatMultiple(personaje) {
+  const campo  = _TRIVIA_CAMPOS_STATS[Math.floor(Math.random() * _TRIVIA_CAMPOS_STATS.length)];
+  const nombreCampo = _TRIVIA_NOMBRES_STATS[campo];
+
+  const otros = barajar(window.BD_GLOBAL.filter(p => p.PERSONAJE !== personaje.PERSONAJE)).slice(0, 3);
+  const opciones = barajar([personaje, ...otros]);
+
+  const correcto = opciones.reduce((max, p) =>
+    (parseInt(p[campo]) || 0) > (parseInt(max[campo]) || 0) ? p : max
+  );
+
+  return {
+    tipo: 'multiple_visual',  // NUEVO: opciones con imagen, no con texto del personaje
+    pregunta: `¿QUIÉN TIENE MÁS ${nombreCampo}?`,
+    // Cada opción es el personaje completo (para mostrar imagen + nombre)
+    opcionesPersonajes: opciones,
+    correctaIdx: opciones.findIndex(p => p.PERSONAJE === correcto.PERSONAJE),
+    personajePrincipal: null, // NO mostrar imagen destacada — daría la respuesta
+    explicacion: `${correcto.PERSONAJE} TIENE ${correcto[campo]} DE ${nombreCampo}.`,
+    narracionPregunta: `¿QUIÉN TIENE MÁS ${nombreCampo}? ` +
+      opciones.map((p, i) => `OPCIÓN ${['A','B','C','D'][i]}: ${pronunciarNombre(p.PERSONAJE)}`).join(". "),
+  };
+}
+
+// ── Pregunta tipo: ¿[Personaje] tiene más de X de [STAT]? V/F ──
+function _preguntaStatVerdaderoFalso(personaje) {
+  const campo  = _TRIVIA_CAMPOS_STATS[Math.floor(Math.random() * _TRIVIA_CAMPOS_STATS.length)];
+  const nombreCampo = _TRIVIA_NOMBRES_STATS[campo];
+  const valorReal = parseInt(personaje[campo]) || 50;
+
+  // 50% de las veces pregunta con el umbral correcto (respuesta VERDADERO),
+  // 50% con un umbral que lo hace FALSO
+  const esVerdadero = Math.random() > 0.5;
+  let umbral;
+  if (esVerdadero) {
+    umbral = Math.max(1, valorReal - 10 - Math.floor(Math.random() * 15));
+  } else {
+    umbral = valorReal + 10 + Math.floor(Math.random() * 15);
+    if (umbral > 100) umbral = 100; // clamp, igual queda FALSO si valorReal < 100
+  }
+
+  const respuestaCorrecta = valorReal > umbral;
+
+  return {
+    tipo: 'vf',
+    pregunta: `${personaje.PERSONAJE.toUpperCase()} TIENE MÁS DE ${umbral} DE ${nombreCampo}`,
+    correctaBool: respuestaCorrecta,
+    personajePrincipal: personaje,
+    explicacion: `${personaje.PERSONAJE} TIENE ${valorReal} DE ${nombreCampo}.`,
+    narracionPregunta: `${pronunciarNombre(personaje.PERSONAJE)} TIENE MÁS DE ${umbral} DE ${nombreCampo}. ¿VERDADERO O FALSO?`,
+  };
+}
+
+// ── Pregunta tipo: ¿[Personaje] es de Marvel/DC? V/F ──
+function _preguntaUniversoVerdaderoFalso(personaje) {
+  const universoPreguntado = Math.random() > 0.5 ? personaje.UNIVERSO :
+    (personaje.UNIVERSO === 'MARVEL' ? 'DC' : 'MARVEL');
+  const respuestaCorrecta = universoPreguntado === personaje.UNIVERSO;
+
+  return {
+    tipo: 'vf',
+    pregunta: `${personaje.PERSONAJE.toUpperCase()} ES DE ${universoPreguntado}`,
+    correctaBool: respuestaCorrecta,
+    personajePrincipal: personaje,
+    explicacion: `${personaje.PERSONAJE} ES DE ${personaje.UNIVERSO}.`,
+    narracionPregunta: `${pronunciarNombre(personaje.PERSONAJE)} ES DE ${universoPreguntado}. ¿VERDADERO O FALSO?`,
+  };
+}
+
+// ── Pregunta tipo: ¿Cuál es aliado de [Personaje]? — visual con imágenes ──
+function _preguntaAliadoMultiple(personaje) {
+  const aliados = personaje.ALIADOS_CLAVE.split(',').map(a => a.trim()).filter(Boolean);
+  const nombreAliadoCorrecto = aliados[Math.floor(Math.random() * aliados.length)];
+
+  // Buscar el objeto completo del aliado en la BD (para mostrar su imagen)
+  const aliadoCorrectoObj = buscarPersonaje(nombreAliadoCorrecto) ||
+    { PERSONAJE: nombreAliadoCorrecto, IMAGEN: "" };
+
+  // 3 distractores: personajes random que NO sean aliados de este personaje
+  const distractores = barajar(
+    window.BD_GLOBAL.filter(p =>
+      p.PERSONAJE !== personaje.PERSONAJE &&
+      normalizarNombre(p.PERSONAJE) !== normalizarNombre(nombreAliadoCorrecto) &&
+      !aliados.some(a => normalizarNombre(a) === normalizarNombre(p.PERSONAJE))
+    )
+  ).slice(0, 3);
+
+  const opciones = barajar([aliadoCorrectoObj, ...distractores]);
+
+  return {
+    tipo: 'multiple_visual',
+    pregunta: `¿QUIÉN ES ALIADO DE ${personaje.PERSONAJE.toUpperCase()}?`,
+    opcionesPersonajes: opciones,
+    correctaIdx: opciones.findIndex(p => normalizarNombre(p.PERSONAJE) === normalizarNombre(nombreAliadoCorrecto)),
+    personajePrincipal: personaje, // acá SÍ se puede mostrar — es quien se pregunta, no la respuesta
+    explicacion: `${nombreAliadoCorrecto} ES ALIADO DE ${personaje.PERSONAJE}.`,
+    narracionPregunta: `¿QUIÉN ES ALIADO DE ${pronunciarNombre(personaje.PERSONAJE)}? ` +
+      opciones.map((p, i) => `OPCIÓN ${['A','B','C','D'][i]}: ${pronunciarNombre(p.PERSONAJE)}`).join(". "),
+  };
+}
+
+// ── Pregunta tipo: ¿Cuál es la categoría de poder/debilidad? ──
+function _preguntaCategoriaMultiple(personaje, campo, pregunta) {
+  const correcta = personaje[campo];
+  const todasCategorias = [
+    "FUEGO","AGUA","ELECTRICIDAD","MAGIA","KRYPTONITA","METAL","MENTE",
+    "TECNOLOGIA","LUZ","OSCURIDAD","SONIDO","FRIO","RADIACION","FISICO","VENENO"
+  ];
+  const distractores = barajar(todasCategorias.filter(c => c !== correcta)).slice(0, 3);
+  const opciones = barajar([correcta, ...distractores]);
+
+  return {
+    tipo: 'multiple',
+    pregunta: `${pregunta}\n(${personaje.PERSONAJE.toUpperCase()})`,
+    opciones,
+    correctaIdx: opciones.indexOf(correcta),
+    personajePrincipal: personaje,
+    explicacion: `${personaje.PERSONAJE}: ${correcta}.`,
+    narracionPregunta: `${pregunta.replace('¿','').replace('?','')} DE ${pronunciarNombre(personaje.PERSONAJE)}. ` +
+      opciones.map((op, i) => `OPCIÓN ${['A','B','C','D'][i]}: ${op}`).join(". "),
+  };
+}
+
+// ── Pregunta tipo: ¿Cuál es la rareza de [Personaje]? ──
+function _preguntaRarezaMultiple(personaje) {
+  const correcta = personaje.RAREZA_DE_CARTA;
+  const todasRarezas = ["COMÚN","INFRECUENTE","RARA","ÉPICA","LEGENDARIA"];
+  const distractores = barajar(todasRarezas.filter(r => r !== correcta)).slice(0, 3);
+  const opciones = barajar([correcta, ...distractores]);
+
+  return {
+    tipo: 'multiple',
+    pregunta: `¿CUÁL ES LA RAREZA DE ${personaje.PERSONAJE.toUpperCase()}?`,
+    opciones,
+    correctaIdx: opciones.indexOf(correcta),
+    personajePrincipal: personaje,
+    explicacion: `${personaje.PERSONAJE} ES ${correcta}.`,
+    narracionPregunta: `¿CUÁL ES LA RAREZA DE ${pronunciarNombre(personaje.PERSONAJE)}? ` +
+      opciones.map((op, i) => `OPCIÓN ${['A','B','C','D'][i]}: ${op}`).join(". "),
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. RENDERIZADO DE PREGUNTA
+// ────────────────────────────────────────────────────────────
+
+// Colores fijos por letra de opción (A/B/C/D) — consistentes en todo el modo
+const _TRIVIA_COLORES_OPCION = {
+  0: { nombre: 'A', color: 'var(--turno-color-a)' }, // rojo
+  1: { nombre: 'B', color: 'var(--turno-color-b)' }, // azul
+  2: { nombre: 'C', color: 'var(--turno-color-c)' }, // verde
+  3: { nombre: 'D', color: 'var(--turno-color-d)' }, // naranja
+};
+
+function _renderizarPregunta(pregunta, jugador) {
+  const contenedor = document.getElementById('trivia-pregunta-contenedor');
+  if (!contenedor) return;
+
+  let imgPrincipalHTML = '';
+  if (pregunta.personajePrincipal) {
+    const p = pregunta.personajePrincipal;
+    imgPrincipalHTML = p.IMAGEN
+      ? `<img src="${p.IMAGEN}" alt="${p.PERSONAJE}" class="trivia-img-personaje"
+              onerror="this.style.display='none'">`
+      : `<div class="trivia-img-personaje trivia-img-fallback">🦸</div>`;
+  }
+
+  let opcionesHTML = '';
+
+  if (pregunta.tipo === 'multiple_visual') {
+    // Opciones con imagen + nombre, cada una con su color fijo A/B/C/D
+    opcionesHTML = `<div class="trivia-opciones trivia-opciones-visual">
+      ${pregunta.opcionesPersonajes.map((p, idx) => {
+        const c = _TRIVIA_COLORES_OPCION[idx];
+        const img = p.IMAGEN
+          ? `<img src="${p.IMAGEN}" alt="${_escape(p.PERSONAJE)}" onerror="this.style.display='none'">`
+          : `<div class="trivia-opcion-visual-fallback">🦸</div>`;
+        return `<button class="trivia-opcion trivia-opcion-visual" data-idx="${idx}"
+                    style="--color-opcion:${c.color};" onclick="responderTrivia(${idx})">
+          <span class="trivia-opcion-letra" style="background:${c.color};">${c.nombre}</span>
+          <div class="trivia-opcion-visual-img">${img}</div>
+          <span class="trivia-opcion-visual-nombre">${_escape(p.PERSONAJE)}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+  } else if (pregunta.tipo === 'multiple') {
+    opcionesHTML = `<div class="trivia-opciones">
+      ${pregunta.opciones.map((op, idx) => {
+        const c = _TRIVIA_COLORES_OPCION[idx];
+        return `<button class="trivia-opcion" data-idx="${idx}"
+                    style="--color-opcion:${c.color};border-left:5px solid ${c.color};"
+                    onclick="responderTrivia(${idx})">
+          <span class="trivia-opcion-letra" style="background:${c.color};">${c.nombre}</span>
+          <span class="trivia-opcion-texto">${_escape(op)}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+  } else {
+    // Verdadero / Falso — colores fijos: verde / rojo
+    opcionesHTML = `<div class="trivia-opciones trivia-opciones-vf">
+      <button class="trivia-opcion trivia-opcion-vf trivia-opcion-v" onclick="responderTriviaVF(true)">
+        ✓ VERDADERO
+      </button>
+      <button class="trivia-opcion trivia-opcion-vf trivia-opcion-f" onclick="responderTriviaVF(false)">
+        ✗ FALSO
+      </button>
+    </div>`;
+  }
+
+  contenedor.innerHTML = `
+    <div class="trivia-card">
+      ${imgPrincipalHTML}
+      <div class="trivia-pregunta-texto">${_escape(pregunta.pregunta).replace(/\n/g,'<br>')}</div>
+      ${opcionesHTML}
+    </div>
+  `;
+
+  // Narrar la pregunta completa con las opciones (fix #5)
+  if (typeof narrar === "function" && pregunta.narracionPregunta) {
+    narrar(pregunta.narracionPregunta, { rate: CONFIG.AUDIO_RATE_INFO || 0.85 });
+  } else if (typeof narrar === "function") {
+    narrar(pregunta.pregunta);
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. RESPUESTA — múltiple choice
+// ────────────────────────────────────────────────────────────
+function responderTrivia(idxElegido) {
+  const pregunta = _trivia.preguntaActual;
+  if (!pregunta || (pregunta.tipo !== 'multiple' && pregunta.tipo !== 'multiple_visual')) return;
+  if (typeof reproducirSonido === "function") reproducirSonido('click');
+
+  const esCorrecta = idxElegido === pregunta.correctaIdx;
+  _procesarRespuestaTrivia(esCorrecta, pregunta, idxElegido);
+}
+
+function responderTriviaVF(eligioVerdadero) {
+  const pregunta = _trivia.preguntaActual;
+  if (!pregunta || pregunta.tipo !== 'vf') return;
+  if (typeof reproducirSonido === "function") reproducirSonido('click');
+
+  const esCorrecta = eligioVerdadero === pregunta.correctaBool;
+  _procesarRespuestaTrivia(esCorrecta, pregunta, eligioVerdadero ? 'v' : 'f');
+}
+
+function _procesarRespuestaTrivia(esCorrecta, pregunta, eleccion) {
+  // Bloquear más clicks
+  document.querySelectorAll('.trivia-opcion').forEach(btn => btn.style.pointerEvents = 'none');
+
+  const jugador = _trivia.jugadores[_trivia.turnoActual];
+  historialSesion.intentos++;
+
+  // Marcar visualmente la opción correcta y la elegida
+  if (pregunta.tipo === 'multiple' || pregunta.tipo === 'multiple_visual') {
+    document.querySelectorAll('.trivia-opcion').forEach((btn, idx) => {
+      if (idx === pregunta.correctaIdx) btn.classList.add('trivia-correcta');
+      else if (idx === eleccion && !esCorrecta) btn.classList.add('trivia-incorrecta');
+    });
+  } else {
+    const claseEsperada = pregunta.correctaBool ? '.trivia-opcion-v' : '.trivia-opcion-f';
+    document.querySelector(claseEsperada)?.classList.add('trivia-correcta');
+    if (!esCorrecta) {
+      const claseElegida = eleccion === 'v' ? '.trivia-opcion-v' : '.trivia-opcion-f';
+      document.querySelector(claseElegida)?.classList.add('trivia-incorrecta');
+    }
+  }
+
+  if (esCorrecta) {
+    historialSesion.aciertos++;
+    jugador.puntos += _TRIVIA_PUNTOS_ACIERTO;
+    if (typeof reproducirSonido === "function") reproducirSonido('match');
+  } else {
+    if (typeof reproducirSonido === "function") reproducirSonido('fail');
+  }
+
+  _actualizarMarcadorTrivia();
+  // Narrar el resultado diciendo explícitamente cuál era la correcta (fix #5)
+  _mostrarExplicacionTrivia(pregunta.explicacion, esCorrecta);
+}
+
+function _mostrarExplicacionTrivia(texto, esCorrecta) {
+  const contenedor = document.getElementById('trivia-pregunta-contenedor');
+  if (!contenedor) return;
+
+  const prefijo = esCorrecta ? "¡CORRECTO! " : "¡CASI! ";
+  const textoCompleto = prefijo + texto;
+
+  const div = document.createElement('div');
+  div.className = `trivia-explicacion ${esCorrecta ? 'trivia-explicacion-ok' : 'trivia-explicacion-fail'}`;
+  div.innerHTML = `
+    <div class="trivia-explicacion-icono">${esCorrecta ? '✅' : '❌'}</div>
+    <div class="trivia-explicacion-texto">${_escape(texto)}</div>
+    <div class="trivia-explicacion-botones">
+      <button class="btn-secundario trivia-btn-repetir" id="trivia-btn-repetir-audio"
+              onclick="_repetirAudioExplicacion('${_escapeAttr(textoCompleto)}')"
+              aria-label="Escuchar de nuevo">🔊</button>
+      <button class="btn-primario" onclick="_avanzarTrivia()">SIGUIENTE →</button>
+    </div>
+  `;
+  contenedor.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Narrar el feedback + la respuesta correcta automáticamente
+  if (typeof narrar === "function") {
+    narrar(textoCompleto, { rate: CONFIG.AUDIO_RATE_INFO || 0.85 });
+  }
+}
+
+// Botón 🔊 para volver a escuchar la explicación sin esperar — Mejora UX #8
+function _repetirAudioExplicacion(texto) {
+  if (typeof narrar === "function") {
+    narrar(texto, { rate: CONFIG.AUDIO_RATE_INFO || 0.85 });
+  }
+}
+
+// Helper de escape para atributos (reutiliza el patrón de otros motores)
+function _escapeAttr(str) {
+  return String(str || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;");
+}
+
+function _avanzarTrivia() {
+  // Pasar al siguiente jugador
+  _trivia.turnoActual = (_trivia.turnoActual + 1) % _trivia.jugadores.length;
+  guardarEstadoTrivia(_trivia);
+  _siguienteTurnoTrivia();
+}
+
+// ────────────────────────────────────────────────────────────
+// 6. FIN DE PARTIDA
+// ────────────────────────────────────────────────────────────
+function _finalizarTrivia() {
+  _trivia.activa = false;
+  localStorage.removeItem('trivia_partida_activa');
+
+  const ranking = [..._trivia.jugadores].sort((a, b) => b.puntos - a.puntos);
+  const ganador  = ranking[0];
+  const esEmpate = ranking.length > 1 && ranking[0].puntos === ranking[1].puntos;
+
+  if (typeof lanzarConfetti === "function") lanzarConfetti();
+  if (typeof reproducirSonido === "function") reproducirSonido('victoria');
+
+  const titulo = esEmpate ? "🤝 ¡EMPATE!" : `🏆 ¡GANÓ ${ganador.nombre.toUpperCase()}!`;
+
+  if (typeof mostrarPodio === "function") {
+    mostrarPodio(
+      titulo,
+      ranking,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        if (opcion === 0) navegarA('pantalla-trivia-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  } else {
+    const puntajesTexto = ranking.map(j => `${j.nombre}: ${j.puntos} PTS`).join('\n');
+    mostrarModal(
+      `${titulo}\n\n${puntajesTexto}`,
+      ["🔄 NUEVA PARTIDA", "🏠 MENÚ PRINCIPAL"],
+      (opcion) => {
+        if (opcion === 0) navegarA('pantalla-trivia-config');
+        else              navegarA('pantalla-menu');
+      }
+    );
+  }
+
+  if (typeof narrar === "function") {
+    const texto = esEmpate
+      ? `¡Empate en la trivia! Los dos jugaron increíble. ${ranking.map(j => `${j.nombre} con ${j.puntos} puntos`).join(', ')}.`
+      : `¡Felicitaciones ${ganador.nombre}! Ganaste la trivia con ${ganador.puntos} puntos.`;
+    narrar(texto);
+  }
+}
+
+// Botón manual para cortar partida LIBRE
+function terminarTriviaManual() {
+  mostrarModal(
+    "¿TERMINAR LA TRIVIA AHORA?",
+    ["SÍ, TERMINAR", "SEGUIR JUGANDO"],
+    (opcion) => { if (opcion === 0) _finalizarTrivia(); }
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// 7. RENDERIZADO DE ARENA / MARCADOR
+// ────────────────────────────────────────────────────────────
+function _renderizarArenaTrivia() {
+  _renderizarMarcadorTrivia();
+  document.getElementById('trivia-marcador')?.classList.remove('oculto');
+  document.getElementById('btn-pausa')?.classList.remove('oculto');
+}
+
+function _renderizarMarcadorTrivia() {
+  const marcador = document.getElementById('trivia-marcador');
+  if (!marcador) return;
+
+  const esLibre = _trivia.modoRondas === "LIBRE";
+
+  marcador.innerHTML = _trivia.jugadores.map((j, idx) => `
+    <div class="marcador-jugador" style="border-bottom: 3px solid ${j.color}">
+      <span class="marcador-jugador-nombre" style="color:${j.color}">${j.nombre}</span>
+      <span class="marcador-jugador-pts" id="trivia-pts-${idx}">${j.puntos}</span>
+    </div>
+  `).join('') +
+  (esLibre
+    ? `<button class="btn-secundario" style="font-size:11px;padding:6px 12px;" onclick="terminarTriviaManual()">🏁 TERMINAR</button>`
+    : '');
+}
+
+function _actualizarMarcadorTrivia() {
+  _trivia.jugadores.forEach((j, idx) => {
+    const el = document.getElementById(`trivia-pts-${idx}`);
+    if (el) {
+      if (typeof animarContadorPuntos === "function") animarContadorPuntos(el, j.puntos);
+      else el.textContent = j.puntos;
+    }
+  });
+}
+
+function _actualizarStatusTrivia(texto) {
+  const el = document.getElementById('trivia-status');
+  if (el) el.textContent = texto;
+}
+
+// ────────────────────────────────────────────────────────────
+// 8. GUARDADO / RESTAURACIÓN (simplificado — sin pregunta a medias)
+// ────────────────────────────────────────────────────────────
+function guardarEstadoTrivia(estado) {
+  const guardar = () => {
+    try {
+      localStorage.setItem('trivia_partida_activa', JSON.stringify({
+        modoRondas:  estado.modoRondas,
+        universo:    estado.universo,
+        jugadores:   estado.jugadores.map(j => ({ nombre: j.nombre, puntos: j.puntos, color: j.color })),
+        turnoActual: estado.turnoActual,
+        rondaActual: estado.rondaActual,
+        timestamp:   Date.now(),
+      }));
+    } catch(e) { console.warn("No se pudo guardar trivia:", e); }
+  };
+  if (typeof requestIdleCallback !== "undefined") requestIdleCallback(guardar);
+  else setTimeout(guardar, 0);
+}
+
+function restaurarEstadoTrivia(guardado) {
+  if (!window.BD_GLOBAL) { mostrarToast("BD NO CARGADA — NO SE PUEDE RESTAURAR"); return; }
+
+  Object.assign(_trivia, {
+    activa:        true,
+    modoRondas:    guardado.modoRondas,
+    universo:      guardado.universo,
+    jugadores:     guardado.jugadores,
+    turnoActual:   guardado.turnoActual,
+    rondaActual:   guardado.rondaActual,
+    poolPersonajes:barajar(obtenerPersonajesPorUniverso(guardado.universo)),
+    historial:     [],
+  });
+
+  navegarA('pantalla-trivia-juego');
+  _renderizarArenaTrivia();
+  mostrarToast("PARTIDA RESTAURADA — NUEVA PREGUNTA");
+  _siguienteTurnoTrivia();
+}
+
+// Helper de escape (mismo patrón que otros motores)
+function _escape(str) {
+  return String(str || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+</script>

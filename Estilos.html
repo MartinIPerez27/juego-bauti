@@ -1,0 +1,2100 @@
+<style>
+/* ============================================================
+   ESTILOS.HTML — CSS3 GLOBAL
+   Juego de Cartas MARVEL / DC — v4.0
+   Orden: Variables → Reset → Pantallas → Carta 3D →
+          Animaciones → Componentes UI → Menú → Config →
+          Batalla → Info → Capas Globales → Responsive
+   ============================================================ */
+
+
+/* ────────────────────────────────────────────────────────────
+   1. VARIABLES CSS
+   Cambiar aquí para rebalancear visual sin tocar componentes.
+   ──────────────────────────────────────────────────────────── */
+:root {
+  /* Paleta de juego */
+  --color-fondo:            #0a0a1a;
+  --color-fondo-panel:      #12122a;
+  --color-fondo-card:       #1a1a38;
+  --color-acento-rojo:      #e63946;
+  --color-acento-oro:       #ffd60a;
+  --color-acento-azul:      #4cc9f0;
+  --color-acento-verde:     #57cc99;
+  --color-texto:            #ffffff;
+  --color-texto-dim:        rgba(255,255,255,0.55);
+  --color-borde:            rgba(255,255,255,0.12);
+
+  --ui-fondo-panel:         rgba(255,255,255,0.06);
+  --ui-borde:               rgba(255,255,255,0.14);
+  --ui-btn-activo-bg:       rgba(255,214,10,0.18);
+  --ui-btn-activo-borde:    #ffd60a;
+  --ui-btn-activo-texto:    #ffd60a;
+
+  --turno-color-a:          #e63946;
+  --turno-color-b:          #4cc9f0;
+  --turno-color-c:          #57cc99;
+  --turno-color-d:          #f4a261;
+
+  --carta-min-ancho:        80px;
+  --carta-min-alto:         110px;
+  --tilt-x:                 0deg;
+  --tilt-y:                 0deg;
+  --font-principal:         'Poppins', 'Quicksand', sans-serif;
+  --trans-rapida:           0.15s ease-out;
+  --trans-normal:           0.25s ease-out;
+  --trans-pantalla:         0.3s ease-out;
+}
+
+/* ── TEMA CLARO ─────────────────────────────────────────────── */
+body.tema-claro {
+  --color-fondo:       #f0f2f8;
+  --color-fondo-panel: #ffffff;
+  --color-fondo-card:  #e8eaf2;
+  --color-texto:       #0a0a1a;
+  --color-texto-dim:   rgba(10,10,26,0.55);
+  --color-borde:       rgba(10,10,26,0.12);
+  --ui-fondo-panel:    rgba(10,10,26,0.05);
+  --ui-borde:          rgba(10,10,26,0.14);
+  background:          var(--color-fondo);
+  color:               var(--color-texto);
+}
+body.tema-claro .cara-dorso {
+  background: repeating-linear-gradient(
+    45deg, rgba(10,10,26,0.04) 0, rgba(10,10,26,0.04) 2px,
+    transparent 2px, transparent 10px
+  ), var(--color-fondo-card);
+  border-color: var(--color-borde);
+}
+
+/* Botón toggle tema — esquina superior izquierda del menú */
+.btn-toggle-tema {
+  position:      absolute;
+  top:           14px;
+  left:          14px;
+  width:         40px;
+  height:        40px;
+  border-radius: 50%;
+  background:    var(--ui-fondo-panel);
+  border:        1.5px solid var(--ui-borde);
+  font-size:     18px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  cursor:        pointer;
+  transition:    background var(--trans-rapida);
+  z-index:       10;
+}
+.btn-toggle-tema:hover { background: rgba(255,255,255,0.15); }
+
+
+/* ────────────────────────────────────────────────────────────
+   2. RESET Y BASE
+   REGLA PEDAGÓGICA: text-transform uppercase global para niños.
+   Excepciones explícitas donde se necesite lowercase.
+   ──────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing:                 border-box;
+  text-transform:             uppercase;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:               manipulation;
+  margin:                     0;
+  padding:                    0;
+}
+
+html, body {
+  width:      100vw;
+  height:     100vh;
+  overflow:   hidden;   /* sin scroll de body; los tableros son internamente scrolleables */
+}
+
+body {
+  background:  var(--color-fondo);
+  color:       var(--color-texto);
+  font-family: var(--font-principal);
+  font-size:   18px;
+  line-height: 1.35;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  transition: transform 0.1s ease-out;
+}
+
+/* Feedback táctil global — rebote sutil en CUALQUIER botón al tocar.
+   Mejora UX #1: confirmación física consistente para niños. */
+button:active {
+  transform: scale(0.94);
+}
+
+input {
+  font-family: inherit;
+  color: inherit;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   3. SISTEMA DE PANTALLAS
+   ──────────────────────────────────────────────────────────── */
+.pantalla {
+  display:        none;
+  width:          100%;
+  height:         100%;
+  flex-direction: column;
+  overflow:       hidden;
+}
+
+.pantalla.activa {
+  display:   flex;
+  animation: pantallaFadeIn var(--trans-pantalla);
+}
+
+/* Clase de utilidad: oculta cualquier elemento */
+.oculto {
+  display: none !important;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   4. CARTA 3D
+   contain: layout style paint → evita reflow global en
+   tableros de hasta 240 cartas simultáneas.
+   ──────────────────────────────────────────────────────────── */
+.carta-contenedor {
+  perspective: 1200px;
+  min-width:   var(--carta-min-ancho);
+  min-height:  var(--carta-min-alto);
+}
+
+.carta {
+  position:        relative;
+  width:           100%;
+  height:          100%;
+  transform-style: preserve-3d;
+  transition:      transform var(--trans-rapida);
+  transform:       rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) scale(var(--escala, 1));
+  /* CRÍTICO — contiene repaints dentro de la carta */
+  contain:         layout style paint;
+  cursor:          pointer;
+}
+
+.carta.activa {
+  --escala: 1.05;
+  box-shadow: 0 20px 60px rgba(255,215,0,0.4);
+}
+
+.carta .cara-frente,
+.carta .cara-dorso {
+  position:            absolute;
+  width:               100%;
+  height:              100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius:       12px;
+  overflow:            hidden;
+}
+
+/* La cara frente comienza girada (visible cuando la carta se "revela") */
+.carta .cara-frente { transform: rotateY(180deg); }
+
+/* Clase que aplica el flip completo */
+.carta.revelada {
+  transform: rotateX(var(--tilt-x)) rotateY(calc(180deg + var(--tilt-y)));
+}
+
+.carta img {
+  width:       100%;
+  height:      100%;
+  object-fit:  cover;
+}
+
+/* Dorso de carta — diseño temático MARVEL/DC con gradiente radial + estrella */
+.carta .cara-dorso {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,214,10,0.08) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(230,57,70,0.12) 0%, transparent 50%, rgba(76,201,240,0.12) 100%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 3px,
+      transparent 3px,
+      transparent 12px
+    ),
+    var(--color-fondo-card);
+  border: 2px solid var(--color-acento-oro);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       32px;
+  position:        relative;
+  box-shadow:      inset 0 0 20px rgba(0,0,0,0.3);
+}
+.carta .cara-dorso::before {
+  content: '⭐';
+  opacity: 0.85;
+  filter:  drop-shadow(0 0 8px rgba(255,214,10,0.5));
+}
+
+/* Carta durante el juego de batalla: muestra stats encima de la imagen */
+.carta-batalla-stats {
+  position:   absolute;
+  bottom:     0;
+  left:       0;
+  right:      0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  padding:    6px 8px 8px;
+  font-size:  10px;
+  color:      #fff;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   5. ANIMACIONES
+   ──────────────────────────────────────────────────────────── */
+
+/* Transición de pantalla */
+@keyframes pantallaFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Transición tipo "deslizar carta" — Mejora UX #10.
+   Usada en pantallas de juego activo para reforzar la sensación
+   de estar entrando a una partida de cartas. */
+@keyframes pantallaSlideIn {
+  from { opacity: 0; transform: translateX(40px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.pantalla.activa.pantalla-juego-activa {
+  animation: pantallaSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Match correcto en Memoria */
+@keyframes cartaMatch {
+  0%   { transform: rotateY(180deg) scale(1);
+         box-shadow: 0 0 0 rgba(255,215,0,0); }
+  50%  { transform: rotateY(180deg) scale(1.2);
+         box-shadow: 0 0 40px rgba(255,215,0,0.9); }
+  100% { transform: rotateY(180deg) scale(1);
+         box-shadow: 0 0 10px rgba(255,215,0,0.3); }
+}
+.carta.match-ok {
+  animation: cartaMatch 0.5s ease-out;
+}
+
+/* Fallo en Memoria (shake rojo) */
+@keyframes cartaFail {
+  0%, 100% { transform: translateX(0); border: 2px solid transparent; }
+  20%      { transform: translateX(-8px); border: 2px solid var(--color-acento-rojo); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-5px); }
+  80%      { transform: translateX(5px); }
+}
+.carta.match-fail {
+  animation: cartaFail 0.4s ease-out;
+}
+
+/* Slide de extracción de carta en Batalla */
+@keyframes slideFromDeck {
+  from { transform: translateX(-60px) rotateY(-20deg); opacity: 0; }
+  to   { transform: translateX(0) rotateY(0deg); opacity: 1; }
+}
+.carta.extrayendo {
+  animation: slideFromDeck 0.3s var(--trans-rapida);
+}
+
+/* Confetti de victoria */
+@keyframes confetti {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Pulsar del indicador de turno */
+@keyframes pulsarTurno {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+/* Spinner de carga */
+@keyframes girarSpinner {
+  to { transform: rotate(360deg); }
+}
+
+/* Toast aparece desde abajo */
+@keyframes toastEntrada {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   6. ZONAS TÁCTILES MÍNIMAS (WCAG 2.1 — 44×44px)
+   ──────────────────────────────────────────────────────────── */
+button,
+.carta-contenedor,
+.carta,
+.btn-jugador,
+.btn-opcion,
+.btn-filtro,
+.btn-modo {
+  min-width:  44px;
+  min-height: 44px;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   7. COMPONENTES UI REUTILIZABLES
+   ──────────────────────────────────────────────────────────── */
+
+/* Botón primario (acción principal de pantalla) */
+.btn-primario {
+  background:    var(--color-acento-oro);
+  color:         #0a0a1a;
+  font-weight:   700;
+  font-size:     16px;
+  padding:       14px 28px;
+  border-radius: 10px;
+  transition:    background var(--trans-rapida), transform var(--trans-rapida);
+}
+.btn-primario:hover,
+.btn-primario:focus-visible {
+  background: #ffe040;
+  transform: scale(1.03);
+}
+.btn-primario:active { transform: scale(0.97); }
+.btn-primario:disabled {
+  background: rgba(255,255,255,0.12);
+  color:      rgba(255,255,255,0.3);
+  cursor:     not-allowed;
+  transform:  none;
+}
+.btn-grande { font-size: 18px; padding: 16px 36px; }
+
+/* Botón secundario */
+.btn-secundario {
+  background:    var(--ui-fondo-panel);
+  color:         var(--color-texto);
+  font-weight:   600;
+  font-size:     14px;
+  padding:       10px 20px;
+  border-radius: 8px;
+  border:        1.5px solid var(--ui-borde);
+  transition:    background var(--trans-rapida), border-color var(--trans-rapida);
+}
+.btn-secundario:hover,
+.btn-secundario:focus-visible {
+  background:    rgba(255,255,255,0.1);
+  border-color:  var(--color-acento-azul);
+}
+
+/* Estado de carga inline en botones — Mejora UX #2.
+   Reemplaza el ícono ⏳ estático por un spinner girando real,
+   más claro para indicar "trabajando" vs "esperando acción". */
+.btn-cargando {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.btn-cargando::before {
+  content: '';
+  display: inline-block;
+  width:  13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: -2px;
+  animation: girarSpinner 0.7s linear infinite;
+}
+
+/* Botón volver (flecha ← en header de pantalla) */
+.btn-volver {
+  font-size:   14px;
+  font-weight: 600;
+  color:       var(--color-texto-dim);
+  padding:     8px 12px;
+  border-radius: 6px;
+  transition:  color var(--trans-rapida), background var(--trans-rapida);
+  align-self:  flex-start;
+}
+.btn-volver:hover { color: var(--color-texto); background: var(--ui-fondo-panel); }
+
+/* Botones de opción: seleccionable (config / filtros) */
+.btn-opcion {
+  display:       flex;
+  flex-direction:column;
+  align-items:   center;
+  justify-content:center;
+  gap:           4px;
+  padding:       12px 20px;
+  border-radius: 10px;
+  border:        2px solid var(--ui-borde);
+  background:    var(--ui-fondo-panel);
+  color:         var(--color-texto-dim);
+  font-size:     13px;
+  font-weight:   600;
+  transition:    all var(--trans-rapida);
+  text-align:    center;
+  flex:          1;
+}
+.btn-opcion:hover { border-color: rgba(255,255,255,0.3); color: var(--color-texto); }
+.btn-opcion.activo {
+  background:   var(--ui-btn-activo-bg);
+  border-color: var(--ui-btn-activo-borde);
+  color:        var(--ui-btn-activo-texto);
+}
+.opcion-titulo  { font-size: 15px; font-weight: 700; }
+.opcion-detalle { font-size: 11px; opacity: 0.75; }
+
+/* Input de nombre de jugador */
+.jugador-nombre-input {
+  background:   var(--ui-fondo-panel);
+  border:       1.5px solid var(--ui-borde);
+  border-radius:8px;
+  padding:      10px 14px;
+  font-size:    15px;
+  font-weight:  600;
+  color:        var(--color-texto);
+  width:        100%;
+  outline:      none;
+  transition:   border-color var(--trans-rapida);
+}
+.jugador-nombre-input:focus {
+  border-color: var(--color-acento-azul);
+  box-shadow:   0 0 0 3px rgba(76,201,240,0.12);
+}
+.jugador-nombre-input::placeholder {
+  color:   rgba(255,255,255,0.25);
+  font-weight: 400;
+}
+
+/* Fila de jugador (color + input) */
+.jugador-input-fila {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+}
+.jugador-color {
+  width:         18px;
+  height:        18px;
+  border-radius: 50%;
+  flex-shrink:   0;
+}
+.jugador-color-a { background: var(--turno-color-a); }
+.jugador-color-b { background: var(--turno-color-b); }
+.jugador-color-c { background: var(--turno-color-c); }
+.jugador-color-d { background: var(--turno-color-d); }
+
+/* Header de pantalla de juego */
+.pantalla-header {
+  display:       flex;
+  align-items:   center;
+  gap:           16px;
+  padding:       16px 20px 8px;
+  border-bottom: 1px solid var(--color-borde);
+  flex-shrink:   0;
+}
+.pantalla-titulo {
+  font-size:   20px;
+  font-weight: 700;
+  color:       var(--color-texto);
+}
+
+/* Slider de edad */
+.slider-edad-wrapper { position: relative; }
+#slider-edad {
+  -webkit-appearance: none;
+  width:         100%;
+  height:        6px;
+  border-radius: 3px;
+  background:    var(--ui-borde);
+  outline:       none;
+}
+#slider-edad::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width:         24px;
+  height:        24px;
+  border-radius: 50%;
+  background:    var(--color-acento-oro);
+  cursor:        pointer;
+}
+.edad-sugerencia {
+  margin-top: 8px;
+  font-size:  13px;
+  color:      var(--color-acento-azul);
+  font-weight:600;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   8. MENÚ PRINCIPAL
+   ──────────────────────────────────────────────────────────── */
+.menu-header {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  padding:         40px 20px 24px;
+  flex-shrink:     0;
+}
+
+.menu-titulo {
+  font-size:   clamp(36px, 8vw, 72px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-align:  center;
+}
+.titulo-marvel    { color: var(--color-acento-rojo); }
+.titulo-separador { color: rgba(255,255,255,0.4); margin: 0 12px; }
+.titulo-dc        { color: var(--color-acento-azul); }
+
+.menu-subtitulo {
+  font-size:    13px;
+  font-weight:  600;
+  color:        var(--color-texto-dim);
+  letter-spacing:0.1em;
+  margin-top:   8px;
+}
+
+/* Botones de modo de juego — grilla horizontal */
+.menu-botones {
+  display:         flex;
+  justify-content: center;
+  align-items:     stretch;
+  gap:             20px;
+  padding:         20px;
+  flex:            1;
+}
+
+.btn-modo {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content:center;
+  gap:            10px;
+  padding:        28px 32px;
+  border-radius:  16px;
+  border:         2px solid var(--ui-borde);
+  background:     var(--color-fondo-panel);
+  color:          var(--color-texto);
+  font-weight:    700;
+  min-width:      180px;
+  max-width:      240px;
+  flex:           1;
+  transition:     all var(--trans-normal);
+}
+.btn-modo:hover, .btn-modo:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.btn-modo:active { transform: translateY(-1px); }
+
+.btn-icono { font-size: 44px; }
+.btn-texto { font-size: 22px; font-weight: 800; }
+.btn-desc  { font-size: 12px; color: var(--color-texto-dim); }
+
+/* Colores de acento por modo */
+.btn-memoria:hover { border-color: var(--color-acento-azul);  }
+.btn-batalla:hover { border-color: var(--color-acento-rojo);  }
+.btn-info:hover    { border-color: var(--color-acento-verde); }
+
+/* Estado de carga de BD (bajo los botones) */
+.menu-estado-bd {
+  text-align:  center;
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--color-texto-dim);
+  padding:     8px;
+  flex-shrink: 0;
+}
+
+/* Indicador sutil de pronunciaciones cargando (no bloquea el juego) */
+.menu-estado-pron {
+  text-align:  center;
+  font-size:   11px;
+  font-weight: 600;
+  color:       var(--color-acento-azul);
+  padding:     4px 8px;
+  flex-shrink: 0;
+  opacity:     0.8;
+  transition:  opacity 0.4s ease-out;
+}
+
+/* Footer con contador de personajes */
+.menu-footer {
+  text-align:  center;
+  font-size:   12px;
+  color:       rgba(255,255,255,0.2);
+  padding:     12px;
+  flex-shrink: 0;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   9. PANTALLAS DE CONFIGURACIÓN (compartidas Memoria y Batalla)
+   ──────────────────────────────────────────────────────────── */
+.config-seccion {
+  flex:       1;
+  overflow-y: auto;
+  padding:    20px;
+  display:    flex;
+  flex-direction: column;
+  gap:        24px;
+}
+
+.config-grupo {
+  background:   var(--color-fondo-panel);
+  border:       1px solid var(--color-borde);
+  border-radius:12px;
+  padding:      18px 20px;
+}
+
+.config-label {
+  font-size:     12px;
+  font-weight:   700;
+  color:         var(--color-texto-dim);
+  letter-spacing:0.1em;
+  margin-bottom: 12px;
+}
+
+.config-opciones {
+  display: flex;
+  gap:     10px;
+  flex-wrap: wrap;
+}
+
+.jugadores-lista {
+  display:       flex;
+  flex-direction:column;
+  gap:           10px;
+  margin-bottom: 12px;
+}
+
+.config-acciones-jugadores {
+  display: flex;
+  gap: 8px;
+}
+
+.config-edad { gap: 0; }
+
+/* VS separador en configuración de batalla */
+.vs-separador {
+  text-align:  center;
+  font-size:   20px;
+  font-weight: 800;
+  color:       var(--color-texto-dim);
+  padding:     8px 0;
+}
+.batalla-jugadores {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+/* Footer de config con botón iniciar */
+.config-footer {
+  display:         flex;
+  justify-content: center;
+  padding:         20px;
+  flex-shrink:     0;
+  border-top:      1px solid var(--color-borde);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   10. TABLERO DE MEMORIA
+   ──────────────────────────────────────────────────────────── */
+
+/* Layout pantalla memoria: tablero ocupa todo, marcador arriba fijo */
+#pantalla-memoria-juego {
+  flex-direction: column;
+}
+
+/* Marcador ARRIBA — fijo, no tapa cartas */
+.marcador-memoria {
+  display:         flex;
+  justify-content: space-around;
+  align-items:     center;
+  padding:         8px 16px;
+  background:      var(--color-fondo-panel);
+  border-bottom:   1px solid var(--color-borde);
+  flex-shrink:     0;
+  gap:             12px;
+  flex-wrap:       wrap;
+}
+.marcador-jugador {
+  display:        flex;
+  align-items:    center;
+  gap:            8px;
+  padding:        4px 12px;
+  border-radius:  6px;
+  background:     rgba(255,255,255,0.05);
+  border:         2px solid transparent;
+  transition:     all var(--trans-normal);
+}
+.marcador-jugador-nombre {
+  font-size:   12px;
+  font-weight: 700;
+  color:       var(--color-texto-dim);
+}
+.marcador-jugador-pts {
+  font-size:   20px;
+  font-weight: 800;
+  color:       var(--color-acento-oro);
+  min-width:   28px;
+  text-align:  center;
+}
+
+/* Pulso visual mientras el contador de puntos sube animado — Mejora UX #6 */
+.marcador-jugador-pts.puntos-animando,
+.zona-score.puntos-animando,
+.arena-score.puntos-animando {
+  color:      #ffe88a;
+  text-shadow: 0 0 12px rgba(255,214,10,0.6);
+}
+
+/* Resaltado del jugador con el turno activo — borde pulsante + fondo */
+.marcador-jugador.marcador-activo {
+  background: rgba(255,214,10,0.15);
+  border-color: var(--color-acento-oro);
+  box-shadow: 0 0 16px rgba(255,214,10,0.35);
+  animation:  pulsarTurno 1.6s ease-in-out infinite;
+  transform:  scale(1.06);
+}
+.marcador-jugador.marcador-activo .marcador-jugador-nombre {
+  color: var(--color-acento-oro);
+}
+
+/* Tablero scrolleable — debajo del marcador */
+.tablero-memoria-wrapper {
+  flex:       1;
+  overflow-y: auto;
+  padding:    10px;
+  /* Scrollbar fino y discreto */
+  scrollbar-width:      thin;
+  scrollbar-color:      rgba(255,255,255,0.15) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.tablero-memoria-wrapper::-webkit-scrollbar       { width: 4px; }
+.tablero-memoria-wrapper::-webkit-scrollbar-track  { background: transparent; }
+.tablero-memoria-wrapper::-webkit-scrollbar-thumb  {
+  background:    rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+
+/* Grid responsivo */
+.tablero-memoria {
+  display: grid;
+  gap:     8px;
+  width:   100%;
+}
+
+/* Carta en tablero de Memoria */
+.carta-memoria {
+  cursor:   pointer;
+  position: relative;
+}
+.carta-memoria.carta-encontrada {
+  opacity:        0.45;
+  cursor:         default;
+  filter:         brightness(0.55) saturate(0.3);
+  pointer-events: none;
+}
+.carta-memoria.carta-encontrada .carta {
+  box-shadow: 0 0 10px rgba(87,204,153,0.4);
+}
+
+/* Overlay de pausa */
+.overlay-pausa {
+  position:         fixed;
+  inset:            0;
+  background:       rgba(0,0,0,0.75);
+  backdrop-filter:  blur(6px);
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  z-index:          300;
+}
+.pausa-contenido {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            16px;
+  padding:        36px 40px;
+  background:     var(--color-fondo-panel);
+  border:         1px solid var(--color-borde);
+  border-radius:  16px;
+}
+.pausa-titulo {
+  font-size:   28px;
+  font-weight: 800;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   11. ARENA DE BATALLA
+   ──────────────────────────────────────────────────────────── */
+/* ── ARENA DE BATALLA ── */
+.arena-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         10px 20px;
+  background:      var(--color-fondo-panel);
+  border-bottom:   1px solid var(--color-borde);
+  flex-shrink:     0;
+  gap:             12px;
+}
+.arena-header-jugador {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  flex:        1;
+}
+.arena-header-b { justify-content: flex-end; }
+.arena-nombre {
+  font-size:   15px;
+  font-weight: 700;
+  color:       var(--color-texto);
+}
+.arena-score {
+  font-size:   28px;
+  font-weight: 800;
+  color:       var(--color-acento-oro);
+  min-width:   32px;
+  text-align:  center;
+}
+.arena-status {
+  font-size:   15px;
+  font-weight: 800;
+  color:       var(--color-texto);
+  text-align:  center;
+  flex-shrink: 0;
+  padding:     6px 16px;
+  background:  rgba(255,214,10,0.1);
+  border:      1px solid rgba(255,214,10,0.25);
+  border-radius: 8px;
+}
+
+/* Barra de progreso de rondas/preguntas — Mejora UX #4.
+   Más visible que solo el texto "RONDA 3 DE 5". */
+.arena-progreso-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.arena-progreso-texto {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-texto-dim);
+  letter-spacing: 0.05em;
+}
+.arena-progreso-barra {
+  width: 100px;
+  height: 5px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.arena-progreso-relleno {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-acento-oro), #ffe88a);
+  border-radius: 3px;
+  transition: width 0.4s ease-out;
+}
+
+.arena-batalla {
+  display:  flex;
+  flex:     1;
+  overflow: hidden;
+  padding:  12px;
+  gap:      12px;
+}
+
+/* Zona de cada jugador */
+.zona-jugador {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            12px;
+  flex:           1;
+  overflow-y:     auto;
+  padding:        8px;
+  background:     var(--color-fondo-panel);
+  border-radius:  12px;
+  border:         1.5px solid var(--color-borde);
+}
+.zona-a { border-color: rgba(230,57,70,0.35); }
+.zona-b { border-color: rgba(76,201,240,0.35); }
+.zona-ganadora {
+  border-color: var(--color-acento-oro) !important;
+  box-shadow:   0 0 24px rgba(255,214,10,0.3);
+  animation:    pulsarTurno 1s ease-in-out 3;
+}
+
+/* Cartas en zona de batalla */
+.zona-cartas {
+  display:         flex;
+  flex-wrap:       wrap;
+  gap:             8px;
+  justify-content: center;
+}
+.carta-batalla { width: 90px; height: 125px; }
+
+/* Tablet landscape (≥900px): cartas más grandes */
+@media (orientation: landscape) and (min-width: 900px) {
+  .carta-batalla { width: 130px; height: 180px; }
+  .carta-batalla-stats { font-size: 10px; padding: 8px 10px 10px; }
+}
+
+/* Zona central: mazo + log */
+.zona-central {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            14px;
+  flex-shrink:    0;
+  width:          160px;
+}
+
+/* Mazo de extracción */
+.mazo-batalla {
+  position:      relative;
+  width:         100px;
+  height:        140px;
+  border-radius: 12px;
+  background:    var(--color-fondo-card);
+  border:        2px solid var(--color-acento-oro);
+  cursor:        pointer;
+  display:       flex;
+  align-items:   center;
+  justify-content:center;
+  transition:    transform var(--trans-rapida), box-shadow var(--trans-rapida);
+  flex-shrink:   0;
+}
+.mazo-batalla:hover {
+  transform:  scale(1.06);
+  box-shadow: 0 0 30px rgba(255,214,10,0.35);
+}
+.mazo-batalla:active { transform: scale(0.98); }
+.mazo-dorso {
+  width:         90%;
+  height:        90%;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,214,10,0.06) 0px,
+      rgba(255,214,10,0.06) 2px,
+      transparent 2px,
+      transparent 10px
+    );
+  border: 1px solid rgba(255,214,10,0.2);
+}
+.mazo-contador {
+  position:    absolute;
+  bottom:      8px;
+  right:       8px;
+  font-size:   11px;
+  font-weight: 700;
+  color:       var(--color-acento-oro);
+}
+
+/* Log de resultados de rondas */
+.log-batalla {
+  flex:       1;
+  overflow-y: auto;
+  width:      100%;
+  font-size:  12px;
+  color:      var(--color-texto-dim);
+  display:    flex;
+  flex-direction: column;
+  gap:        6px;
+}
+.log-entrada {
+  background:   var(--color-fondo-card);
+  border-radius:6px;
+  padding:      6px 8px;
+  border-left:  3px solid var(--color-borde);
+  font-size:    11px;
+}
+.log-entrada.ganador-a { border-color: var(--turno-color-a); }
+.log-entrada.ganador-b { border-color: var(--turno-color-b); }
+
+/* Botón de narración */
+.btn-narrar {
+  width:     100%;
+  font-size: 13px;
+  padding:   10px 12px;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   11b. MODO DRAFT
+   ──────────────────────────────────────────────────────────── */
+
+/* Overlay que cubre la arena durante la selección */
+.draft-overlay-seleccion {
+  position:        absolute;
+  inset:           0;
+  background:      rgba(10,10,26,0.96);
+  backdrop-filter: blur(4px);
+  z-index:         50;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             20px;
+  padding:         20px;
+}
+#pantalla-draft-juego { position: relative; }
+
+.draft-overlay-header {
+  text-align: center;
+  flex-shrink: 0;
+}
+.draft-turno-label {
+  font-size:    20px;
+  font-weight:  800;
+  padding:      8px 24px;
+  border-radius:8px;
+  border:       2px solid;
+  display:      inline-block;
+  animation:    pulsarTurno 2s ease-in-out infinite;
+  margin-bottom:6px;
+}
+.draft-overlay-instruccion {
+  font-size:  13px;
+  color:      rgba(255,255,255,0.5);
+  margin-top: 4px;
+}
+
+/* Grid de 5 opciones — todas visibles, sin scroll */
+.draft-opciones-grid {
+  display:               grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap:                   14px;
+  width:                 100%;
+  max-width:             900px;
+}
+
+/* Cada carta opción */
+.draft-opcion {
+  background:   var(--color-fondo-card);
+  border:       2px solid var(--color-borde);
+  border-radius:12px;
+  overflow:     hidden;
+  cursor:       pointer;
+  transition:   transform var(--trans-rapida), border-color var(--trans-rapida),
+                box-shadow var(--trans-rapida);
+  display:      flex;
+  flex-direction: column;
+}
+.draft-opcion:hover {
+  transform:    translateY(-6px) scale(1.04);
+  border-color: var(--color-acento-oro);
+  box-shadow:   0 8px 30px rgba(255,214,10,0.35);
+}
+.draft-opcion:active { transform: scale(0.97); }
+
+.draft-opcion img {
+  width:       100%;
+  aspect-ratio: 3/4;
+  object-fit:  cover;
+  display:     block;
+}
+.draft-opcion-info {
+  padding:     8px;
+  text-align:  center;
+}
+.draft-opcion-nombre {
+  font-size:   11px;
+  font-weight: 700;
+  color:       var(--color-texto);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.draft-opcion-pwr {
+  font-size:   12px;
+  font-weight: 800;
+  color:       var(--color-acento-oro);
+}
+
+.btn-draft:hover { border-color: var(--color-acento-oro); }
+.btn-bingo:hover { border-color: #a855f7; }
+
+/* ────────────────────────────────────────────────────────────
+   12. MODO INFO
+   ──────────────────────────────────────────────────────────── */
+.info-controles {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  padding:     12px 20px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-borde);
+  flex-wrap:   wrap;
+}
+
+/* Buscador */
+.info-buscador-wrapper {
+  position:  relative;
+  flex:      1;
+  min-width: 200px;
+}
+.info-buscador-icono {
+  position:  absolute;
+  left:      12px;
+  top:       50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+}
+.info-buscador-input {
+  width:         100%;
+  padding:       10px 16px 10px 40px;
+  background:    var(--color-fondo-panel);
+  border:        1.5px solid var(--ui-borde);
+  border-radius: 8px;
+  font-size:     14px;
+  color:         var(--color-texto);
+  outline:       none;
+  transition:    border-color var(--trans-rapida);
+}
+.info-buscador-input:focus { border-color: var(--color-acento-azul); }
+.info-buscador-input::placeholder { color: rgba(255,255,255,0.25); }
+
+/* Filtros de universo */
+.info-filtros { display: flex; gap: 8px; }
+.btn-filtro {
+  padding:       8px 16px;
+  border-radius: 6px;
+  border:        1.5px solid var(--ui-borde);
+  background:    var(--ui-fondo-panel);
+  color:         var(--color-texto-dim);
+  font-size:     13px;
+  font-weight:   600;
+  transition:    all var(--trans-rapida);
+}
+.btn-filtro:hover { color: var(--color-texto); border-color: rgba(255,255,255,0.3); }
+.btn-filtro.activo {
+  border-color: var(--color-acento-azul);
+  color:        var(--color-acento-azul);
+  background:   rgba(76,201,240,0.1);
+}
+
+/* Galería de personajes */
+.info-galeria {
+  flex:       1;
+  overflow-y: auto;
+  padding:    16px 20px;
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        14px;
+  align-content: flex-start;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Card de personaje en galería — ancho fijo para que la imagen no se deforme */
+.info-card {
+  background:   var(--color-fondo-panel);
+  border:       1px solid var(--color-borde);
+  border-radius:10px;
+  overflow:     hidden;
+  cursor:       pointer;
+  transition:   transform var(--trans-rapida), border-color var(--trans-rapida);
+  display:      flex;
+  flex-direction:column;
+  width:        150px;
+  flex-shrink:  0;
+}
+.info-card:hover {
+  transform:    translateY(-3px);
+  border-color: var(--color-acento-azul);
+}
+.info-card-img {
+  width:      150px;
+  height:     200px;
+  object-fit: cover;
+  background: var(--color-fondo-card);
+  display:    block;
+}
+.info-card-img-fallback {
+  width:           150px;
+  height:          200px;
+  background:      var(--color-fondo-card);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       40px;
+  color:           rgba(255,255,255,0.15);
+}
+.info-card-body {
+  padding:     8px 10px;
+  flex:        1;
+  display:     flex;
+  flex-direction:column;
+  gap:         4px;
+}
+.info-card-nombre {
+  font-size:   11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.info-card-universo {
+  font-size:   10px;
+  font-weight: 600;
+}
+.universo-marvel { color: var(--color-acento-rojo); }
+.universo-dc     { color: var(--color-acento-azul); }
+
+/* Modal de detalle de personaje */
+.info-modal-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  z-index:         500;
+  padding:         20px;
+}
+.info-modal-contenido {
+  background:   var(--color-fondo-panel);
+  border:       1px solid var(--color-borde);
+  border-radius:16px;
+  padding:      28px;
+  max-width:    680px;
+  width:        100%;
+  max-height:   85vh;
+  overflow-y:   auto;
+  display:      flex;
+  flex-direction:column;
+  gap:          18px;
+  position:     relative;
+}
+.info-modal-cerrar {
+  position:    absolute;
+  top:         14px;
+  right:       14px;
+  width:       36px;
+  height:      36px;
+  border-radius:50%;
+  background:  rgba(255,255,255,0.1);
+  font-size:   18px;
+  display:     flex;
+  align-items: center;
+  justify-content:center;
+  transition:  background var(--trans-rapida);
+}
+.info-modal-cerrar:hover { background: rgba(255,255,255,0.2); }
+
+/* Stats en el modal de Info */
+.info-stats-grid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap:                   10px;
+}
+.info-stat-item {
+  background:   var(--color-fondo-card);
+  border-radius:8px;
+  padding:      10px 8px;
+  text-align:   center;
+  display:      flex;
+  flex-direction: column;
+  align-items:  center;
+  gap:          4px;
+  overflow:     hidden;
+}
+.info-stat-nombre {
+  font-size:   9px;
+  color:       var(--color-texto-dim);
+  line-height: 1.3;
+  word-break:  break-word;
+  hyphens:     auto;
+  text-align:  center;
+  width:       100%;
+}
+.info-stat-valor {
+  font-size:   22px;
+  font-weight: 700;
+  color:       var(--color-acento-oro);
+  line-height: 1;
+}
+
+/* Barra de stat (visual) */
+.stat-barra-fondo {
+  height:       6px;
+  background:   rgba(255,255,255,0.1);
+  border-radius:3px;
+  margin-top:   4px;
+  overflow:     hidden;
+}
+.stat-barra-relleno {
+  height:       100%;
+  border-radius:3px;
+  background:   var(--color-acento-azul);
+  transition:   width 0.4s ease-out;
+}
+
+/* Badge Wikipedia / Local */
+.badge-fuente {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           4px;
+  padding:       3px 10px;
+  border-radius: 20px;
+  font-size:     11px;
+  font-weight:   600;
+}
+.badge-wikipedia { background: rgba(76,201,240,0.15); color: var(--color-acento-azul); }
+.badge-local     { background: rgba(87,204,153,0.15); color: var(--color-acento-verde); }
+.badge-fallback  { background: rgba(255,255,255,0.08); color: var(--color-texto-dim); }
+
+
+/* ────────────────────────────────────────────────────────────
+   12b. MODO BINGO
+   ──────────────────────────────────────────────────────────── */
+#bingo-juego {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+}
+
+/* Carta cantada + botón */
+.bingo-carta-actual {
+  display:         flex;
+  align-items:     center;
+  gap:             20px;
+  padding:         12px 20px;
+  background:      var(--color-fondo-panel);
+  border-bottom:   1px solid var(--color-borde);
+  flex-shrink:     0;
+}
+
+.bingo-carta-img-wrapper {
+  width:         80px;
+  height:        110px;
+  border-radius: 10px;
+  overflow:      hidden;
+  border:        2px solid var(--color-acento-oro);
+  flex-shrink:   0;
+  position:      relative;
+  background:    var(--color-fondo-card);
+}
+
+/* Placeholder mientras no hay carta cantada */
+.bingo-carta-placeholder {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           100%;
+  height:          100%;
+  font-size:       32px;
+  opacity:         0.35;
+}
+.bingo-carta-img-vacia .bingo-carta-nombre { display: none; }
+
+.bingo-carta-nombre {
+  position:    absolute;
+  bottom:      0; left: 0; right: 0;
+  background:  rgba(0,0,0,0.8);
+  font-size:   8px;
+  font-weight: 700;
+  text-align:  center;
+  padding:     3px 4px;
+  line-height: 1.2;
+}
+
+.bingo-controles {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+/* Cartones scrolleables */
+.bingo-cartones {
+  flex:            1;
+  overflow-y:      auto;
+  padding:         12px 16px;
+  display:         flex;
+  flex-wrap:       wrap;
+  gap:             16px;
+  justify-content: center;
+  align-content:   flex-start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+/* Un cartón */
+.bingo-carton {
+  background:   var(--color-fondo-panel);
+  border:       1.5px solid var(--color-borde);
+  border-radius:12px;
+  overflow:     hidden;
+  flex-shrink:  0;
+}
+
+.bingo-carton-header {
+  text-align:  center;
+  font-size:   14px;
+  font-weight: 700;
+  padding:     8px 12px;
+  background:  rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+/* Grid 5×5 */
+.bingo-grid {
+  display:               grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap:                   2px;
+  padding:               6px;
+}
+
+/* Casilla individual */
+.bingo-casilla {
+  position:        relative;
+  width:           90px;
+  height:          90px;
+  border-radius:   8px;
+  overflow:        hidden;
+  background:      var(--color-fondo-card);
+  border:          1.5px solid var(--color-borde);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  transition:      all var(--trans-rapida);
+}
+.bingo-casilla-img {
+  width:  100%;
+  height: 66px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bingo-casilla-img img { width: 100%; height: 100%; object-fit: cover; }
+.bingo-casilla-nombre {
+  font-size:   9px;
+  font-weight: 700;
+  text-align:  center;
+  padding:     3px 3px 0;
+  line-height: 1.2;
+  color:       rgba(255,255,255,0.75);
+  overflow:    hidden;
+  max-height:  24px;
+}
+
+/* Casilla marcada */
+.bingo-casilla.bingo-marcada {
+  background:  rgba(87,204,153,0.2);
+  border-color:var(--color-acento-verde);
+}
+.bingo-casilla.bingo-marcada .bingo-casilla-img img {
+  opacity: 0.7;
+  filter:  brightness(0.8);
+}
+.bingo-check {
+  position:  absolute;
+  top:       50%;
+  left:      50%;
+  transform: translate(-50%,-50%);
+  font-size: 32px;
+  color:     var(--color-acento-verde);
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(87,204,153,0.8);
+  pointer-events: none;
+}
+
+/* Casilla libre (centro) */
+.bingo-libre {
+  background:  rgba(255,214,10,0.15);
+  border-color:var(--color-acento-oro);
+  color:       var(--color-acento-oro);
+}
+
+/* Tablet landscape (BMAX 2408px): cartones bien grandes */
+@media (orientation: landscape) and (min-width: 900px) {
+  .bingo-casilla     { width: 110px; height: 110px; }
+  .bingo-casilla-img { height: 80px; }
+  .bingo-casilla-nombre { font-size: 10px; max-height: 28px; }
+  .bingo-check       { font-size: 38px; }
+  .bingo-carton-header { font-size: 16px; padding: 10px 14px; }
+}
+
+/* ── ANIMACIÓN DE VICTORIA — cartón completo destella ── */
+@keyframes bingoVictoria {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(255,214,10,0);
+    transform:  scale(1);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(255,214,10,0.9), 0 0 100px rgba(255,214,10,0.4);
+    transform:  scale(1.03);
+  }
+}
+.bingo-carton.bingo-ganador {
+  animation:    bingoVictoria 0.8s ease-in-out 4;
+  border-color: var(--color-acento-oro);
+  border-width: 3px;
+  position:     relative;
+  z-index:      10;
+}
+.bingo-carton.bingo-ganador .bingo-carton-header {
+  background: linear-gradient(90deg, rgba(255,214,10,0.3), rgba(255,214,10,0.1));
+}
+
+/* Destello individual de cada casilla cuando el cartón gana */
+@keyframes bingoCasillaDestello {
+  0%, 100% { background: rgba(87,204,153,0.2); }
+  50%      { background: rgba(255,214,10,0.5); }
+}
+.bingo-carton.bingo-ganador .bingo-casilla {
+  animation: bingoCasillaDestello 0.8s ease-in-out 4;
+}
+
+/* Cartón ganador */
+.bingo-ganador-carton {
+  border-color: var(--color-acento-oro) !important;
+  box-shadow:   0 0 40px rgba(255,214,10,0.6);
+  animation:    pulsarTurno 0.5s ease-in-out infinite;
+}
+.bingo-casilla-victoria {
+  animation: bingoVictoria 0.6s ease-out forwards;
+}
+@keyframes bingoVictoria {
+  0%   { transform: scale(1);    background: var(--color-fondo-card); }
+  40%  { transform: scale(1.2);  background: rgba(255,214,10,0.4); border-color: var(--color-acento-oro); }
+  100% { transform: scale(1);    background: rgba(255,214,10,0.15); border-color: var(--color-acento-oro); }
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   12c. MODO TRIVIA
+   ──────────────────────────────────────────────────────────── */
+.btn-trivia:hover { border-color: #c084fc; }
+
+/* Contenedor principal de la pregunta — scrolleable por si la
+   explicación + botón no entran en pantallas chicas */
+.trivia-pregunta-contenedor {
+  flex:       1;
+  overflow-y: auto;
+  padding:    20px;
+  display:    flex;
+  flex-direction: column;
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Card central con la pregunta */
+.trivia-card {
+  width:      100%;
+  max-width:  600px;
+  display:    flex;
+  flex-direction: column;
+  align-items: center;
+  gap:        18px;
+}
+
+.trivia-img-personaje {
+  width:         130px;
+  height:        173px;
+  object-fit:    cover;
+  border-radius: 14px;
+  border:        3px solid var(--color-acento-oro);
+  box-shadow:    0 8px 30px rgba(255,214,10,0.25);
+}
+.trivia-img-fallback {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       48px;
+  background:      var(--color-fondo-card);
+}
+
+.trivia-pregunta-texto {
+  font-size:   18px;
+  font-weight: 800;
+  text-align:  center;
+  line-height: 1.4;
+  padding:     0 10px;
+}
+
+/* Grid de opciones múltiple choice */
+.trivia-opciones {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   12px;
+  width:                 100%;
+}
+
+.trivia-opcion {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       16px 18px;
+  background:    var(--color-fondo-card);
+  border:        2px solid var(--color-borde);
+  border-radius: 12px;
+  font-size:     14px;
+  font-weight:   700;
+  color:         var(--color-texto);
+  text-align:    left;
+  transition:    all var(--trans-rapida);
+  cursor:        pointer;
+}
+.trivia-opcion:hover {
+  border-color: var(--color-acento-azul);
+  transform:    translateY(-2px);
+}
+.trivia-opcion:active { transform: scale(0.98); }
+
+.trivia-opcion-letra {
+  width:           28px;
+  height:          28px;
+  border-radius:   50%;
+  background:      rgba(255,255,255,0.1);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       13px;
+  flex-shrink:     0;
+}
+.trivia-opcion-texto {
+  flex: 1;
+  line-height: 1.3;
+}
+
+/* Verdadero / Falso — dos botones grandes apilados horizontalmente */
+.trivia-opciones-vf {
+  grid-template-columns: 1fr 1fr;
+}
+.trivia-opcion-vf {
+  justify-content: center;
+  font-size:       18px;
+  padding:         22px 18px;
+}
+.trivia-opcion-v { border-color: rgba(87,204,153,0.4); background: rgba(87,204,153,0.08); }
+.trivia-opcion-v:hover { border-color: var(--color-acento-verde); }
+.trivia-opcion-f { border-color: rgba(230,57,70,0.4); background: rgba(230,57,70,0.08); }
+.trivia-opcion-f:hover { border-color: var(--color-acento-rojo); }
+
+/* ── Opciones visuales (imagen + nombre) para preguntas tipo "¿quién...?" ── */
+.trivia-opciones-visual {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.trivia-opcion-visual {
+  flex-direction: column;
+  align-items:    center;
+  padding:        10px;
+  gap:            6px;
+  position:       relative;
+  border-width:   3px;
+  border-color:   var(--color-opcion, var(--color-borde));
+}
+.trivia-opcion-visual:hover {
+  border-color: var(--color-opcion);
+  box-shadow:   0 4px 20px color-mix(in srgb, var(--color-opcion) 35%, transparent);
+}
+.trivia-opcion-visual .trivia-opcion-letra {
+  position:  absolute;
+  top:       6px;
+  left:      6px;
+  width:     26px;
+  height:    26px;
+  font-size: 12px;
+  z-index:   2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.trivia-opcion-visual-img {
+  width:         100%;
+  aspect-ratio:  3/4;
+  border-radius: 8px;
+  overflow:      hidden;
+  background:    var(--color-fondo-card);
+}
+.trivia-opcion-visual-img img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.trivia-opcion-visual-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+}
+.trivia-opcion-visual-nombre {
+  font-size:   11px;
+  font-weight: 700;
+  text-align:  center;
+  line-height: 1.2;
+}
+
+/* Feedback visual de correcta/incorrecta */
+.trivia-opcion.trivia-correcta {
+  background:   rgba(87,204,153,0.2);
+  border-color: var(--color-acento-verde) !important;
+  box-shadow:   0 0 20px rgba(87,204,153,0.3);
+}
+.trivia-opcion.trivia-incorrecta {
+  background:   rgba(230,57,70,0.2);
+  border-color: var(--color-acento-rojo) !important;
+}
+
+/* Explicación post-respuesta */
+.trivia-explicacion {
+  width:         100%;
+  max-width:     600px;
+  margin-top:    18px;
+  padding:       18px 20px;
+  border-radius: 14px;
+  display:       flex;
+  flex-direction: column;
+  align-items:   center;
+  gap:           12px;
+  text-align:    center;
+  animation:     pantallaFadeIn 0.3s ease-out;
+}
+.trivia-explicacion-ok {
+  background: rgba(87,204,153,0.1);
+  border: 2px solid rgba(87,204,153,0.4);
+}
+.trivia-explicacion-fail {
+  background: rgba(230,57,70,0.1);
+  border: 2px solid rgba(230,57,70,0.4);
+}
+.trivia-explicacion-icono { font-size: 32px; }
+.trivia-explicacion-texto {
+  font-size:   14px;
+  font-weight: 600;
+  color:       var(--color-texto);
+  line-height: 1.4;
+}
+.trivia-explicacion-botones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.trivia-btn-repetir {
+  width:  44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Responsive: una sola columna en portrait angosto */
+@media (orientation: portrait) and (max-width: 500px) {
+  .trivia-opciones { grid-template-columns: 1fr; }
+  .trivia-img-personaje { width: 100px; height: 133px; }
+  .trivia-pregunta-texto { font-size: 16px; }
+}
+
+/* Tablet landscape: más espacio, opciones más grandes */
+@media (orientation: landscape) and (min-width: 900px) {
+  .trivia-img-personaje { width: 160px; height: 213px; }
+  .trivia-pregunta-texto { font-size: 22px; }
+  .trivia-opcion { font-size: 16px; padding: 20px 22px; }
+  .trivia-opcion-vf { font-size: 22px; padding: 28px 22px; }
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   13. CAPAS GLOBALES
+   ──────────────────────────────────────────────────────────── */
+
+/* Spinner de carga inicial */
+#spinner-global {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(10,10,26,0.92);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             20px;
+  z-index:         900;
+}
+.spinner-circulo {
+  width:        56px;
+  height:       56px;
+  border:       5px solid rgba(255,255,255,0.12);
+  border-top:   5px solid var(--color-acento-oro);
+  border-radius:50%;
+  animation:    girarSpinner 0.9s linear infinite;
+}
+.spinner-mensaje {
+  font-size:   14px;
+  font-weight: 600;
+  color:       var(--color-texto-dim);
+  letter-spacing:0.1em;
+}
+
+/* Modal genérico */
+.modal-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  z-index:         800;
+  padding:         20px;
+}
+.modal-caja {
+  background:   var(--color-fondo-panel);
+  border:       1px solid var(--color-borde);
+  border-radius:14px;
+  padding:      28px 32px;
+  max-width:    440px;
+  width:        100%;
+  display:      flex;
+  flex-direction:column;
+  gap:          20px;
+}
+.modal-mensaje {
+  font-size:   17px;
+  font-weight: 700;
+  text-align:  center;
+  line-height: 1.4;
+}
+.modal-botones {
+  display: flex;
+  gap:     10px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+
+/* ── PODIO VISUAL DE FIN DE PARTIDA — Mejora UX #11 ── */
+.podio-titulo {
+  font-size:   19px;
+  font-weight: 800;
+  text-align:  center;
+  line-height: 1.4;
+}
+.podio-filas {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+.podio-fila {
+  display:       flex;
+  align-items:   center;
+  gap:           12px;
+  padding:       10px 14px;
+  border-radius: 10px;
+  background:    rgba(255,255,255,0.04);
+  border:        1.5px solid var(--color-borde);
+}
+.podio-fila.podio-primero {
+  background:   rgba(255,214,10,0.12);
+  border-color: var(--color-acento-oro);
+  box-shadow:   0 0 16px rgba(255,214,10,0.2);
+  transform:    scale(1.03);
+}
+.podio-medalla {
+  font-size:   26px;
+  flex-shrink: 0;
+  width:       32px;
+  text-align:  center;
+}
+.podio-nombre {
+  flex:        1;
+  font-size:   15px;
+  font-weight: 800;
+}
+.podio-puntos {
+  font-size:   16px;
+  font-weight: 800;
+  color:       var(--color-acento-oro);
+  flex-shrink: 0;
+}
+
+/* Toast notifications */
+.toast-container {
+  position:       fixed;
+  bottom:         24px;
+  left:           50%;
+  transform:      translateX(-50%);
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  z-index:        700;
+  pointer-events: none;
+}
+.toast {
+  background:   rgba(30,30,60,0.95);
+  border:       1px solid var(--color-acento-azul);
+  color:        var(--color-texto);
+  padding:      12px 22px;
+  border-radius:8px;
+  font-size:    14px;
+  font-weight:  600;
+  white-space:  nowrap;
+  animation:    toastEntrada 0.25s ease-out;
+  box-shadow:   0 4px 20px rgba(0,0,0,0.5);
+}
+
+/* Indicador de turno */
+#indicador-turno {
+  padding:    10px 20px;
+  font-size:  clamp(16px, 2.5vw, 22px);
+  font-weight:700;
+  text-align: center;
+  animation:  pulsarTurno 2s ease-in-out infinite;
+  letter-spacing: 0.05em;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+#indicador-turno.jugador-a { background: var(--turno-color-a); }
+#indicador-turno.jugador-b { background: var(--turno-color-b); }
+#indicador-turno.jugador-c { background: var(--turno-color-c); }
+#indicador-turno.jugador-d { background: var(--turno-color-d); }
+
+/* Pausa integrada en el header de batalla */
+.btn-pausa-header {
+  width:         40px;
+  height:        40px;
+  border-radius: 8px;
+  background:    rgba(255,255,255,0.1);
+  border:        1.5px solid rgba(255,255,255,0.2);
+  color:         white;
+  font-size:     16px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  flex-shrink:   0;
+  transition:    background var(--trans-rapida);
+}
+.btn-pausa-header:hover { background: rgba(255,255,255,0.2); }
+
+/* Ocultar el botón pausa flotante global cuando estamos en batalla
+   (se reemplaza por el del header) */
+#pantalla-batalla-juego ~ #btn-pausa { display: none !important; }
+
+/* Barra de progreso de narración */
+.barra-narracion {
+  position:     fixed;
+  bottom:       0;
+  left:         0;
+  right:        0;
+  background:   var(--color-fondo-panel);
+  border-top:   1px solid var(--color-borde);
+  padding:      10px 16px;
+  z-index:      150;
+  display:      flex;
+  align-items:  center;
+  gap:          12px;
+}
+.barra-narracion-progreso {
+  flex:         1;
+  height:       6px;
+  background:   rgba(255,255,255,0.1);
+  border-radius:3px;
+  overflow:     hidden;
+  position:     relative;
+}
+.barra-narracion-progreso::after {
+  content:      '';
+  position:     absolute;
+  top:          0; left: 0; bottom: 0;
+  width:        var(--progreso, 0%);
+  background:   var(--color-acento-azul);
+  border-radius:3px;
+  transition:   width 0.3s linear;
+}
+.barra-narracion-controles {
+  display: flex;
+  gap:     8px;
+}
+.barra-narracion-controles button {
+  width:        36px;
+  height:       36px;
+  border-radius:50%;
+  background:   var(--ui-fondo-panel);
+  border:       1px solid var(--ui-borde);
+  font-size:    14px;
+  display:      flex;
+  align-items:  center;
+  justify-content:center;
+  transition:   background var(--trans-rapida);
+}
+.barra-narracion-controles button:hover { background: rgba(255,255,255,0.15); }
+
+
+/* ────────────────────────────────────────────────────────────
+   14. RESPONSIVE — ORIENTACIÓN
+   Tablet BMAX I12 POWER: 2408×1720px.
+   Landscape: sidebar siempre visible, layout horizontal.
+   Portrait:  layout vertical, cartas más angostas.
+   ──────────────────────────────────────────────────────────── */
+
+/* LANDSCAPE — tablero de Memoria */
+@media (orientation: landscape) {
+  .tablero-memoria {
+    grid-template-columns:
+      repeat(auto-fill, minmax(max(var(--carta-min-ancho), 110px), 1fr));
+  }
+  .arena-batalla    { flex-direction: row; }
+  .pantalla-info    { flex-direction: row; }
+  .menu-botones     { flex-direction: row; }
+  .info-galeria     { gap: 16px; }
+  .info-card        { width: 170px; }
+  .info-card-img    { width: 170px; height: 227px; }
+}
+
+/* PORTRAIT */
+@media (orientation: portrait) {
+  .tablero-memoria {
+    grid-template-columns:
+      repeat(auto-fill, minmax(max(var(--carta-min-ancho), 85px), 1fr));
+  }
+  .arena-batalla {
+    flex-direction: column;
+  }
+  .zona-central { width: 100%; flex-direction: row; }
+  .menu-botones { flex-direction: column; align-items: center; }
+  .btn-modo     { width: 100%; max-width: 400px; flex-direction: row; padding: 18px 24px; }
+  .info-galeria { gap: 10px; }
+  .info-card    { width: 130px; }
+  .info-card-img { width: 130px; height: 173px; }
+}
+
+/* Pantallas pequeñas (< 600px) — ajuste de fuente base */
+@media (max-width: 600px) {
+  body        { font-size: 15px; }
+  .menu-titulo{ font-size: clamp(28px, 10vw, 48px); }
+  .btn-icono  { font-size: 32px; }
+}
+
+/* Pantalla grande (BMAX landscape 2408px) — aprovechar el espacio */
+@media (min-width: 1800px) {
+  .info-galeria  { gap: 20px; }
+  .info-card     { width: 200px; }
+  .info-card-img { width: 200px; height: 267px; }
+  .menu-botones { gap: 40px; }
+  .btn-modo     { min-width: 240px; padding: 40px; }
+  .btn-icono    { font-size: 56px; }
+  .btn-texto    { font-size: 28px; }
+}
+</style>
