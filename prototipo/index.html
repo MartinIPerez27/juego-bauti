@@ -59,14 +59,13 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   box-shadow:0 .5em 1.1em rgba(0,0,0,.5)}
 .card.bad{--side:var(--red)}.card.neutral{--side:var(--yellow)}
 .card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block}
-.card .nm{position:absolute;left:0;right:0;bottom:0;padding:.42em .3em .4em;text-align:center;font-family:var(--display);
-  font-size:1.55em;line-height:1;color:#fff;background:var(--side);border-top:.2em solid var(--ink);text-shadow:0 .08em 0 var(--ink);
+.card .nm{position:absolute;left:0;right:0;bottom:0;padding:.3em .35em .32em;display:flex;align-items:center;justify-content:center;gap:.35em;
+  font-family:var(--display);font-size:1.4em;line-height:1;color:#fff;background:var(--side);border-top:.2em solid var(--ink);text-shadow:0 .08em 0 var(--ink);
   background-image:radial-gradient(circle,rgba(0,0,0,.22) 0 .12em,transparent .16em);background-size:.5em .5em}
 .card.neutral .nm{color:var(--ink);text-shadow:none}
-.card .pw{position:absolute;top:.15em;left:.15em;width:3.5em;height:3.5em;display:grid;place-items:center;
-  font-family:var(--display);font-size:1.6em;color:var(--ink);line-height:1}
-.card .pw svg{position:absolute;inset:0;width:100%;height:100%}
-.card .pw b{position:relative;font-weight:400;padding-top:.05em}
+.card .pw{flex:none;width:1.95em;height:1.95em;border-radius:50%;background:var(--paper);color:var(--ink);border:.13em solid var(--ink);
+  display:grid;place-items:center;font-family:var(--body);font-weight:900;font-size:1.05em;line-height:1;text-shadow:none;letter-spacing:0;font-variant-numeric:lining-nums}
+.card .nm span{flex:1;text-align:center;min-width:0}
 .card .sh{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%)}
 .back-face{background:var(--bg2);display:grid;place-items:center;
   background-image:radial-gradient(circle,rgba(255,255,255,.22) 0 .16em,transparent .2em);background-size:.7em .7em}
@@ -87,7 +86,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 
 /* ===== MENÚ ===== */
 .head{position:absolute;left:0;right:0;top:22px;text-align:center;font-size:78px;color:var(--yellow);text-shadow:0 5px 0 var(--ink)}
-#hub{position:absolute;left:70px;right:70px;top:130px;bottom:50px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:28px}
+#hub{position:absolute;left:70px;right:70px;top:124px;bottom:116px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:28px}
 .tile{position:relative;border-radius:28px;border:6px solid var(--ink);overflow:hidden;text-align:left;background:var(--bg2);
   box-shadow:0 10px 0 var(--ink),0 18px 28px rgba(0,0,0,.4);transition:transform .16s var(--ease-out),box-shadow .16s var(--ease-out)}
 .tile:active{transform:translateY(7px) scale(.985);box-shadow:0 3px 0 var(--ink)}
@@ -102,6 +101,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .tile .ic svg{width:42px;height:42px}
 .tile.soon .ic{background:var(--paper)}
 
+.voice{position:absolute;left:70px;right:70px;bottom:26px;height:64px;display:flex;gap:14px;align-items:center;font-family:var(--display);font-size:36px;color:var(--yellow)}
+.voice select{flex:1;min-width:0;height:60px;border-radius:14px;border:4px solid var(--ink);background:var(--paper);color:var(--ink);font:900 21px var(--body);padding:0 14px;text-transform:uppercase}
+.voice .btn{height:60px;font-size:34px;padding:0 26px;box-shadow:0 5px 0 var(--ink);border-width:4px}
 /* ===== CONFIG ===== */
 #s-config .pl{position:absolute;top:120px;width:520px;height:252px;border-radius:26px;border:6px solid var(--ink);padding:22px 26px;
   background:var(--bg2);box-shadow:0 10px 0 var(--ink),0 18px 26px rgba(0,0,0,.35)}
@@ -144,7 +146,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .turnflag{position:absolute;left:50%;transform:translateX(-50%);top:-44px;white-space:nowrap;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:14px;
   font-family:var(--display);font-size:28px;padding:0 14px;opacity:0;transition:opacity .2s}
 .side.turn .turnflag{opacity:1}
-#board{position:absolute;left:280px;right:280px;top:60px;bottom:30px;perspective:1100px}
+#board{position:absolute;left:280px;right:280px;top:60px;bottom:30px;perspective:1100px;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2)}
+#board .bi{position:relative;width:100%}
 .slot{position:absolute;transition:transform .16s var(--ease-out)}
 .slot:active:not(:disabled){transform:scale(.96)}
 .slot[disabled]{pointer-events:none}
@@ -165,7 +168,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 /* ===== EQUIPOS ===== */
 #s-team .tt{position:absolute;left:0;right:0;top:22px;text-align:center;font-size:70px;color:var(--yellow);text-shadow:0 5px 0 var(--ink)}
 #s-team .tt span{color:#fff}
-#coll{position:absolute;left:60px;right:60px;top:140px;height:340px;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-content:flex-start;padding-top:20px}
+#coll{position:absolute;left:60px;right:60px;top:130px;height:350px;overflow-y:auto;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2);display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-content:flex-start;padding-top:20px}
 .pick{position:relative;transition:transform .2s var(--ease-out)}
 .pick:active{transform:scale(.96)}
 .pick.sel{transform:translateY(-14px)}
@@ -223,18 +226,22 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .lc{transition:transform .16s var(--ease-out)}.lc:active{transform:scale(.96)}
 #det{position:absolute;inset:0;z-index:10;background:rgba(11,14,51,.94);opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
 #det.on{opacity:1;visibility:visible;transition:opacity .2s}
-#det .big{position:absolute;left:110px;top:60px}
-#det .info{position:absolute;left:520px;right:80px;top:60px}
-#det h2{margin:0 0 20px;font-family:var(--display);font-weight:400;font-size:90px;line-height:.95;color:var(--yellow);text-shadow:0 5px 0 var(--ink)}
-.bar{display:grid;grid-template-columns:230px 1fr 70px;align-items:center;gap:16px;margin-bottom:12px;font-family:var(--display);font-size:38px}
-.bar i{display:block;height:34px;border-radius:12px;background:var(--ink);border:4px solid var(--ink);overflow:hidden}
+#det .big{position:absolute;left:100px;top:90px}
+#det .info{position:absolute;left:500px;right:150px;top:30px}
+#det h2{margin:0 0 10px;font-family:var(--display);font-weight:400;font-size:74px;line-height:.95;color:var(--yellow);text-shadow:0 5px 0 var(--ink)}
+.bar{display:grid;grid-template-columns:200px 1fr 64px;align-items:center;gap:14px;margin-bottom:8px;font-family:var(--display);font-size:32px}
+.bar i{display:block;height:28px;border-radius:12px;background:var(--ink);border:4px solid var(--ink);overflow:hidden}
 .bar i u{display:block;height:100%;width:var(--v);background:var(--c);border-radius:8px;transform-origin:0 50%;animation:grow .7s var(--ease-out) both;
   background-image:radial-gradient(circle,rgba(0,0,0,.2) 0 2px,transparent 2.5px);background-size:9px 9px}
 @keyframes grow{from{transform:scaleX(0)}}
-.tags{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 22px}
-.tg{font-family:var(--display);font-size:32px;background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:14px;padding:4px 14px}
-#det .btn.say{height:84px;font-size:44px}
-#det .x{position:absolute;right:40px;top:30px}
+.tags{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}
+.tg{font-family:var(--display);font-size:28px;background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:14px;padding:4px 14px}
+#det .btn.say{height:58px;font-size:32px;padding:0 20px;gap:10px;border-width:4px;box-shadow:0 5px 0 var(--ink)}
+#det .btn.say svg{width:32px;height:32px}
+.story{position:relative;background:var(--paper);color:var(--ink);border:5px solid var(--ink);border-radius:18px;padding:12px 20px 14px;font-size:25px;line-height:1.28;font-weight:900;box-shadow:0 6px 0 var(--ink)}
+.story .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.story h3{margin:0;font-family:var(--display);font-weight:400;font-size:34px;color:var(--red);line-height:1}
+#det .x{position:absolute;right:40px;top:30px;z-index:5}
 
 /* ===== FINAL ===== */
 #s-final{text-align:center}
@@ -250,6 +257,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   font-family:var(--display);font-size:44px;text-align:center;text-transform:uppercase;padding:30px}
 #rot svg{width:120px;height:120px}
 @media (orientation:portrait){#rot{display:flex}}
+/* cifras claras y rectas para quien está aprendiendo los números */
+.score .p .v,.side .sc,.stp .val,.pwr span,.chip b,#s-final .sc b,.bar span:last-child{font-family:var(--body);font-weight:900;letter-spacing:0}
+.chip b{font-size:.95em}
 @media (prefers-reduced-motion:reduce){
   .rise,.fan .card,.chip,.slot.nope .flip,.thumb.pop,.vs.show{animation-duration:.01ms}
   .flip{transition-duration:.01ms}
@@ -295,6 +305,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <button class="btn round blue back" data-go="title" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">¿A QUÉ JUGAMOS?</div>
     <div id="hub"></div>
+    <div class="voice"><label for="vsel">VOZ</label><select id="vsel" aria-label="VOZ DEL NARRADOR"></select><button class="btn blue" id="vtest">PROBAR</button></div>
   </section>
 
   <!-- CONFIG -->
@@ -369,7 +380,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 const TAGS={flyer:'VUELA',magic:'MAGIA',tech:'TECNOLOGÍA',cosmic:'PODER CÓSMICO',brute:'SUPERFUERZA',mind:'SÚPER CEREBRO',speed:'SUPER VELOCIDAD',agil:'ÁGIL'};
 const STATL={intelligence:'CEREBRO',strength:'FUERZA',speed:'VELOCIDAD',durability:'AGUANTE',power:'PODER',combat:'COMBATE'};
 const STATC={intelligence:'#2fa8ff',strength:'#ff3d52',speed:'#ffd23f',durability:'#35d98a',power:'#ff4fa3',combat:'#ff9a3d'};
-const RAW=[{"id": "620", "name": "SPIDER-MAN", "tags": ["agil"], "side": "good", "stats": {"intelligence": 90, "strength": 55, "speed": 67, "durability": 75, "power": 74, "combat": 85}, "img": "img/620.jpg"}, {"id": "346", "name": "IRON MAN", "tags": ["tech", "flyer"], "side": "good", "stats": {"intelligence": 100, "strength": 85, "speed": 58, "durability": 85, "power": 100, "combat": 64}, "img": "img/346.jpg"}, {"id": "332", "name": "HULK", "tags": ["brute"], "side": "good", "stats": {"intelligence": 88, "strength": 100, "speed": 63, "durability": 100, "power": 98, "combat": 85}, "img": "img/332.jpg"}, {"id": "69", "name": "BATMAN", "tags": ["mind"], "side": "good", "stats": {"intelligence": 81, "strength": 40, "speed": 29, "durability": 55, "power": 63, "combat": 90}, "img": "img/69.jpg"}, {"id": "644", "name": "SUPERMAN", "tags": ["flyer", "cosmic", "speed", "brute"], "side": "good", "stats": {"intelligence": 94, "strength": 100, "speed": 100, "durability": 100, "power": 100, "combat": 85}, "img": "img/644.jpg"}, {"id": "720", "name": "MUJER MARAVILLA", "tags": ["magic", "brute"], "side": "good", "stats": {"intelligence": 88, "strength": 100, "speed": 79, "durability": 100, "power": 100, "combat": 100}, "img": "img/720.jpg"}, {"id": "659", "name": "THOR REY RÚNICO", "tags": ["magic", "cosmic", "flyer"], "side": "good", "stats": {"intelligence": 69, "strength": 100, "speed": 83, "durability": 100, "power": 100, "combat": 100}, "img": "img/659.jpg"}, {"id": "374", "name": "JUGGERNAUT", "tags": ["brute"], "side": "neutral", "stats": {"intelligence": 44, "strength": 100, "speed": 42, "durability": 100, "power": 85, "combat": 70}, "img": "img/374.jpg"}, {"id": "263", "name": "FLASH", "tags": ["speed"], "side": "good", "stats": {"intelligence": 63, "strength": 10, "speed": 100, "durability": 50, "power": 68, "combat": 32}, "img": "img/263.jpg"}, {"id": "370", "name": "JOKER", "tags": ["mind"], "side": "bad", "stats": {"intelligence": 100, "strength": 10, "speed": 12, "durability": 60, "power": 43, "combat": 70}, "img": "img/370.jpg"}, {"id": "655", "name": "THANOS", "tags": ["cosmic", "brute", "mind"], "side": "bad", "stats": {"intelligence": 100, "strength": 100, "speed": 33, "durability": 100, "power": 100, "combat": 80}, "img": "img/655.jpg"}, {"id": "222", "name": "DOCTOR DOOM", "tags": ["magic", "tech", "mind"], "side": "bad", "stats": {"intelligence": 100, "strength": 32, "speed": 20, "durability": 100, "power": 100, "combat": 84}, "img": "img/222.jpg"}, {"id": "204", "name": "DARKSEID", "tags": ["cosmic", "brute", "flyer"], "side": "bad", "stats": {"intelligence": 88, "strength": 100, "speed": 83, "durability": 100, "power": 100, "combat": 95}, "img": "img/204.jpg"}, {"id": "717", "name": "WOLVERINE", "tags": ["agil"], "side": "good", "stats": {"intelligence": 63, "strength": 32, "speed": 50, "durability": 100, "power": 89, "combat": 100}, "img": "img/717.jpg"}, {"id": "bwl", "name": "BATMAN QUE RÍE", "tags": ["mind", "magic"], "side": "bad", "stats": {"intelligence": 100, "strength": 55, "speed": 60, "durability": 85, "power": 92, "combat": 100}, "img": "img/bwl.jpg"}];
+const RAW=[{"id": "620", "name": "SPIDER-MAN", "tags": ["agil"], "side": "good", "stats": {"intelligence": 90, "strength": 55, "speed": 67, "durability": 75, "power": 74, "combat": 85}, "img": "img/620.jpg", "story": "Peter Parker era un chico común. Una araña con poderes lo picó y se convirtió en Spider-Man. Trepa paredes, lanza telarañas y siempre ayuda a la gente."}, {"id": "346", "name": "IRON MAN", "tags": ["tech", "flyer"], "side": "good", "stats": {"intelligence": 100, "strength": 85, "speed": 58, "durability": 85, "power": 100, "combat": 64}, "img": "img/346.jpg", "story": "Tony Stark es un genio inventor. Construyó una armadura de metal que vuela y dispara rayos. Así nació Iron Man."}, {"id": "332", "name": "HULK", "tags": ["brute"], "side": "good", "stats": {"intelligence": 88, "strength": 100, "speed": 63, "durability": 100, "power": 98, "combat": 85}, "img": "img/332b.jpg", "story": "El doctor Bruce Banner tuvo un accidente con rayos gamma. Cuando se enoja, se transforma en Hulk, un gigante verde con una fuerza enorme."}, {"id": "69", "name": "BATMAN", "tags": ["mind"], "side": "good", "stats": {"intelligence": 81, "strength": 40, "speed": 29, "durability": 55, "power": 63, "combat": 90}, "img": "img/69b.jpg", "story": "Bruce Wayne no tiene superpoderes. Es muy inteligente y valiente, y usa inventos para cuidar la ciudad de Gotham durante la noche."}, {"id": "644", "name": "SUPERMAN", "tags": ["flyer", "cosmic", "speed", "brute"], "side": "good", "stats": {"intelligence": 94, "strength": 100, "speed": 100, "durability": 100, "power": 100, "combat": 85}, "img": "img/644.jpg", "story": "Superman llegó de bebé desde el planeta Krypton. En la Tierra vuela, es súper fuerte y también es Clark Kent, un periodista."}, {"id": "720", "name": "MUJER MARAVILLA", "tags": ["magic", "brute"], "side": "good", "stats": {"intelligence": 88, "strength": 100, "speed": 79, "durability": 100, "power": 100, "combat": 100}, "img": "img/720b.jpg", "story": "Diana es una princesa guerrera de la isla de las amazonas. Tiene un lazo mágico que hace decir la verdad y brazaletes que frenan cualquier ataque."}, {"id": "659", "name": "THOR REY RÚNICO", "tags": ["magic", "cosmic", "flyer"], "side": "good", "stats": {"intelligence": 69, "strength": 100, "speed": 83, "durability": 100, "power": 100, "combat": 100}, "img": "img/659.jpg", "story": "Thor es el dios del trueno de Asgard. En esta versión se convirtió en el Rey Rúnico, con un poder mágico antiguo enorme."}, {"id": "374", "name": "JUGGERNAUT", "tags": ["brute"], "side": "neutral", "stats": {"intelligence": 44, "strength": 100, "speed": 42, "durability": 100, "power": 85, "combat": 70}, "img": "img/374.jpg", "story": "Cain Marko encontró una joya mágica que lo volvió imparable. Cuando empieza a correr, nadie lo puede frenar."}, {"id": "263", "name": "FLASH", "tags": ["speed"], "side": "good", "stats": {"intelligence": 88, "strength": 48, "speed": 100, "durability": 60, "power": 100, "combat": 60}, "img": "img/263b.jpg", "story": "Barry Allen es un científico de la policía. Un rayo le dio superpoderes y ahora corre más rápido que la luz."}, {"id": "370", "name": "JOKER", "tags": ["mind"], "side": "bad", "stats": {"intelligence": 100, "strength": 10, "speed": 12, "durability": 60, "power": 43, "combat": 70}, "img": "img/370.jpg", "story": "El Joker es el villano más famoso de Gotham. Siempre se ríe y hace bromas peligrosas para molestar a Batman."}, {"id": "655", "name": "THANOS", "tags": ["cosmic", "brute", "mind"], "side": "bad", "stats": {"intelligence": 100, "strength": 100, "speed": 33, "durability": 100, "power": 100, "combat": 80}, "img": "img/655b.jpg", "story": "Thanos es un titán de piel violeta. Quiere juntar las Gemas del Infinito, que dan un poder gigante."}, {"id": "222", "name": "DOCTOR DOOM", "tags": ["magic", "tech", "mind"], "side": "bad", "stats": {"intelligence": 100, "strength": 32, "speed": 20, "durability": 100, "power": 100, "combat": 84}, "img": "img/222.jpg", "story": "Victor von Doom es un genio y también un mago. Gobierna Latveria, usa una armadura de metal y cree que es el mejor del mundo."}, {"id": "204", "name": "DARKSEID", "tags": ["cosmic", "brute", "flyer"], "side": "bad", "stats": {"intelligence": 88, "strength": 100, "speed": 83, "durability": 100, "power": 100, "combat": 95}, "img": "img/204.jpg", "story": "Darkseid manda en el planeta Apokolips. Lanza rayos con los ojos, tiene una fuerza gigante y quiere gobernar todo el universo."}, {"id": "717", "name": "WOLVERINE", "tags": ["agil"], "side": "good", "stats": {"intelligence": 63, "strength": 32, "speed": 50, "durability": 100, "power": 89, "combat": 100}, "img": "img/717.jpg", "story": "Logan tiene garras de metal que salen de sus manos y se cura muy rápido de cualquier herida. Es un integrante de los X-Men."}, {"id": "bwl", "name": "BATMAN QUE RÍE", "tags": ["mind", "magic"], "side": "bad", "stats": {"intelligence": 100, "strength": 55, "speed": 60, "durability": 85, "power": 92, "combat": 100}, "img": "img/bwl.jpg", "story": "Es un Batman de otro universo que se volvió malvado. Su risa da miedo y es muy, muy inteligente. Es uno de los villanos más peligrosos de DC."}];
 const CARDS=RAW.map(c=>({...c,pw:Math.round(Object.values(c.stats).reduce((a,b)=>a+b,0)/6)}));
 const BYID=Object.fromEntries(CARDS.map(c=>[c.id,c]));
 
@@ -387,10 +398,6 @@ addEventListener('resize',fit);fit();
 const rectIn=e=>{const r=e.getBoundingClientRect(),s=stage.getBoundingClientRect();return{x:(r.left-s.left)/SC,y:(r.top-s.top)/SC,w:r.width/SC,h:r.height/SC}};
 const SVGNS='http://www.w3.org/2000/svg';
 const icon=(id,cls='')=>`<svg class="${cls}"><use href="#${id}"/></svg>`;
-function star(){const pts=[];for(let i=0;i<24;i++){const r=i%2?38:50,a=i*Math.PI/12;pts.push((50+r*Math.cos(a)).toFixed(1)+','+(50+r*Math.sin(a)).toFixed(1))}
-  return `<svg viewBox="0 0 100 100"><polygon points="${pts.join(' ')}" fill="#ffd23f" stroke="#0b0e33" stroke-width="5" stroke-linejoin="round"/></svg>`}
-const STAR=star();
-
 /* ===== SONIDO (todo generado por código) ===== */
 let AC=null,MUTED=false;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
@@ -414,23 +421,32 @@ const sfx=n=>{try{SFX[n]()}catch(e){}};
 function buzz(ms){try{if(!MUTED&&navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 
 /* ===== VOZ (la tablet lee en español; el juego real usará frases pregrabadas) ===== */
-let VOICE=null;
-function pickVoice(){try{const v=speechSynthesis.getVoices();VOICE=v.find(x=>x.lang==='es-AR')||v.find(x=>x.lang==='es-US')||v.find(x=>x.lang==='es-MX')||v.find(x=>x.lang.startsWith('es'))||null}catch(e){}}
-try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
-let SKIP=false,spk=null;
+let VOICE=null,VOICES=[];
+function vscore(v){const n=v.name+' '+v.lang;let k=0;
+  if(/^es[-_]AR/i.test(v.lang))k+=3;else if(/^es[-_](US|MX|419)/i.test(v.lang))k+=2;else if(/^es/i.test(v.lang))k+=1;
+  if(/natural|neural|wavenet|chirp|studio/i.test(n))k+=6;if(/online/i.test(n))k+=3;if(/google/i.test(n))k+=2;if(!v.localService)k+=1;return k}
+function loadVoices(){try{VOICES=speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang)).sort((a,b)=>vscore(b)-vscore(a))}catch(e){VOICES=[]}
+  let saved='';try{saved=localStorage.getItem('bauti_voz')||''}catch(e){}
+  VOICE=VOICES.find(v=>v.name===saved)||VOICES[0]||null;
+  const sel=$('#vsel');sel.innerHTML=VOICES.length?VOICES.map(v=>`<option value="${v.name}">${v.name} · ${v.lang}</option>`).join(''):'<option>VOZ DEL DISPOSITIVO</option>';
+  if(VOICE)sel.value=VOICE.name}
+try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices}catch(e){}
+$('#vsel').onchange=e=>{VOICE=VOICES.find(v=>v.name===e.target.value)||VOICE;try{localStorage.setItem('bauti_voz',e.target.value)}catch(x){}};
+$('#vtest').onclick=()=>{ac();SKIP=false;speak('¡Hola, Bauti! ¡Vamos a jugar! Hoy peleamos con los mejores superhéroes.')};
+let SKIP=false;
 function speak(text){return new Promise(res=>{
-  const est=Math.max(1100,text.length*85);
+  const est=Math.max(1100,text.length*80);
   if(MUTED||SKIP||!('speechSynthesis' in window)){setTimeout(res,SKIP?0:est*.8);return}
   let done=false;const fin=()=>{if(!done){done=true;res()}};
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text.toLowerCase());u.lang=(VOICE&&VOICE.lang)||'es-AR';if(VOICE)u.voice=VOICE;u.rate=.92;u.pitch=1.15;
-    u.onend=fin;u.onerror=fin;spk=u;speechSynthesis.speak(u)}catch(e){}
-  setTimeout(fin,est+1500);spk={fin}})}
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text.toLowerCase());u.lang=(VOICE&&VOICE.lang)||'es-AR';if(VOICE)u.voice=VOICE;u.rate=.96;u.pitch=1;
+    u.onend=fin;u.onerror=fin;speechSynthesis.speak(u)}catch(e){}
+  setTimeout(fin,est+2000)})}
 function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}}
 $('#b-snd').onclick=()=>{MUTED=!MUTED;$('#b-snd use').setAttribute('href',MUTED?'#i-mute':'#i-snd');if(MUTED)stopSpeech();else sfx('tap')};
 
 /* ===== CARTAS ===== */
 function cardEl(c,cw){const e=document.createElement('div');e.className='card '+(c.side==='good'?'':(c.side==='bad'?'bad':'neutral'));e.style.setProperty('--cw',cw+'px');
-  e.innerHTML=`<img src="${c.img}" alt="" draggable="false"><div class="pw">${STAR}<b>${c.pw}</b></div><div class="nm">${c.name}</div><div class="sh"></div>`;return e}
+  e.innerHTML=`<img src="${c.img}" alt="" draggable="false"><div class="nm"><b class="pw">${c.pw}</b><span>${c.name}</span></div><div class="sh"></div>`;return e}
 function backEl(cw){const e=document.createElement('div');e.className='card back-face';e.style.setProperty('--cw',cw+'px');
   e.innerHTML=`<svg viewBox="0 0 48 48" style="color:#ffd23f"><use href="#i-bolt"/></svg>`;return e}
 
@@ -448,19 +464,19 @@ $('#b-play').onclick=()=>{ac();sfx('go');go('hub')};
 
 /* MENÚ */
 const MODES=[
-  {k:'main',t:'PARES Y BATALLA',img:'img/332.jpg',ic:'i-swords'},
-  {k:'lib',t:'BIBLIOTECA',img:'img/69.jpg',ic:'i-book'},
+  {k:'main',t:'PARES Y BATALLA',img:'img/332b.jpg',ic:'i-swords'},
+  {k:'lib',t:'BIBLIOTECA',img:'img/69b.jpg',ic:'i-book'},
   {k:'draft',t:'DRAFT',img:'img/644.jpg',ic:'i-lock',soon:1},
   {k:'who',t:'¿QUIÉN SOY?',img:'img/222.jpg',ic:'i-q',soon:1},
-  {k:'hl',t:'MAYOR O MENOR',img:'img/263.jpg',ic:'i-q',soon:1},
-  {k:'cup',t:'COPA DE HÉROES',img:'img/720.jpg',ic:'i-q',soon:1}];
+  {k:'hl',t:'MAYOR O MENOR',img:'img/263b.jpg',ic:'i-q',soon:1},
+  {k:'cup',t:'COPA DE HÉROES',img:'img/720b.jpg',ic:'i-q',soon:1}];
 $('#hub').innerHTML=MODES.map(m=>`<button class="tile ${m.soon?'soon':''}" data-m="${m.k}"><img src="${m.img}" alt=""><span class="ic">${icon(m.ic)}</span>${m.soon?'<span class="tag">PRONTO</span>':''}<span class="lb">${m.t}</span></button>`).join('');
 $('#hub').onclick=e=>{const t=e.target.closest('.tile');if(!t)return;const k=t.dataset.m;sfx('tap');
   if(k==='main')go('config');else if(k==='lib'){buildLib();go('lib')}else toast('¡PRONTO!')};
 
 /* CONFIG */
-const S={names:['BAUTI','PAPÁ'],ai:[false,false],pairs:8,team:2,rounds:3,coll:[[],[]],score:[0,0],round:0,turn:0};
-const OPT={pairs:[4,6,8,10,12],team:[1,2,3],rounds:[1,2,3,4,5]},LBL={pairs:'PARES A BUSCAR',team:'HÉROES POR EQUIPO',rounds:'RONDAS'};
+const S={names:['BAUTI','PAPÁ'],ai:[false,false],pairs:Math.min(8,CARDS.length),team:2,rounds:3,coll:[[],[]],score:[0,0],round:0,turn:0};
+const OPT={pairs:[4,6,8,10,12,15,20,25,30,40,50,60,75,100,150,200,300].filter(n=>n<=CARDS.length||n===4),team:[1,2,3],rounds:[1,2,3,4,5]},LBL={pairs:'PARES A BUSCAR',team:'HÉROES POR EQUIPO',rounds:'RONDAS'};
 function renderSteps(){$('#steps').innerHTML=Object.keys(OPT).map(k=>`<div class="stp"><div class="lbl">${LBL[k]}</div><div class="row">
   <button class="btn red" data-s="${k}" data-d="-1" aria-label="MENOS">${icon('i-minus')}</button><div class="val">${S[k]}</div>
   <button class="btn blue" data-s="${k}" data-d="1" aria-label="MÁS">${icon('i-plus')}</button></div></div>`).join('');
@@ -474,67 +490,69 @@ renderSteps();
 $('#b-start').onclick=()=>{S.names=[$('#n1').value.trim().toUpperCase()||'JUGADOR 1',$('#n2').value.trim().toUpperCase()||(S.ai[1]?'MÁQUINA':'JUGADOR 2')];
   if(S.names[0]===S.names[1])S.names[1]+=' 2';sfx('go');startMemory()};
 
-/* ===== MEMORIA ===== */
-let deck=[],matched=[],known=new Map(),first=null,busy=false,left=0,faceUp=new Set();
-function layout(n){const W=$('#board').clientWidth,H=$('#board').clientHeight,gap=14;let best=null;
-  for(let cols=3;cols<=8;cols++){const rows=Math.ceil(n/cols),w=Math.min((W-gap*(cols-1))/cols,(H-gap*(rows-1))/rows/1.5);if(!best||w>best.w)best={cols,rows,w}}
+/* ===== MEMORIA =====
+   Regla de la casa: las cartas dadas vuelta SE QUEDAN dadas vuelta aunque no encuentres su par.
+   Cada turno se dan vuelta hasta 2 cartas. Si una carta repite a otra que ya está a la vista, quien la dio vuelta
+   se lleva el par y sigue jugando. Si no hay par, las cartas siguen a la vista y pasa el turno. */
+let deck=[],matched=[],faceUp=new Set(),busy=false,left=0,flips=0;
+const MINW=88;
+function layout(n,W,H){const gap=14;let best=null;
+  for(let cols=3;cols<=16;cols++){const rows=Math.ceil(n/cols),w=Math.min((W-gap*(cols-1))/cols,(H-gap*(rows-1))/rows/1.5);if(!best||w>best.w)best={cols,rows,w}}
+  if(best.w<MINW){best.cols=Math.max(3,Math.floor((W+gap)/(MINW+gap)));best.rows=Math.ceil(n/best.cols);best.w=Math.min(MINW,(W-gap*(best.cols-1))/best.cols)}
   best.w=Math.floor(best.w);return{...best,gap}}
 function sideUpdate(){[0,1].forEach(i=>{const s=$('#sd'+i);s.classList.toggle('turn',S.turn===i);$('.nm',s).textContent=S.names[i]})}
 function addThumb(p,c){const t=document.createElement('img');t.className='thumb pop';t.src=c.img;t.alt='';$('.tray',$('#sd'+p)).append(t);
   const sc=$('.sc',$('#sd'+p));sc.textContent=S.coll[p].length;sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump');return t}
 function startMemory(){
-  S.coll=[[],[]];S.score=[0,0];S.round=0;S.turn=0;known=new Map();first=null;busy=true;faceUp=new Set();
+  S.coll=[[],[]];S.score=[0,0];S.round=0;S.turn=0;busy=true;faceUp=new Set();flips=0;
   const pick=shuffle(CARDS).slice(0,Math.min(S.pairs,CARDS.length));deck=shuffle([...pick,...pick].map(c=>c.id));matched=deck.map(()=>false);left=pick.length;
   [0,1].forEach(i=>{const s=$('#sd'+i);$('.tray',s).innerHTML='';$('.sc',s).textContent='0'});sideUpdate();
   go('mem');
-  const L=layout(deck.length),b=$('#board');b.innerHTML='';
-  const totW=L.cols*L.w+(L.cols-1)*L.gap,offX=(b.clientWidth-totW)/2;
-  const rowsN=Math.ceil(deck.length/L.cols),totH=rowsN*L.w*1.5+(rowsN-1)*L.gap,offY=(b.clientHeight-totH)/2;
-  deck.forEach((id,i)=>{const r=Math.floor(i/L.cols),c=i%L.cols,s=document.createElement('button');
-    const inRow=r===rowsN-1?deck.length-r*L.cols:L.cols,rowOff=(L.cols-inRow)*(L.w+L.gap)/2;s.className='slot';s.setAttribute('aria-label','CARTA '+(i+1));
-    s.style.cssText=`width:${L.w}px;height:${L.w*1.5}px;left:${offX+rowOff+c*(L.w+L.gap)}px;top:${offY+r*(L.w*1.5+L.gap)}px;animation:rise .5s var(--ease-out) ${i*35}ms both`;
+  const board=$('#board');board.innerHTML='';board.scrollTop=0;
+  const W=board.clientWidth,H=board.clientHeight,L=layout(deck.length,W,H);
+  const rowsN=Math.ceil(deck.length/L.cols),totW=L.cols*L.w+(L.cols-1)*L.gap,totH=rowsN*L.w*1.5+(rowsN-1)*L.gap;
+  const offX=(W-totW)/2,offY=totH<H?(H-totH)/2:6;
+  const bi=document.createElement('div');bi.className='bi';bi.style.height=Math.max(H,totH+offY+30)+'px';board.append(bi);
+  deck.forEach((id,i)=>{const r=Math.floor(i/L.cols),c=i%L.cols,s=document.createElement('button');s.className='slot';s.setAttribute('aria-label','CARTA '+(i+1));
+    const inRow=r===rowsN-1?deck.length-r*L.cols:L.cols,rowOff=(L.cols-inRow)*(L.w+L.gap)/2;
+    s.style.cssText=`width:${L.w}px;height:${L.w*1.5}px;left:${offX+rowOff+c*(L.w+L.gap)}px;top:${offY+r*(L.w*1.5+L.gap)}px;animation:rise .5s var(--ease-out) ${Math.min(i,40)*30}ms both`;
     const f=document.createElement('div');f.className='flip';
     const bk=document.createElement('div');bk.className='face';bk.append(backEl(L.w));
     const fr=document.createElement('div');fr.className='face fr';fr.append(cardEl(BYID[id],L.w));f.append(bk,fr);s.append(f);
-    s.onclick=()=>humanFlip(i);b.append(s)});
-  setTimeout(()=>{busy=false;turnStart()},deck.length*35+500)}
+    s.onclick=()=>humanFlip(i);bi.append(s)});
+  setTimeout(()=>{busy=false;turnStart()},Math.min(deck.length,40)*30+500)}
 const slotEl=i=>$$('.slot',$('#board'))[i];
-function showCard(i){faceUp.add(i);slotEl(i).classList.add('up');known.set(i,deck[i]);sfx('flip');buzz(8)}
-function hideCard(i){faceUp.delete(i);slotEl(i).classList.remove('up')}
-function humanFlip(i){if(busy||S.ai[S.turn]||matched[i]||faceUp.has(i))return;ac();showCard(i);
-  if(first===null){first=i;return}const a=first;first=null;resolve(a,i)}
-async function resolve(a,b){busy=true;await sleep(750);
-  if(deck[a]===deck[b]){await doMatch(a,b)}else{
-    [a,b].forEach(i=>{const s=slotEl(i);s.classList.remove('nope');void s.offsetWidth;s.classList.add('nope')});sfx('no');buzz(40);await sleep(1000);
-    hideCard(a);hideCard(b);await sleep(350);S.turn^=1;sideUpdate()}
-  busy=false;if(left>0)turnStart();else endMemory()}
+function focusSlot(i){const s=slotEl(i),b=$('#board'),t=s.offsetTop;
+  if(t<b.scrollTop||t+s.offsetHeight>b.scrollTop+b.clientHeight)b.scrollTo({top:Math.max(0,t-(b.clientHeight-s.offsetHeight)/2),behavior:REDUCE?'auto':'smooth'})}
+function showCard(i){faceUp.add(i);slotEl(i).classList.add('up');sfx('flip');buzz(8)}
+function humanFlip(i){if(busy||S.ai[S.turn]||matched[i]||faceUp.has(i))return;ac();flipCard(i)}
+async function flipCard(i){busy=true;showCard(i);await sleep(650);
+  const mate=[...faceUp].find(j=>j!==i&&!matched[j]&&deck[j]===deck[i]);
+  if(mate!==undefined){await doMatch(mate,i);flips=0;busy=false;if(left>0)turnStart();else endMemory();return}
+  sfx('no');flips++;
+  if(flips>=2){flips=0;await sleep(450);S.turn^=1;sideUpdate()}
+  busy=false;turnStart()}
 async function doMatch(a,b){const c=BYID[deck[a]],p=S.turn;matched[a]=matched[b]=true;left--;sfx('match');buzz([20,30,20]);
-  const tray=$('.tray',$('#sd'+p)),ph=document.createElement('div');
-  [a,b].forEach(i=>slotEl(i).classList.add('ok'));await sleep(420);
+  const tray=$('.tray',$('#sd'+p));
+  [a,b].forEach(i=>slotEl(i).classList.add('ok'));
+  focusSlot(a);
+  await sleep(450);
   const from=[slotEl(a),slotEl(b)],dst=$('#sd'+p+' .sc');
   await Promise.all(from.map((s,k)=>fly(s,dst,c.img,k*90)));
   from.forEach(s=>s.classList.add('gone'));S.coll[p].push(c);addThumb(p,c);
   if(S.coll[p].length>12)tray.firstChild.remove();
-  if(left===0)return;await sleep(250)}
+  if(left>0)await sleep(250)}
 function fly(src,dst,img,delay=0){const a=rectIn(src),b=rectIn(dst),e=document.createElement('div');e.className='fly';
   e.style.cssText=`left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px;background-image:url(${img})`;stage.append(e);
   const dx=b.x+b.w/2-(a.x+a.w/2),dy=b.y+b.h/2-(a.y+a.h/2),s=.3;
   if(REDUCE){e.remove();return Promise.resolve()}
   return e.animate([{transform:'translate(0,0) scale(1)'},{transform:'translate(0,-30px) scale(1.12)',offset:.2},{transform:`translate(${dx}px,${dy}px) scale(${s})`}],
     {duration:620,delay,easing:'cubic-bezier(.77,0,.175,1)',fill:'both'}).finished.then(()=>e.remove())}
-function turnStart(){sideUpdate();if(S.ai[S.turn])aiPlay()}
+function turnStart(){sideUpdate();if(S.ai[S.turn]&&left>0)aiPlay()}
 async function aiPlay(){busy=true;await sleep(900);
-  const un=deck.map((_,i)=>i).filter(i=>!matched[i]&&!faceUp.has(i));
-  const kn=[...known.entries()].filter(([i])=>!matched[i]);
-  const byChar={};kn.forEach(([i,id])=>(byChar[id]=byChar[id]||[]).push(i));
-  const pairKnown=Object.values(byChar).find(a=>a.length>=2);
-  let a,b;
-  if(pairKnown&&Math.random()>.35){[a,b]=pairKnown;showCard(a);await sleep(800);showCard(b)}
-  else{const fresh=un.filter(i=>!known.has(i));a=(fresh.length?fresh:un)[rnd((fresh.length?fresh:un).length)];showCard(a);await sleep(800);
-    const mate=kn.find(([i,id])=>i!==a&&id===deck[a]);
-    if(mate&&Math.random()>.35)b=mate[0];else{const rest=un.filter(i=>i!==a&&!known.has(i));const pool=rest.length?rest:un.filter(i=>i!==a);b=pool[rnd(pool.length)]}
-    showCard(b)}
-  resolve(a,b)}
+  const hidden=deck.map((_,i)=>i).filter(i=>!matched[i]&&!faceUp.has(i));
+  if(!hidden.length){busy=false;return}
+  const i=hidden[rnd(hidden.length)];focusSlot(i);await sleep(350);flipCard(i)}
 async function endMemory(){const bn=$('#mbanner');bn.textContent='¡TERMINARON LOS PARES!';bn.classList.remove('show');void bn.offsetWidth;bn.classList.add('show');sfx('win');
   await sleep(1700);S.round=0;S.score=[0,0];nextRound()}
 
@@ -579,26 +597,32 @@ function evaluate(A,B){
     return{base,r,total:base+r.reduce((s,x)=>s+x.b,0),best}};
   const a=side(A,B),b=side(B,A);return{a,b,win:a.total===b.total?-1:(a.total>b.total?0:1)}}
 const NUM=['','','DOS','TRES'];
+const VERB={flyer:'VUELAN',magic:'TIENEN MAGIA',tech:'USAN TECNOLOGÍA',cosmic:'TIENEN PODER CÓSMICO',brute:'SON SUPER FUERTES',mind:'SON SUPER INTELIGENTES',speed:'SON SUPER VELOCES',agil:'SON MUY ÁGILES'};
 function chipText(x){switch(x.k){
   case'syn':return`${NUM[x.n]||x.n} ${TAGS[x.tag]}`;case'good':return'LOS BUENOS JUNTOS';case'bad':return'LOS MALOS JUNTOS';
   case'flyer':return'VUELAN';case'cosmic':return'PODER CÓSMICO';case'speed':return'SUPER RÁPIDOS';case'mt':return'MAGIA VS TECNOLOGÍA';case'mb':return'CEREBRO VS FUERZA';}return''}
-function reasonLine(x,w){switch(x.k){
-  case'syn':return`¡${NUM[x.n]||x.n} CON ${TAGS[x.tag]} JUNTOS SON IMPARABLES!`;
-  case'good':return'¡LOS BUENOS UNIDOS GANAN!';case'bad':return'¡LOS MALOS SE UNIERON Y DAN MUCHO MIEDO!';
-  case'flyer':return'¡PUEDEN VOLAR Y EL OTRO EQUIPO NO!';case'cosmic':return'¡TIENEN PODER CÓSMICO, COMO LAS ESTRELLAS!';
-  case'speed':return'¡SON SUPER RÁPIDOS, NO LOS ATRAPAN!';case'mt':return'¡LA MAGIA LE GANA A LA TECNOLOGÍA!';case'mb':return'¡EL CEREBRO LE GANA A LA FUERZA BRUTA!';}return''}
+const pickOne=a=>a[rnd(a.length)];
+function reasonLine(x){switch(x.k){
+  case'syn':return pickOne([`¡${NUM[x.n]||x.n} QUE ${VERB[x.tag]}! ¡JUNTOS SON IMPARABLES!`,`¡MIRÁ ESO! ¡${NUM[x.n]||x.n} QUE ${VERB[x.tag]} Y SE AYUDAN ENTRE ELLOS!`]);
+  case'good':return pickOne(['¡LOS BUENOS ESTÁN UNIDOS Y ESO LES DA MÁS FUERZA!','¡CUANDO LOS BUENOS SE JUNTAN, GANAN!']);
+  case'bad':return pickOne(['¡LOS MALOS SE UNIERON Y DAN MUCHO MIEDO!','¡LOS MALOS TRABAJAN EN EQUIPO Y ESO ES PELIGROSO!']);
+  case'flyer':return pickOne(['¡PUEDEN VOLAR Y EL OTRO EQUIPO NO!','¡ATACAN DESDE EL CIELO Y NADIE LOS ALCANZA!']);
+  case'cosmic':return pickOne(['¡TIENEN PODER CÓSMICO, COMO LAS ESTRELLAS!','¡SU PODER VIENE DEL UNIVERSO ENTERO!']);
+  case'speed':return pickOne(['¡SON SUPER RÁPIDOS Y NO LOS ATRAPAN!','¡CORREN TANTO QUE NI SE VEN!']);
+  case'mt':return pickOne(['¡LA MAGIA LE GANA A LA TECNOLOGÍA!','¡LOS ROBOTS NO SABEN QUÉ HACER CONTRA LA MAGIA!']);
+  case'mb':return pickOne(['¡EL CEREBRO LE GANA A LA FUERZA BRUTA!','¡PIENSAN UN PLAN Y LA FUERZA BRUTA NO ALCANZA!']);}return''}
 function narrate(res,A,B){
-  const L=[],pick=a=>a[rnd(a.length)],N=S.names;
-  L.push(pick(['¡QUÉ PELEA!','¡DUELO ÉPICO!','¡ESTO SE PONE PICANTE!','¡VAMOS A VER QUIÉN GANA!']));
-  L.push(`${N[0]} TIENE A ${res.a.best.name}. ${N[1]} TIENE A ${res.b.best.name}.`);
-  if(res.win<0){L.push('¡ESTÁN PAREJISIMOS!');L.push('¡EMPATE! ¡PUNTO PARA LOS DOS!');return L}
+  const L=[],N=S.names;
+  L.push(pickOne(['¡QUÉ PELEA!','¡MIRÁ QUÉ DUELO!','¡ESTO SE PONE PICANTE!','¡ATENCIÓN, EMPIEZA EL COMBATE!','¡VAMOS A VER QUIÉN GANA!']));
+  L.push(pickOne([`POR UN LADO, ${res.a.best.name}. POR EL OTRO, ${res.b.best.name}.`,`${N[0]} ELIGIÓ A ${res.a.best.name}. ${N[1]} ELIGIÓ A ${res.b.best.name}.`]));
+  if(res.win<0){L.push('¡ESTÁN PAREJÍSIMOS, NO SE PUEDE DECIDIR!');L.push('¡EMPATE! ¡PUNTO PARA LOS DOS!');return L}
   const w=res.win?res.b:res.a,l=res.win?res.a:res.b,wn=N[res.win],ln=N[res.win^1];
   const top=[...w.r].sort((x,y)=>y.b-x.b).slice(0,2);
-  if(w.base>l.base&&(!top.length||w.base-l.base>top[0].b))L.push(`¡${w.best.name} ES MÁS FUERTE QUE ${l.best.name}!`);
+  if(w.base>l.base&&(!top.length||w.base-l.base>top[0].b))L.push(pickOne([`¡${w.best.name} ES MÁS FUERTE QUE ${l.best.name}!`,`¡${w.best.name} TIENE MÁS PODER Y SE NOTA!`]));
   top.forEach(x=>L.push(reasonLine(x)));
-  if(A.length!==B.length)L.push('¡UN EQUIPO MÁS GRANDE ES MÁS FUERTE!');
+  if(A.length!==B.length)L.push('¡Y UN EQUIPO MÁS GRANDE SIEMPRE AYUDA!');
   if(Math.abs(w.total-l.total)<=10)L.push(`¡PERO ${ln} ESTUVO MUY CERCA!`);
-  L.push(`¡GANA ${wn}! ¡UN PUNTO!`);return L}
+  L.push(pickOne([`¡GANA ${wn}! ¡UN PUNTO!`,`¡PUNTO PARA ${wn}!`,`¡${wn} SE LLEVA ESTA RONDA!`]));return L}
 
 /* ===== BATALLA ===== */
 let bres=null,bDone=null;
@@ -665,8 +689,8 @@ function buildLib(){const L=$('#lib');if(L.childElementCount)return;
   CARDS.forEach((c,i)=>{const b=document.createElement('button');b.className='lc rise';b.style.animationDelay=i*30+'ms';b.setAttribute('aria-label',c.name);b.append(cardEl(c,150));b.onclick=()=>{sfx('tap');openDet(c)};L.append(b)})}
 function openDet(c){$('#detbig').innerHTML='';$('#detbig').append(cardEl(c,320));
   $('#detinfo').innerHTML=`<h2>${c.name}</h2>`+Object.keys(STATL).map(k=>`<div class="bar"><span>${STATL[k]}</span><i><u style="--v:${c.stats[k]}%;--c:${STATC[k]}"></u></i><span>${c.stats[k]}</span></div>`).join('')+
-    `<div class="tags">${c.tags.map(t=>`<span class="tg">${TAGS[t]}</span>`).join('')}</div><button class="btn say" id="say">${icon('i-snd')} ESCUCHAR</button>`;
-  $('#say').onclick=()=>{ac();speak(`${c.name}. ${c.tags.map(t=>TAGS[t]).join(', ')}.`)};
+    `<div class="tags">${c.tags.map(t=>`<span class="tg">${TAGS[t]}</span>`).join('')}</div><div class="story"><div class="hd"><h3>SU HISTORIA</h3><button class="btn say" id="say">${icon('i-snd')} ESCUCHAR</button></div>${c.story}</div>`;
+  $('#say').onclick=()=>{ac();SKIP=false;speak(`${c.name}. ${c.story}`)};
   $('#det').classList.add('on')}
 $('#detx').onclick=()=>{stopSpeech();sfx('tap');$('#det').classList.remove('on')};
 </script>
