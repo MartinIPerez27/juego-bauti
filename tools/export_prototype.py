@@ -16,13 +16,20 @@ def main():
     stats = {}
     for cid, k, v in db.execute('SELECT character_id,stat_key,value FROM character_stats'): stats.setdefault(cid, {})[k] = int(v)
     img = {r['character_id']: r['card_path'] for r in db.execute("SELECT character_id,card_path FROM images WHERE is_selected=1 AND status='lista'")}
+    gal = {}
+    for r in db.execute("SELECT character_id,card_path FROM images WHERE is_selected=0 AND status='lista' AND card_path IS NOT NULL ORDER BY id"):
+        gal.setdefault(r['character_id'], []).append(r['card_path'])
     power = dict(db.execute('SELECT character_id,power FROM v_power'))
     chars = []
     for r in db.execute('SELECT * FROM characters ORDER BY id'):
         st = stats[r['id']]; p = img.get(r['id']); fn = None
         if p and os.path.exists(os.path.join(ROOT, p)):
             fn = 'img/' + os.path.basename(p); shutil.copy(os.path.join(ROOT, p), os.path.join(OUT, fn))
-        chars.append(dict(id=r['id'], n=r['name'], u=r['universe'], al=r['alignment'], ra=r['rarity'], fa=r['fame'], el=r['power_element'],
+        g = []
+        for gp in gal.get(r['id'], []):
+            if os.path.exists(os.path.join(ROOT, gp)):
+                shutil.copy(os.path.join(ROOT, gp), os.path.join(OUT, 'img', os.path.basename(gp))); g.append('img/' + os.path.basename(gp))
+        chars.append(dict(id=r['id'], n=r['name'], u=r['universe'], gal=g, al=r['alignment'], ra=r['rarity'], fa=r['fame'], el=r['power_element'],
                           ab=r['special_ability'], re=r['reach'], hi=r['story'], st=[st[k] for k in KEYS], pw=round(power[r['id']], 1), im=fn))
     params = {k: v for k, v in db.execute("SELECT key,value FROM balance_params WHERE key LIKE 'elegiuno%' OR key IN ('arena_multiplicador')")}
     data = dict(
