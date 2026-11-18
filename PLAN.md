@@ -51,12 +51,14 @@ El prototipo HTML (`prototipo/`) ya fija la sensación, el arte y las reglas. Es
 - Biblioteca con todas las cartas, estadísticas, historia y botón de escuchar.
 - Draft: elegir cartas por turnos de un mazo común.
 
-## Fase 7. Modos nuevos (elegís cuáles)
-- ¿QUIÉN SOY?: silueta y la voz da pistas.
-- MAYOR O MENOR: ¿cuál tiene más fuerza?
-- COPA DE HÉROES: eliminatoria de 8 personajes.
-- MISIÓN COOPERATIVA: Bauti y papá contra un villano jefe.
-- TIENDA DE SOBRES: abrir sobres y juntar cartas, usando el progreso guardado.
+## Fase 7. Modos nuevos
+Las reglas de todos los modos están en `data/MODOS.md`. Elegidos hasta ahora:
+- PERSONAJE vs PERSONAJE: cada jugador arma un héroe con una ruleta que le ofrece cartas, y gana el mejor promedio.
+- ELEGÍ UNO: modo individual con ruleta y TIER; solo se gana con S+ (muy difícil, calibrado con simulación).
+- PIEDRA, PAPEL Y TIJERA DE PODERES.
+- CARRERA DE HÉROES.
+- EQUIPO PERFECTO.
+- DESAFÍO DEL DÍA.
 
 ## Fase 8. Pulido y entrega
 - Animaciones y sacudidas ajustadas, rendimiento en la tablet real, tamaños de botones, accesibilidad.
