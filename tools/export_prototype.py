@@ -45,9 +45,15 @@ def main():
     with open(os.path.join(OUT, 'data.js'), 'w', encoding='utf8') as f:
         f.write('const DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
     import base64
-    with open(os.path.join(OUT, 'pack.js'), 'w', encoding='utf8') as f:
-        f.write('const PACK={' + ','.join('%s:"data:image/webp;base64,%s"' % (json.dumps(k), base64.b64encode(open(os.path.join(ROOT, v), 'rb').read()).decode()) for k, v in sorted(pack.items())) + '};\n')
-    print('en pack.js:', len(pack), '| MB: %.1f' % (os.path.getsize(os.path.join(OUT, 'pack.js')) / 1e6))
+    # tres archivos (pack.js, pack2.js, pack3.js) para no pasar el máximo de 16 MB por archivo
+    items = [(k, json.dumps(k) + ':"data:image/webp;base64,' + base64.b64encode(open(os.path.join(ROOT, v), 'rb').read()).decode() + '"') for k, v in sorted(pack.items())]
+    total = sum(len(t) for _, t in items); parts = [[], [], []]; acc = 0
+    for k, t in items:
+        n = min(2, int(acc / (total / 3 + 1))); parts[n].append(t); acc += len(t)
+    for n, name in enumerate(['pack.js', 'pack2.js', 'pack3.js']):
+        with open(os.path.join(OUT, name), 'w', encoding='utf8') as f:
+            f.write('window.PACK=window.PACK||{};Object.assign(PACK,{' + ','.join(parts[n]) + '});\n')
+    print('en packs:', len(pack), '| MB: %.1f' % (total / 1e6))
     print('personajes:', len(chars), '| con foto:', sum(1 for c in chars if c['im']), '| tamaño data.js: %d KB' % (os.path.getsize(os.path.join(OUT, 'data.js')) // 1024))
     print('imágenes MB: %.1f' % (sum(os.path.getsize(os.path.join(OUT, 'img', f)) for f in os.listdir(os.path.join(OUT, 'img'))) / 1e6))
 
