@@ -3,7 +3,7 @@
 Rechaza las que no tengan entre 350 y 560 caracteres y marca como 'poco segura' las de personajes poco conocidos (data/stories/dudosas.txt)."""
 import glob, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from catalog_lib import ROOT, connect
+from catalog_lib import ROOT, connect, trim_name_intro
 
 db = connect(); n = 0; fuera = []
 for f in sorted(glob.glob(os.path.join(ROOT, 'data', 'stories', 'batch*.txt'))):
@@ -12,7 +12,7 @@ for f in sorted(glob.glob(os.path.join(ROOT, 'data', 'stories', 'batch*.txt'))):
         if not ln or ln.startswith('#'): continue
         cid, txt = ln.split('|', 1); cid = int(cid)
         if not 350 <= len(txt) <= 560: fuera.append((cid, len(txt))); continue      # no se aplica lo que no cumple el largo
-        db.execute("UPDATE characters SET story=?, story_source='claude' WHERE id=?", (txt, cid)); n += 1
+        db.execute("UPDATE characters SET story=?, story_source='claude' WHERE id=?", (trim_name_intro(txt), cid)); n += 1
 dud = os.path.join(ROOT, 'data', 'stories', 'dudosas.txt')
 db.execute("DELETE FROM review_flags WHERE code='HISTORIA_POCO_SEGURA'")
 if os.path.exists(dud):

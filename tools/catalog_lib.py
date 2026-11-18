@@ -87,3 +87,12 @@ def recompute_rarity(db):
         pos += k
     db.executemany('UPDATE characters SET rarity=? WHERE id=?', [(r, i) for i, r in res.items()])
     return res
+
+
+def trim_name_intro(s):
+    """Saca la presentación con el nombre: "Hulk es el doctor Bruce..." -> "Es el doctor Bruce..."; "Superman es Clark Kent, ..." -> "Su nombre real es Clark Kent, ..."."""
+    m = re.match(r'^([^,.;:]{2,60}?) (es|son|fue|era|eran) (.+)$', s, re.S)
+    if not m or not m.group(1)[0].isupper() or len(m.group(1).split()) > 7: return s
+    subj, verb, rest = m.groups()
+    if rest[0].isupper(): return f'Su nombre real es {rest}' if verb == 'es' else s
+    return f'{verb.capitalize()} {rest}'

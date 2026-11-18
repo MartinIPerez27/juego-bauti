@@ -7,7 +7,7 @@ Después hay que buscar sus fotos:  python3 tools/fetch_photos.py collect && pic
 """
 import glob, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from catalog_lib import ROOT, connect, norm, recompute_rarity, slug
+from catalog_lib import ROOT, connect, norm, recompute_rarity, slug, trim_name_intro
 
 KEYS = ['inteligencia', 'fuerza', 'velocidad', 'aguante', 'poder', 'combate']
 UNI = {'M': 'MARVEL', 'D': 'DC'}
@@ -36,7 +36,7 @@ def main():
             sl = slug(name)
             db.execute("""INSERT INTO characters(id,slug,name,universe,rarity,fame,alignment,story,story_short,story_source,special_ability,power_element,reach,review_status)
                           VALUES(?,?,?,?,'COMÚN',?,?,?,NULL,'claude',?,?,?,'nuevo')""",
-                       (cid, sl, name, UNI[u], int(fame), AL[a], story, ab, EL[el], reach))
+                       (cid, sl, name, UNI[u], int(fame), AL[a], trim_name_intro(story), ab, EL[el], reach))
             db.executemany('INSERT INTO character_stats VALUES(?,?,?)', [(cid, k, float(v)) for k, v in zip(KEYS, vals)])
             db.execute("INSERT INTO review_flags(character_id,code,severity,detail) VALUES(?,?,?,?)",
                        (cid, 'HEROE_NUEVO', 'baja', 'Calificado por Claude con la rúbrica: revisar estadísticas, elemento e historia'))
