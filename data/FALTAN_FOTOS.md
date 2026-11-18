@@ -1,6 +1,6 @@
 # FALTAN FOTOS
 
-240 personajes todavía sin foto. Buscá una en Google (mejor de cuerpo completo y vertical), copiá el link de la IMAGEN y pasámelo con el número o el nombre.
+265 personajes todavía sin foto. Buscá una en Google (mejor de cuerpo completo y vertical), copiá el link de la IMAGEN y pasámelo con el número o el nombre.
 
 Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de la galería, agregá `--extra`).
 
@@ -9,6 +9,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 8 | ACERTIJO | DC |
 | 664 | ARTEMIS | DC |
 | 662 | ATLAS | DC |
+| 764 | ATOM GIRL | DC |
 | 39 | BAT-MITE | DC |
 | 42 | BATMAN AZRAEL | DC |
 | 43 | BATMAN NOSFERATU | DC |
@@ -26,6 +27,8 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 542 | DESAAD | DC |
 | 116 | DESPERO | DC |
 | 118 | DEVASTATOR | DC |
+| 773 | DOCTOR MID-NITE | DC |
+| 770 | DOCTOR POISON | DC |
 | 496 | DOCTOR SIVANA | DC |
 | 128 | DOS CARAS | DC |
 | 133 | EL AVISPON VERDE | DC |
@@ -52,19 +55,26 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 270 | MORFEO | DC |
 | 273 | MR TERRIFIC | DC |
 | 280 | MUJER MARAVILLA - AGUILA DORADA | DC |
+| 769 | NIGHTSHADE | DC |
+| 767 | OFFSPRING | DC |
 | 297 | OMEGA (BATMAN EN LAST KNIGHT ON EARTH) | DC |
 | 680 | PARADEMON | DC |
 | 491 | PARASITE | DC |
 | 530 | PHANTOM STRANGER | DC |
 | 314 | PINGÜINO | DC |
+| 775 | POWER RING | DC |
 | 728 | PROFESSOR PYG | DC |
 | 320 | PSYCHO-PIRATE | DC |
 | 326 | RATCATCHER | DC |
+| 779 | SHADE | DC |
 | 361 | SINIESTRO | DC |
+| 765 | SIREN | DC |
 | 365 | SOMBRERERO LOCO | DC |
+| 776 | SONAR | DC |
 | 396 | SUPERMAN KINGDOM COME | DC |
 | 398 | SUPERMAN RED SON | DC |
 | 399 | SUPERMAN-PRIME FUSED (WORLD´S FUNNEST) | DC |
+| 778 | SUPERWOMAN | DC |
 | 546 | TERRA | DC |
 | 405 | THANOSEID | DC |
 | 413 | THE MERCILESS | DC |
@@ -78,6 +88,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 721 | ULTRA-HUMANITE | DC |
 | 435 | VANDAL SAVAGE | DC |
 | 440 | VIGILANTE | DC |
+| 766 | WARP | DC |
 | 446 | WHITE LANTERN KYLE RAYNER | DC |
 | 447 | WHITE WITCH | DC |
 | 485 | WILDCAT | DC |
@@ -89,10 +100,12 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 13 | AGENTE X | MARVEL |
 | 14 | AGENTE ZERO | MARVEL |
 | 554 | AIR-WALKER | MARVEL |
+| 757 | AJAX | MARVEL |
 | 20 | AMPHIBION | MARVEL |
 | 21 | ANCIENT ONE | MARVEL |
 | 696 | ANGEL DUST | MARVEL |
 | 551 | ANT-MAN | MARVEL |
+| 762 | ANT-MAN ERIC O'GRADY | MARVEL |
 | 27 | APOCALIPSIS | MARVEL |
 | 695 | ARCADE | MARVEL |
 | 31 | ASYLUM | MARVEL |
@@ -105,6 +118,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 55 | BLACK KNIGHT | MARVEL |
 | 59 | BLACK TARANTULA | MARVEL |
 | 61 | BLACK WIDOW - TRAJE BLANCO | MARVEL |
+| 746 | BLASTAAR | MARVEL |
 | 701 | BLING! | MARVEL |
 | 64 | BLISTIK | MARVEL |
 | 649 | BLOODAXE | MARVEL |
@@ -122,6 +136,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 704 | COPYCAT | MARVEL |
 | 101 | COSMIC KING THOR | MARVEL |
 | 103 | CROSSBONES | MARVEL |
+| 754 | CROSSFIRE | MARVEL |
 | 702 | DAKEN | MARVEL |
 | 106 | DAREDEVIL TRAJE NEGRO | MARVEL |
 | 107 | DARK CLAW | MARVEL |
@@ -158,6 +173,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 583 | JACK OF HEARTS | MARVEL |
 | 584 | JENNIFER KALE | MARVEL |
 | 706 | JOLT | MARVEL |
+| 740 | KA-ZAR | MARVEL |
 | 690 | KAINE | MARVEL |
 | 219 | KANG EL CONQUISTADOR | MARVEL |
 | 220 | KARNAC | MARVEL |
@@ -168,16 +184,20 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 739 | LOBO THE DUCK | MARVEL |
 | 242 | LOKI GOD OF STORIES | MARVEL |
 | 587 | MACH-IV | MARVEL |
+| 742 | MADAME MASQUE | MARVEL |
 | 247 | MAGIK | MARVEL |
 | 519 | MAGMA | MARVEL |
 | 249 | MAGNETO DINASTÍA X | MARVEL |
 | 589 | MAN-WOLF | MARVEL |
 | 251 | MANDIBULAS | MARVEL |
+| 752 | MANDRILL | MARVEL |
 | 252 | MANIA | MARVEL |
 | 512 | MAR-VELL | MARVEL |
 | 254 | MARQUIS OF DEATH (CLYDE WYNCHAM) | MARVEL |
+| 758 | MAVERICK | MARVEL |
 | 694 | MAXIMUS | MARVEL |
 | 265 | MISTICA | MARVEL |
+| 759 | MOLTEN MAN | MARVEL |
 | 604 | MOONSTONE | MARVEL |
 | 657 | MOSES MAGNUM | MARVEL |
 | 658 | MR IMMORTAL | MARVEL |
@@ -193,6 +213,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 313 | PHOTON | MARVEL |
 | 655 | PLANTMAN | MARVEL |
 | 318 | PROFESOR X | MARVEL |
+| 747 | PSYCHO-MAN | MARVEL |
 | 656 | PURPLE MAN | MARVEL |
 | 322 | PUÑO DE HIERRO | MARVEL |
 | 504 | QUAKE | MARVEL |
@@ -205,6 +226,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 345 | SCOURGE OF THE UNDERWORLD | MARVEL |
 | 596 | SHADOW KING | MARVEL |
 | 355 | SHIVER MAN | MARVEL |
+| 760 | SHRIEK | MARVEL |
 | 700 | SILVERCLAW | MARVEL |
 | 369 | SPIDER MAN SIMBIONTE | MARVEL |
 | 730 | SPIDER-BOY | MARVEL |
@@ -230,7 +252,9 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 652 | THUNDERBIRD | MARVEL |
 | 603 | TINKERER | MARVEL |
 | 426 | TITAN HULK | MARVEL |
+| 745 | TITANIUM MAN | MARVEL |
 | 427 | TOBA HULK | MARVEL |
+| 756 | UNICORN | MARVEL |
 | 643 | UTGARD-LOKI | MARVEL |
 | 654 | VANISHER | MARVEL |
 | 439 | VIEJO LOGAN | MARVEL |
@@ -239,6 +263,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 445 | WEAPON HEX | MARVEL |
 | 509 | WHITE TIGER | MARVEL |
 | 505 | WICCAN | MARVEL |
+| 750 | WIZARD | MARVEL |
 | 732 | WOLVERBROOM | MARVEL |
 | 449 | WOLVERINE TRAJE NEGRO | MARVEL |
 | 514 | WRECKER | MARVEL |

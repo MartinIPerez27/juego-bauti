@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Alarga con una frase final las historias de un lote que quedaron por debajo de 362 caracteres (mínimo aceptado: 350)."""
 import sys
-ADDS = [' Siempre busca ayudar a sus amigos y nunca abandona una misión a medias.', ' Cada aventura le enseña algo nuevo y lo vuelve más fuerte.',
-        ' Sus compañeros confían en él porque jamás se da por vencido.', ' Con valentía y buen humor enfrenta a los rivales más difíciles.']
+ADDS = [' Su historia sigue sumando aventuras en los cómics.', ' Los lectores lo recuerdan por su estilo inconfundible.', ' Cada vez que aparece, la pelea se pone más interesante.', ' Es un personaje que nadie olvida después de verlo en acción.']
 k = 0
 for p in sys.argv[1:]:
     out = []
