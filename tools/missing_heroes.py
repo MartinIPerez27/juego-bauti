@@ -39,7 +39,7 @@ ES_TO_EN = {
     'EL AVISPON VERDE': 'Green Hornet', 'LA COSA DEL PANTANO': 'Swamp Thing', 'FLECHA VERDE': 'Green Arrow', 'GATA NEGRA': 'Black Cat',
     'HOMBRE ABSORVENTE': 'Absorbing Man', 'HOMBRE ANTORCHA': 'Human Torch', 'HOMBRE DE ARENA': 'Sandman', 'HOMBRE DE HIELO': 'Iceman',
     'HOMBRE MARAVILLA': 'Wonder Man', 'LINTERNA VERDE': 'Green Lantern', 'MUJER AVISPA': 'Wasp', 'MUJER INVISIBLE': 'Invisible Woman',
-    'MUJER MARAVILLA': 'Wonder Woman', 'OMEGA ROJO': 'Omega Red', 'PANTERA NEGRA': 'Black Panther', 'RAYO NEGRO': 'Black Lightning',
+    'MUJER MARAVILLA': 'Wonder Woman', 'OMEGA ROJO': 'Omega Red', 'PANTERA NEGRA': 'Black Panther', 'RAYO NEGRO': 'Black Bolt',
     'SEÑOR FREEZE': 'Mister Freeze', 'SOLDADO DE INVERNO': 'Winter Soldier', 'TORMENTA': 'Storm', 'HULK ROJO': 'Red Hulk', 'SHE HULK ROJO': 'Red She-Hulk'}
 
 
