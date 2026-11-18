@@ -6,13 +6,13 @@ Lista de todos los modos elegidos y sus reglas. Las constantes están en `balanc
 |---|---|---|
 | PARES Y BATALLA (modo principal) | 2 o más, o contra la máquina | Prototipo hecho; reglas en `PLAN.md` |
 | BIBLIOTECA | 1 | Prototipo hecho |
-| DRAFT | 2 o más | Pendiente |
+| DRAFT | 2 o máquina | Prototipo hecho |
 | PERSONAJE vs PERSONAJE | 2 o más, o contra la máquina | Reglas abajo |
 | ELEGÍ UNO | 1 | Reglas abajo, TIER calibrados |
-| PIEDRA, PAPEL Y TIJERA DE PODERES | 2 | Elementos listos (`element_rules`) |
-| CARRERA DE HÉROES | 2 o más | Pendiente |
-| EQUIPO PERFECTO | 1 o 2 | Pendiente |
-| DESAFÍO DEL DÍA | 1 | Pendiente |
+| PIEDRA, PAPEL Y TIJERA DE PODERES | 2 o máquina | Prototipo hecho |
+| CARRERA DE HÉROES | 2 o máquina | Prototipo hecho |
+| EQUIPO PERFECTO | 1 | Prototipo hecho |
+| DESAFÍO DEL DÍA | 1 | Prototipo hecho |
 
 ## Regla general de la batalla por equipos
 Competir en una arena favorable **no alcanza para ganar**. El puntaje de un equipo es la suma de lo que rinde cada integrante en esa arena. Las 2 estadísticas de la arena pesan 3 veces, pero las otras 4 siguen contando. Comprobado: el equipo de Hulk, Hombre Hormiga y Batman pierde en las 8 arenas contra Doom Emperador, Galactus y Fénix. En "Ciudad en ruinas", que favorece a Hulk, el resultado es 181,5 contra 281.
@@ -58,3 +58,10 @@ Para que sea más fácil o más difícil se cambia el piso de S+ (`elegiuno_piso
 1. PERSONAJE vs PERSONAJE: ¿cada jugador gira su propia ruleta y le tocan cartas distintas? (Lo asumí así.)
 2. PERSONAJE vs PERSONAJE: ¿el empate da un punto a cada uno?
 3. ELEGÍ UNO: ¿el piso de S+ en "el 20 % mejor" (≈ 1 de cada 115) te parece bien de difícil?
+
+## Modos nuevos del prototipo (reglas que tomé; se pueden cambiar)
+- **DRAFT:** 10 cartas a la vista; los jugadores eligen una por turno hasta tener 3 cada uno (la máquina toma la de más poder). Después hay una batalla con arena al azar.
+- **PIEDRA, PAPEL Y TIJERA DE PODERES:** cada uno elige un elemento; cada elemento le gana a dos y pierde con dos (`element_rules`). Gana el primero que llega a 3. Dos jugadores: se pasan la tablet y el segundo elige sin ver al primero.
+- **CARRERA DE HÉROES:** cada uno elige un corredor entre 4 cartas. Se toca rápido su carril: cada toque avanza un poco más según la VELOCIDAD del héroe. La máquina corre sola.
+- **EQUIPO PERFECTO:** una arena y 10 cartas con los valores de esa arena a la vista. Se eligen 3 y se pelea contra el mejor equipo de otras 10 cartas. Si el equipo elegido es el mejor posible de esa mano, sale "¡EQUIPO PERFECTO!".
+- **DESAFÍO DEL DÍA:** la arena, las 8 cartas y el rival salen de la fecha (iguales para todos ese día). Se guarda la racha en el dispositivo.
