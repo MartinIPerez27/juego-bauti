@@ -9,18 +9,9 @@ ELEMENTS = ['MAGIA', 'FUERZA', 'MENTE', 'TECNOLOGIA', 'ENERGIA']
 POWER_VIEW = """
 DROP VIEW IF EXISTS v_power;
 CREATE VIEW v_power AS
-WITH s AS (
-  SELECT cs.character_id, cs.value, d.weight,
-         ROW_NUMBER() OVER (PARTITION BY cs.character_id ORDER BY cs.value DESC) AS rn
-  FROM character_stats cs JOIN stat_defs d ON d.key=cs.stat_key AND d.active=1 AND d.in_power=1),
-a AS (
-  SELECT character_id, SUM(value*weight)/SUM(weight) AS avg_w,
-         AVG(CASE WHEN rn<=3 THEN value END) AS top3
-  FROM s GROUP BY character_id)
-SELECT c.id AS character_id, c.name,
-       ROUND((1-p.value)*a.avg_w + p.value*a.top3, 1) AS power
-FROM characters c JOIN a ON a.character_id=c.id
-JOIN balance_params p ON p.key='pico_peso';
+SELECT c.id AS character_id, c.name, ROUND(SUM(cs.value*d.weight)/SUM(d.weight), 1) AS power
+FROM characters c JOIN character_stats cs ON cs.character_id=c.id JOIN stat_defs d ON d.key=cs.stat_key
+GROUP BY c.id;
 """
 
 
@@ -77,7 +68,7 @@ def gemini_json(prompt, model='gemini-3-flash-preview', temperature=0.7, retries
 
 
 def recompute_rarity(db):
-    """Rareza = 50% percentil de poder + 50% percentil de fama; reparto en pirámide (cuotas en balance_params)."""
+    """Rareza = mezcla de percentil de poder y de fama (peso de la fama en balance_params); reparto en pirámide (cuotas en balance_params)."""
     quota = {r: db.execute('SELECT value FROM balance_params WHERE key=?', ('cuota_' + norm(r).lower(),)).fetchone()[0] for r in RARITIES}
     rows = db.execute('SELECT c.id, v.power, c.fame FROM characters c JOIN v_power v ON v.character_id=c.id').fetchall()
     n = len(rows)
@@ -85,8 +76,10 @@ def recompute_rarity(db):
         order = sorted(range(n), key=lambda i: vals[i]); out = [0.0] * n
         for pos, i in enumerate(order): out[i] = (pos + 0.5) / n
         return out
+    pf_w = db.execute("SELECT value FROM balance_params WHERE key='rareza_peso_fama'").fetchone()
+    wf = pf_w[0] if pf_w else 0.5
     pp = pct([r['power'] for r in rows]); pf = pct([(r['fame'] or 3) + (r['power'] or 0) * 1e-4 for r in rows])
-    score = [0.5 * a + 0.5 * b for a, b in zip(pp, pf)]
+    score = [(1 - wf) * a + wf * b for a, b in zip(pp, pf)]
     order = sorted(range(n), key=lambda i: score[i]); pos = 0; res = {}
     for r in RARITIES:
         k = n - pos if r == RARITIES[-1] else round(quota[r] * n)
