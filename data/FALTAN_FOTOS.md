@@ -1,6 +1,6 @@
 # FALTAN FOTOS
 
-301 personajes todavía sin foto. Buscá una en Google (mejor de cuerpo completo y vertical), copiá el link de la IMAGEN y pasámelo con el número o el nombre.
+302 personajes todavía sin foto. Buscá una en Google (mejor de cuerpo completo y vertical), copiá el link de la IMAGEN y pasámelo con el número o el nombre.
 
 Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de la galería, agregá `--extra`).
 
@@ -58,7 +58,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 630 | LIGHTNING LORD | DC |
 | 843 | MAXWELL LORD | DC |
 | 667 | MICRO LAD | DC |
-| 262 | MINDNIGHTER | DC |
+| 262 | MIDNIGHTER | DC |
 | 270 | MORFEO | DC |
 | 273 | MR TERRIFIC | DC |
 | 280 | MUJER MARAVILLA - AGUILA DORADA | DC |
@@ -105,6 +105,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 553 | A-BOMB | MARVEL |
 | 3 | ABOMINACION | MARVEL |
 | 6 | ACCESS | MARVEL |
+| 7 | ACE | MARVEL |
 | 10 | ADAPTOID | MARVEL |
 | 12 | AGENTE ANTI-VENOM | MARVEL |
 | 13 | AGENTE X | MARVEL |
@@ -217,7 +218,6 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 249 | MAGNETO DINASTÍA X | MARVEL |
 | 790 | MAN-APE | MARVEL |
 | 589 | MAN-WOLF | MARVEL |
-| 251 | MANDIBULAS | MARVEL |
 | 752 | MANDRILL | MARVEL |
 | 252 | MANIA | MARVEL |
 | 512 | MAR-VELL | MARVEL |
@@ -300,6 +300,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 750 | WIZARD | MARVEL |
 | 732 | WOLVERBROOM | MARVEL |
 | 449 | WOLVERINE TRAJE NEGRO | MARVEL |
+| 451 | WRAITH | MARVEL |
 | 514 | WRECKER | MARVEL |
 | 698 | WYATT WINGFOOT | MARVEL |
 | 639 | X-MAN | MARVEL |

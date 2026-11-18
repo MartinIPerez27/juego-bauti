@@ -40,7 +40,7 @@ ES_TO_EN = {
     'HOMBRE ABSORVENTE': 'Absorbing Man', 'HOMBRE ANTORCHA': 'Human Torch', 'HOMBRE DE ARENA': 'Sandman', 'HOMBRE DE HIELO': 'Iceman',
     'HOMBRE MARAVILLA': 'Wonder Man', 'LINTERNA VERDE': 'Green Lantern', 'MUJER AVISPA': 'Wasp', 'MUJER INVISIBLE': 'Invisible Woman',
     'MUJER MARAVILLA': 'Wonder Woman', 'OMEGA ROJO': 'Omega Red', 'PANTERA NEGRA': 'Black Panther', 'RAYO NEGRO': 'Black Bolt',
-    'SEÑOR FREEZE': 'Mister Freeze', 'SOLDADO DE INVERNO': 'Winter Soldier', 'TORMENTA': 'Storm', 'HULK ROJO': 'Red Hulk', 'SHE HULK ROJO': 'Red She-Hulk'}
+    'SEÑOR FREEZE': 'Mister Freeze', 'SOLDADO DE INVERNO': 'Winter Soldier', 'TORMENTA': 'Storm', 'HULK ROJO': 'Red Hulk', 'COLOSO': 'Colossus', 'CICLOPE': 'Cyclops', 'ULYSSES KLAW': 'Klaw', 'THE PUNISHER': 'Punisher', 'GAMBITO': 'Gambit', 'PROFESOR X': 'Professor X', 'LAGARTO': 'Lizard', 'EL BUITRE': 'Vulture', 'ACERTIJO': 'Riddler', 'PINGÜINO': 'Penguin', 'ESPANTAPAJAROS': 'Scarecrow', 'DOS CARAS': 'Two-Face', 'HIEDRA VENENOSA': 'Poison Ivy', 'DOCTOR MANHATTAN': 'Dr Manhattan', 'CONSTANTINE': 'John Constantine', 'ALFRED': 'Alfred Pennyworth', 'LOCKJAW': 'Lockjaw', 'SHE HULK ROJO': 'Red She-Hulk'}
 
 
 def catalog_names(db):
