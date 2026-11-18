@@ -1,6 +1,6 @@
 # FALTAN FOTOS
 
-215 personajes todavía sin foto. Buscá una en Google (mejor de cuerpo completo y vertical), copiá el link de la IMAGEN y pasámelo con el número o el nombre.
+240 personajes todavía sin foto. Buscá una en Google (mejor de cuerpo completo y vertical), copiá el link de la IMAGEN y pasámelo con el número o el nombre.
 
 Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de la galería, agregá `--extra`).
 
@@ -16,6 +16,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 46 | BATZARRO | DC |
 | 547 | BLUE DEVIL | DC |
 | 67 | BOOSTER GOLD | DC |
+| 723 | CALENDAR MAN | DC |
 | 84 | CARA DE ARCILLA | DC |
 | 666 | CHAMELEON | DC |
 | 96 | COCODRILO ASESINO | DC |
@@ -28,6 +29,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 496 | DOCTOR SIVANA | DC |
 | 128 | DOS CARAS | DC |
 | 133 | EL AVISPON VERDE | DC |
+| 716 | ELASTI-GIRL | DC |
 | 143 | ESPANTAPAJAROS | DC |
 | 525 | FIREFLY | DC |
 | 150 | FLASH REVERSO | DC |
@@ -38,6 +40,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 173 | H´EL | DC |
 | 205 | IRON LANTERN | DC |
 | 672 | ISIS | DC |
+| 717 | JERICHO | DC |
 | 218 | JUSTICE BUSTER | DC |
 | 541 | KALIBAK | DC |
 | 550 | KILLER MOTH | DC |
@@ -54,6 +57,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 491 | PARASITE | DC |
 | 530 | PHANTOM STRANGER | DC |
 | 314 | PINGÜINO | DC |
+| 728 | PROFESSOR PYG | DC |
 | 320 | PSYCHO-PIRATE | DC |
 | 326 | RATCATCHER | DC |
 | 361 | SINIESTRO | DC |
@@ -71,6 +75,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 423 | THINKER | DC |
 | 492 | TOYMAN | DC |
 | 678 | TRIPLICATE GIRL | DC |
+| 721 | ULTRA-HUMANITE | DC |
 | 435 | VANDAL SAVAGE | DC |
 | 440 | VIGILANTE | DC |
 | 446 | WHITE LANTERN KYLE RAYNER | DC |
@@ -86,8 +91,10 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 554 | AIR-WALKER | MARVEL |
 | 20 | AMPHIBION | MARVEL |
 | 21 | ANCIENT ONE | MARVEL |
+| 696 | ANGEL DUST | MARVEL |
 | 551 | ANT-MAN | MARVEL |
 | 27 | APOCALIPSIS | MARVEL |
+| 695 | ARCADE | MARVEL |
 | 31 | ASYLUM | MARVEL |
 | 35 | BABYPOOL | MARVEL |
 | 37 | BARON ZEMO | MARVEL |
@@ -98,9 +105,11 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 55 | BLACK KNIGHT | MARVEL |
 | 59 | BLACK TARANTULA | MARVEL |
 | 61 | BLACK WIDOW - TRAJE BLANCO | MARVEL |
+| 701 | BLING! | MARVEL |
 | 64 | BLISTIK | MARVEL |
 | 649 | BLOODAXE | MARVEL |
 | 66 | BLUE MARVEL | MARVEL |
+| 735 | BULLETS AND BRACELETS | MARVEL |
 | 73 | CAMALEON | MARVEL |
 | 76 | CAPITAN AMERICA - FALCON | MARVEL |
 | 77 | CAPITAN AMERICA SUPREMO | MARVEL |
@@ -110,8 +119,10 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 564 | CENTURY | MARVEL |
 | 94 | CICLOPE | MARVEL |
 | 97 | COLOSO | MARVEL |
+| 704 | COPYCAT | MARVEL |
 | 101 | COSMIC KING THOR | MARVEL |
 | 103 | CROSSBONES | MARVEL |
+| 702 | DAKEN | MARVEL |
 | 106 | DAREDEVIL TRAJE NEGRO | MARVEL |
 | 107 | DARK CLAW | MARVEL |
 | 569 | DARKSTAR | MARVEL |
@@ -119,6 +130,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 571 | DESTROYER | MARVEL |
 | 573 | DOC SAMSON | MARVEL |
 | 165 | DOCTOR DOOM EMPERADOR | MARVEL |
+| 731 | DOCTOR STRANGEFATE | MARVEL |
 | 126 | DOORMAN | MARVEL |
 | 647 | DOPPELGANGER | MARVEL |
 | 574 | EGO | MARVEL |
@@ -133,21 +145,27 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 161 | GHOST PANTHER | MARVEL |
 | 166 | GOLDPOOL | MARVEL |
 | 170 | GUARDIAN | MARVEL |
+| 687 | HAMMERHEAD | MARVEL |
 | 188 | HOMBRE DE PIEDRA | MARVEL |
 | 189 | HOMBRE DRAGON | MARVEL |
 | 192 | HOUSE OF M SCARLET WITCH | MARVEL |
 | 195 | HULK VENOM | MARVEL |
 | 506 | HULKLING | MARVEL |
 | 197 | HULKVERINE (WEAPON H) | MARVEL |
+| 707 | INK | MARVEL |
 | 203 | INMORTAL HULK | MARVEL |
 | 207 | IRON MAN - 1º TRAJE | MARVEL |
 | 583 | JACK OF HEARTS | MARVEL |
 | 584 | JENNIFER KALE | MARVEL |
+| 706 | JOLT | MARVEL |
+| 690 | KAINE | MARVEL |
 | 219 | KANG EL CONQUISTADOR | MARVEL |
 | 220 | KARNAC | MARVEL |
+| 686 | KILLMONGER | MARVEL |
 | 230 | LA MANCHA | MARVEL |
 | 232 | LAGARTO | MARVEL |
 | 659 | LIVING BRAIN | MARVEL |
+| 739 | LOBO THE DUCK | MARVEL |
 | 242 | LOKI GOD OF STORIES | MARVEL |
 | 587 | MACH-IV | MARVEL |
 | 247 | MAGIK | MARVEL |
@@ -158,6 +176,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 252 | MANIA | MARVEL |
 | 512 | MAR-VELL | MARVEL |
 | 254 | MARQUIS OF DEATH (CLYDE WYNCHAM) | MARVEL |
+| 694 | MAXIMUS | MARVEL |
 | 265 | MISTICA | MARVEL |
 | 604 | MOONSTONE | MARVEL |
 | 657 | MOSES MAGNUM | MARVEL |
@@ -186,12 +205,15 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 345 | SCOURGE OF THE UNDERWORLD | MARVEL |
 | 596 | SHADOW KING | MARVEL |
 | 355 | SHIVER MAN | MARVEL |
+| 700 | SILVERCLAW | MARVEL |
 | 369 | SPIDER MAN SIMBIONTE | MARVEL |
+| 730 | SPIDER-BOY | MARVEL |
 | 370 | SPIDER-CIDE | MARVEL |
 | 373 | SPIDER-HAM | MARVEL |
 | 376 | SPIDER-MAN NOIR | MARVEL |
 | 377 | SPIDER-PUNK | MARVEL |
 | 600 | STARDUST | MARVEL |
+| 693 | STINGRAY | MARVEL |
 | 385 | STRYFE | MARVEL |
 | 388 | SUPER-ADAPTOID | MARVEL |
 | 389 | SUPER-SKRULL | MARVEL |
@@ -204,6 +226,7 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 411 | THE LIFEBRINGER GALACTUS | MARVEL |
 | 425 | THOR DESTRUCTOR | MARVEL |
 | 601 | THOR GIRL | MARVEL |
+| 734 | THORION | MARVEL |
 | 652 | THUNDERBIRD | MARVEL |
 | 603 | TINKERER | MARVEL |
 | 426 | TITAN HULK | MARVEL |
@@ -216,8 +239,10 @@ Para sumarla: `python3 tools/add_photo.py NÚMERO LINK` (para una foto extra de 
 | 445 | WEAPON HEX | MARVEL |
 | 509 | WHITE TIGER | MARVEL |
 | 505 | WICCAN | MARVEL |
+| 732 | WOLVERBROOM | MARVEL |
 | 449 | WOLVERINE TRAJE NEGRO | MARVEL |
 | 514 | WRECKER | MARVEL |
+| 698 | WYATT WINGFOOT | MARVEL |
 | 639 | X-MAN | MARVEL |
 | 638 | YELLOWJACKET | MARVEL |
 | 642 | YMIR | MARVEL |
