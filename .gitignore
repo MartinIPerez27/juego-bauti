@@ -3,3 +3,5 @@ data/*.bak
 data/*.v1.bak
 data/cache/
 data/raw_images/
+__pycache__/
+*.pyc
