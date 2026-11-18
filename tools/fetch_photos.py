@@ -97,6 +97,72 @@ def collect_fandom_search(db):
     print('Fandom (búsqueda): candidatas nuevas', n, 'de', len(rows), 'personajes')
 
 
+def collect_wikipedia(db):
+    """Para los que siguen sin foto: busca el artículo en Wikipedia (inglés) y toma la imagen principal si el título contiene todas las palabras del nombre."""
+    rows = db.execute("""SELECT c.id,c.name,c.universe FROM characters c WHERE NOT EXISTS
+                         (SELECT 1 FROM images i WHERE i.character_id=c.id AND (i.is_selected=1 OR i.status IN ('candidata','elegida')))
+                         AND NOT EXISTS (SELECT 1 FROM images i WHERE i.character_id=c.id AND i.source='wikipedia') ORDER BY c.id""").fetchall()
+    n = 0
+    for r in rows:
+        base = re.sub(r'\s*\(.*?\)', '', english(r['name']))
+        want = [w for w in re.findall(r'[a-z0-9]+', norm_words(base)) if w not in ('the', 'of', 'and', 'de', 'la', 'el')]
+        hint = {'MARVEL': 'Marvel Comics', 'DC': 'DC Comics'}.get(r['universe'], 'comics')
+        q = urllib.parse.urlencode({'action': 'query', 'generator': 'search', 'gsrsearch': f'{base} {hint} character', 'gsrnamespace': 0, 'gsrlimit': 6,
+                                    'prop': 'pageimages', 'piprop': 'original', 'format': 'json', 'formatversion': 2})
+        try: d = http_json(f'https://en.wikipedia.org/w/api.php?{q}').get('query', {}).get('pages', [])
+        except Exception as e:
+            print('  error', str(e)[:60]); time.sleep(90 if '429' in str(e) else 10); continue      # Wikipedia limita pedidos: se espera
+        for pg in sorted(d, key=lambda x: x.get('index', 99)):
+            src = (pg.get('original') or {}).get('source') or ''
+            title = re.sub(r'\s*\(.*?\)', '', pg['title'])
+            have = re.findall(r'[a-z0-9]+', norm_words(title))
+            ok_ext = re.search(r'\.(jpe?g|png|webp)$', src, re.I) and not re.search(r'logo|symbol|flag|icon', src, re.I)
+            if src and ok_ext and want and all(w in have for w in want):
+                n += add(db, r['id'], 'wikipedia', src, 'https://en.wikipedia.org/wiki/' + urllib.parse.quote(pg['title'].replace(' ', '_'))); break
+        db.commit(); time.sleep(4.0)
+    print('Wikipedia: candidatas nuevas', n, 'de', len(rows), 'personajes')
+
+
+def collect_wikipedia_titles(db):
+    """Pide a Wikipedia muchos títulos probables en un solo pedido ("Nombre (Marvel Comics)", "(DC Comics)", "(comics)", "(character)").
+    Pocos pedidos en vez de uno por personaje, para respetar el límite del sitio. Los redirects se resuelven solos."""
+    rows = db.execute("""SELECT c.id,c.name,c.universe FROM characters c WHERE NOT EXISTS
+                         (SELECT 1 FROM images i WHERE i.character_id=c.id AND (i.is_selected=1 OR i.status IN ('candidata','elegida')))
+                         AND NOT EXISTS (SELECT 1 FROM images i WHERE i.character_id=c.id AND i.source='wikipedia') ORDER BY c.id""").fetchall()
+    n = 0
+    for i in range(0, len(rows), 10):
+        batch = rows[i:i + 10]; titles = {}
+        for r in batch:
+            base = title_case(re.sub(r'\s*\(.*?\)', '', english(r['name'])))
+            hints = ['Marvel Comics', 'DC Comics'] if r['universe'] == 'MARVEL' else ['DC Comics', 'Marvel Comics']
+            for t in [f'{base} ({h})' for h in hints] + [f'{base} (comics)', f'{base} (character)']:
+                titles[t] = r['id']
+        q = urllib.parse.urlencode({'action': 'query', 'titles': '|'.join(titles), 'redirects': 1, 'prop': 'pageimages', 'piprop': 'original',
+                                    'format': 'json', 'formatversion': 2})
+        for attempt in range(4):
+            try: d = http_json(f'https://en.wikipedia.org/w/api.php?{q}')['query']; break
+            except Exception as e:
+                print('  error', str(e)[:50]); time.sleep(60 if '429' in str(e) else 10); d = None
+        if not d: continue
+        alias = {}
+        for k in ('normalized', 'redirects'):
+            for x in d.get(k, []): alias[x['to']] = x['from'] if k == 'normalized' else alias.get(x['from'], x['from'])
+        done = set()
+        order = {t: j for j, t in enumerate(titles)}
+        found = []
+        for pg in d.get('pages', []):
+            src = (pg.get('original') or {}).get('source') or ''
+            if pg.get('missing') or not re.search(r'\.(jpe?g|png|webp)$', src, re.I) or re.search(r'logo|symbol|flag|icon', src, re.I): continue
+            frm = alias.get(pg['title'], pg['title'])
+            for t, cid in titles.items():
+                if t == frm or t == pg['title'] or alias.get(t) == pg['title']: found.append((order[t], cid, src, pg['title']))
+        for _, cid, src, title in sorted(found):
+            if cid in done: continue
+            done.add(cid); n += add(db, cid, 'wikipedia', src, 'https://en.wikipedia.org/wiki/' + urllib.parse.quote(title.replace(' ', '_')))
+        db.commit(); time.sleep(6)
+    print('Wikipedia (por títulos): candidatas nuevas', n, 'de', len(rows), 'personajes')
+
+
 def norm_words(s):
     import unicodedata
     return unicodedata.normalize('NFD', s.lower()).encode('ascii', 'ignore').decode()
@@ -141,7 +207,7 @@ def pick(db):
     got = 0
     for r in db.execute('SELECT id FROM characters c WHERE NOT EXISTS (SELECT 1 FROM images i WHERE i.character_id=c.id AND i.is_selected=1)').fetchall():
         c = db.execute("""SELECT id FROM images WHERE character_id=? AND status IN ('candidata','error') AND status!='rechazada'
-                          ORDER BY CASE source WHEN 'superhero_api' THEN 1 WHEN 'fandom' THEN 2 WHEN 'fandom_busqueda' THEN 3 ELSE 4 END LIMIT 1""", (r['id'],)).fetchone()
+                          ORDER BY CASE source WHEN 'superhero_api' THEN 1 WHEN 'fandom' THEN 2 WHEN 'wikipedia' THEN 3 WHEN 'fandom_busqueda' THEN 4 ELSE 5 END LIMIT 1""", (r['id'],)).fetchone()
         if c: db.execute("UPDATE images SET is_selected=1, status='elegida' WHERE id=?", (c['id'],)); got += 1
     db.commit(); print('fotos elegidas ahora:', got, '| con foto elegida en total:', db.execute('SELECT COUNT(*) FROM images WHERE is_selected=1').fetchone()[0], 'de', db.execute('SELECT COUNT(*) FROM characters').fetchone()[0])
 
@@ -190,11 +256,11 @@ def status(db):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('cmd', choices=['collect', 'pick', 'download', 'status', 'reject']); ap.add_argument('ids', nargs='*', type=int)
-    ap.add_argument('--source', choices=['superhero', 'fandom', 'fandombusqueda', 'comicvine']); ap.add_argument('--limit', type=int, default=400)
+    ap.add_argument('--source', choices=['superhero', 'fandom', 'fandombusqueda', 'wikipedia', 'comicvine']); ap.add_argument('--limit', type=int, default=400)
     a = ap.parse_args(); db = connect()
     if a.cmd == 'collect':
         for s in ([a.source] if a.source else ['superhero', 'fandom']):
-            {'superhero': collect_superhero, 'fandom': collect_fandom, 'fandombusqueda': collect_fandom_search}.get(s, lambda d: collect_comicvine(d, a.limit))(db)
+            {'superhero': collect_superhero, 'fandom': collect_fandom, 'fandombusqueda': collect_fandom_search, 'wikipedia': collect_wikipedia_titles}.get(s, lambda d: collect_comicvine(d, a.limit))(db)
         status(db)
     elif a.cmd == 'pick': print('repetidas rechazadas:', reject_repeated(db)); pick(db)
     elif a.cmd == 'reject': reject(db, a.ids)
