@@ -17,16 +17,24 @@ La hoja de cálculo original solo dio la lista de nombres y datos de texto. **Su
 ## Estado
 | Qué | Estado |
 |---|---|
-| Estadísticas, elementos y fama de los 454 | Hechos. Los calificó Claude con la rúbrica; revisar los que parezcan raros |
-| Fotos | 292 listas y revisadas a la vista; 61 rechazadas y el resto sin foto, en búsqueda (SuperHero API, Fandom y ComicVine) |
-| Historias | 115 reescritas (largo parejo, 350-560 caracteres); las demás son de Gemini y están marcadas para reescribir |
-| Héroes nuevos | Herramienta lista (`missing_heroes.py`); falta adaptarla a las 6 estadísticas |
+| Personajes | 497: los 454 de la hoja y 43 nuevos (tanda 1 de `data/newheroes/`) |
+| Estadísticas, elementos y fama | Hechos por Claude con la rúbrica; los 43 nuevos quedan marcados `HEROE_NUEVO` para revisar |
+| Historias | Las 454 reescritas por Claude (350 a 470 caracteres); 89 marcadas `HISTORIA_POCO_SEGURA` (personajes poco conocidos) para verificar con una fuente |
+| Fotos | 353 listas y revisadas a la vista; ~144 sin foto (`v_sin_foto`). Se descartaron las viñetas con globos, tapas con título y las equivocadas |
+| Historias de los 43 nuevos | Escritas junto con el personaje |
+
+## Cómo se suma un héroe
+1. Agregar una línea en `data/newheroes/batchNN.txt` (nombre, estadísticas, elemento, fama, historia).
+2. `python3 tools/apply_new_heroes.py` valida, inserta y recalcula la rareza de todo.
+3. `python3 tools/fetch_photos.py collect && python3 tools/fetch_photos.py pick && python3 tools/fetch_photos.py download` busca su foto.
 
 ## Herramientas (`tools/`)
 | Comando | Para qué |
 |---|---|
 | `python3 tools/fetch_photos.py collect / pick / download / status` | Buscar y bajar fotos de fuentes gratuitas (nunca de la hoja) |
 | `python3 tools/fetch_photos.py reject ID ...` | Descartar una foto mala y buscar otra |
+| `python3 tools/apply_new_heroes.py` | Sumar héroes nuevos desde `data/newheroes/` |
+| `python3 tools/sim_elegi_uno.py --save` | Recalcular los TIER del modo ELEGÍ UNO |
 | `python3 tools/apply_stories.py` | Cargar historias de `data/stories/` (rechaza las de largo fuera de rango) |
 | `python3 tools/missing_heroes.py list --publisher marvel` | Ver qué héroes faltan |
 | `python3 tools/migrate_v2.py` / `migrate_v3.py` | Migraciones ya aplicadas (no hace falta volver a correrlas) |

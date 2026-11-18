@@ -73,6 +73,35 @@ def collect_fandom(db):
     print('Fandom: candidatas nuevas', n)
 
 
+def collect_fandom_search(db):
+    """Para los que siguen sin foto: busca en la wiki (Marvel o DC) y acepta una página solo si su título contiene todas las palabras del nombre."""
+    rows = db.execute("""SELECT c.id,c.name,c.universe FROM characters c WHERE c.universe IN ('MARVEL','DC') AND NOT EXISTS
+                         (SELECT 1 FROM images i WHERE i.character_id=c.id AND i.is_selected=1) AND NOT EXISTS
+                         (SELECT 1 FROM images i WHERE i.character_id=c.id AND i.source='fandom_busqueda') ORDER BY c.id""").fetchall()
+    n = 0
+    for r in rows:
+        host = WIKI[r['universe']][0]
+        base = re.sub(r'\s*\(.*?\)', '', english(r['name']))
+        want = [w for w in re.findall(r'[a-z0-9]+', norm_words(base)) if w not in ('the', 'of', 'and', 'de', 'la', 'el')]
+        q = urllib.parse.urlencode({'action': 'query', 'generator': 'search', 'gsrsearch': base, 'gsrnamespace': 0, 'gsrlimit': 6,
+                                    'prop': 'pageimages', 'piprop': 'original', 'format': 'json', 'formatversion': 2})
+        try: d = http_json(f'https://{host}/api.php?{q}').get('query', {}).get('pages', [])
+        except Exception as e: print('  error', e); time.sleep(5); continue
+        for pg in sorted(d, key=lambda x: x.get('index', 99)):
+            src = (pg.get('original') or {}).get('source')
+            title = re.sub(r'\s*\(.*?\)', '', pg['title'])
+            have = re.findall(r'[a-z0-9]+', norm_words(title))
+            if src and want and all(w in have for w in want):
+                n += add(db, r['id'], 'fandom_busqueda', src, f'https://{host}/wiki/' + urllib.parse.quote(pg['title'].replace(' ', '_'))); break
+        db.commit(); time.sleep(0.6)
+    print('Fandom (búsqueda): candidatas nuevas', n, 'de', len(rows), 'personajes')
+
+
+def norm_words(s):
+    import unicodedata
+    return unicodedata.normalize('NFD', s.lower()).encode('ascii', 'ignore').decode()
+
+
 def collect_comicvine(db, limit):
     key = os.environ.get('COMICVINE_API_KEY')
     if not key: raise SystemExit('Falta COMICVINE_API_KEY en el entorno')
@@ -96,12 +125,23 @@ def collect_comicvine(db, limit):
     print('ComicVine: candidatas nuevas', n)
 
 
+def reject_repeated(db):
+    """Descarta toda candidata cuya URL ya fue rechazada en otra fuente (misma imagen mala)."""
+    bad = db.execute("""SELECT i.id,i.card_path,i.thumb_path FROM images i WHERE i.status!='rechazada' AND i.source_url IN
+                        (SELECT source_url FROM images WHERE status='rechazada')""").fetchall()
+    for r in bad:
+        for f in (r['card_path'], r['thumb_path']):
+            if f and os.path.exists(os.path.join(ROOT, f)): os.remove(os.path.join(ROOT, f))
+        db.execute("UPDATE images SET status='rechazada', is_selected=0, card_path=NULL, thumb_path=NULL WHERE id=?", (r['id'],))
+    db.commit(); return len(bad)
+
+
 def pick(db):
     """Elige una foto para cada personaje que todavía no tiene (SuperHero API > Fandom > ComicVine), salteando las rechazadas."""
     got = 0
     for r in db.execute('SELECT id FROM characters c WHERE NOT EXISTS (SELECT 1 FROM images i WHERE i.character_id=c.id AND i.is_selected=1)').fetchall():
         c = db.execute("""SELECT id FROM images WHERE character_id=? AND status IN ('candidata','error') AND status!='rechazada'
-                          ORDER BY CASE source WHEN 'superhero_api' THEN 1 WHEN 'fandom' THEN 2 ELSE 3 END LIMIT 1""", (r['id'],)).fetchone()
+                          ORDER BY CASE source WHEN 'superhero_api' THEN 1 WHEN 'fandom' THEN 2 WHEN 'fandom_busqueda' THEN 3 ELSE 4 END LIMIT 1""", (r['id'],)).fetchone()
         if c: db.execute("UPDATE images SET is_selected=1, status='elegida' WHERE id=?", (c['id'],)); got += 1
     db.commit(); print('fotos elegidas ahora:', got, '| con foto elegida en total:', db.execute('SELECT COUNT(*) FROM images WHERE is_selected=1').fetchone()[0], 'de', db.execute('SELECT COUNT(*) FROM characters').fetchone()[0])
 
@@ -150,13 +190,13 @@ def status(db):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('cmd', choices=['collect', 'pick', 'download', 'status', 'reject']); ap.add_argument('ids', nargs='*', type=int)
-    ap.add_argument('--source', choices=['superhero', 'fandom', 'comicvine']); ap.add_argument('--limit', type=int, default=400)
+    ap.add_argument('--source', choices=['superhero', 'fandom', 'fandombusqueda', 'comicvine']); ap.add_argument('--limit', type=int, default=400)
     a = ap.parse_args(); db = connect()
     if a.cmd == 'collect':
         for s in ([a.source] if a.source else ['superhero', 'fandom']):
-            {'superhero': collect_superhero, 'fandom': collect_fandom}.get(s, lambda d: collect_comicvine(d, a.limit))(db)
+            {'superhero': collect_superhero, 'fandom': collect_fandom, 'fandombusqueda': collect_fandom_search}.get(s, lambda d: collect_comicvine(d, a.limit))(db)
         status(db)
-    elif a.cmd == 'pick': pick(db)
+    elif a.cmd == 'pick': print('repetidas rechazadas:', reject_repeated(db)); pick(db)
     elif a.cmd == 'reject': reject(db, a.ids)
     elif a.cmd == 'download': download(db)
     else: status(db)
