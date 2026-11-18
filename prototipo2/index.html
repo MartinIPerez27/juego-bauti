@@ -531,6 +531,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 </div></div>
 
 <script src="data.js"></script>
+<script src="pack.js"></script>
 <script>
 /* ===== DATOS (prototipo: 15 cartas; el juego real tendrá cientos, extraídos una sola vez) ===== */
 const ELC={MAGIA:'#b05cff',FUERZA:'#ff7a3d',MENTE:'#35d98a',TECNOLOGIA:'#2fa8ff',ENERGIA:'#ffd23f'};
@@ -538,7 +539,7 @@ const STK=['inteligencia','fuerza','velocidad','aguante','poder','combate'];
 const STATL={inteligencia:'CEREBRO',fuerza:'FUERZA',velocidad:'VELOCIDAD',aguante:'AGUANTE',poder:'PODER',combate:'COMBATE'};
 const STATC={inteligencia:'#2fa8ff',fuerza:'#ff3d52',velocidad:'#ffd23f',aguante:'#35d98a',poder:'#ff4fa3',combate:'#ff9a3d'};
 const CARDS=DATA.chars.map(c=>({id:String(c.id),name:c.n,side:c.al==='HEROE'?'good':c.al==='VILLANO'?'bad':'neutral',stats:Object.fromEntries(STK.map((k,i)=>[k,c.st[i]])),
-  pw:Math.round(c.pw),img:c.im,el:c.el,story:c.hi,ra:c.ra,ab:c.ab,u:c.u,gal:c.gal||[]}));
+  pw:Math.round(c.pw),img:c.im&&(PACK[c.im]||c.im),el:c.el,story:c.hi,ra:c.ra,ab:c.ab,u:c.u,gal:(c.gal||[]).map(g=>PACK[g]||g)}));
 const BYID=Object.fromEntries(CARDS.map(c=>[c.id,c]));
 
 /* ===== UTILIDADES ===== */

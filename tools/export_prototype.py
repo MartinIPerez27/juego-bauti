@@ -8,6 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from catalog_lib import ROOT, connect
 
 OUT = os.path.join(ROOT, 'prototipo2')
+# La plataforma de prueba admite 511 archivos por versión: los personajes nuevos viajan juntos en pack.js (data URI)
+PACK_FROM = 550
 KEYS = ['inteligencia', 'fuerza', 'velocidad', 'aguante', 'poder', 'combate']
 
 
@@ -20,15 +22,17 @@ def main():
     for r in db.execute("SELECT character_id,card_path FROM images WHERE is_selected=0 AND status='lista' AND card_path IS NOT NULL ORDER BY id"):
         gal.setdefault(r['character_id'], []).append(r['card_path'])
     power = dict(db.execute('SELECT character_id,power FROM v_power'))
-    chars = []
+    chars = []; pack = {}
     for r in db.execute('SELECT * FROM characters ORDER BY id'):
         st = stats[r['id']]; p = img.get(r['id']); fn = None
         if p and os.path.exists(os.path.join(ROOT, p)):
-            fn = 'img/' + os.path.basename(p); shutil.copy(os.path.join(ROOT, p), os.path.join(OUT, fn))
+            fn = 'img/' + os.path.basename(p)
+            if r['id'] < PACK_FROM: shutil.copy(os.path.join(ROOT, p), os.path.join(OUT, fn))
+            else: pack[fn] = p
         g = []
         for gp in gal.get(r['id'], []):
             if os.path.exists(os.path.join(ROOT, gp)):
-                shutil.copy(os.path.join(ROOT, gp), os.path.join(OUT, 'img', os.path.basename(gp))); g.append('img/' + os.path.basename(gp))
+                pack['img/' + os.path.basename(gp)] = gp; g.append('img/' + os.path.basename(gp))
         chars.append(dict(id=r['id'], n=r['name'], u=r['universe'], gal=g, al=r['alignment'], ra=r['rarity'], fa=r['fame'], el=r['power_element'],
                           ab=r['special_ability'], re=r['reach'], hi=r['story'], st=[st[k] for k in KEYS], pw=round(power[r['id']], 1), im=fn))
     params = {k: v for k, v in db.execute("SELECT key,value FROM balance_params WHERE key LIKE 'elegiuno%' OR key IN ('arena_multiplicador')")}
@@ -40,6 +44,10 @@ def main():
         params=params, chars=chars)
     with open(os.path.join(OUT, 'data.js'), 'w', encoding='utf8') as f:
         f.write('const DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
+    import base64
+    with open(os.path.join(OUT, 'pack.js'), 'w', encoding='utf8') as f:
+        f.write('const PACK={' + ','.join('%s:"data:image/webp;base64,%s"' % (json.dumps(k), base64.b64encode(open(os.path.join(ROOT, v), 'rb').read()).decode()) for k, v in sorted(pack.items())) + '};\n')
+    print('en pack.js:', len(pack), '| MB: %.1f' % (os.path.getsize(os.path.join(OUT, 'pack.js')) / 1e6))
     print('personajes:', len(chars), '| con foto:', sum(1 for c in chars if c['im']), '| tamaño data.js: %d KB' % (os.path.getsize(os.path.join(OUT, 'data.js')) // 1024))
     print('imágenes MB: %.1f' % (sum(os.path.getsize(os.path.join(OUT, 'img', f)) for f in os.listdir(os.path.join(OUT, 'img'))) / 1e6))
 
