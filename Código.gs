@@ -647,3 +647,90 @@ function limpiarCacheWikipedia() {
   claves.forEach(k => props.deleteProperty(k));
   Logger.log("Caché Wikipedia limpiado: " + claves.length + " entradas eliminadas.");
 }
+
+// =============================================================================
+// COMICVINE — completar la columna IMAGEN de la hoja BASE
+//
+// Setup: Configuración → Propiedades del script → agregar COMICVINE_API_KEY
+//        (clave gratis en https://comicvine.gamespot.com/api/)
+// Uso:   ejecutar completarImagenesComicVine() desde el editor GAS.
+//        Solo rellena celdas IMAGEN vacías; nunca pisa las existentes.
+//        Procesa hasta COMICVINE_LOTE personajes por corrida (límite de 6 min
+//        de GAS y ~200 requests/hora por recurso de ComicVine): volver a
+//        ejecutar hasta que no queden pendientes.
+// =============================================================================
+const COMICVINE_LOTE = 50;
+
+function _buscarImagenComicVine(nombre, universo, apiKey) {
+  const url = "https://comicvine.gamespot.com/api/search/?format=json" +
+    "&resources=character&limit=10" +
+    "&field_list=name,image,publisher" +
+    "&api_key=" + encodeURIComponent(apiKey) +
+    "&query=" + encodeURIComponent(nombre);
+
+  const resp = UrlFetchApp.fetch(url, {
+    muteHttpExceptions: true,
+    headers: { "User-Agent": "juego-bauti-gas" },   // ComicVine rechaza requests sin UA
+  });
+  if (resp.getResponseCode() !== 200) return "";
+
+  const json = JSON.parse(resp.getContentText());
+  const res  = (json.results || []).filter(r => r.image && r.image.medium_url);
+  if (!res.length) return "";
+
+  const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const editorialOk = r => {
+    const pub = String((r.publisher && r.publisher.name) || "").toLowerCase();
+    return universo === "DC" ? pub.includes("dc") : pub.includes("marvel");
+  };
+
+  // Preferencia: nombre exacto + editorial correcta > editorial correcta > nombre exacto
+  const mejor =
+    res.find(r => norm(r.name) === norm(nombre) && editorialOk(r)) ||
+    res.find(editorialOk) ||
+    res.find(r => norm(r.name) === norm(nombre));
+
+  const img = mejor && mejor.image.medium_url;
+  return img && img.startsWith("https://") ? img : "";
+}
+
+function completarImagenesComicVine() {
+  const apiKey = PropertiesService.getScriptProperties().getProperty("COMICVINE_API_KEY");
+  if (!apiKey) {
+    Logger.log("❌ Falta COMICVINE_API_KEY en Propiedades del script");
+    return;
+  }
+
+  const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_SERVIDOR.HOJA_BASE);
+  const datos   = sheet.getDataRange().getValues();
+  const headers = datos[0];
+  const iNom = headers.indexOf("PERSONAJE");
+  const iImg = headers.indexOf("IMAGEN");
+  const iUni = headers.indexOf("UNIVERSO");
+  if (iNom < 0 || iImg < 0) {
+    Logger.log("❌ La hoja BASE debe tener columnas PERSONAJE e IMAGEN");
+    return;
+  }
+
+  let hechos = 0, sinFoto = [], pendientes = 0;
+  for (let r = 1; r < datos.length; r++) {
+    const nombre = String(datos[r][iNom]).trim();
+    if (!nombre || String(datos[r][iImg]).trim()) continue;
+
+    if (hechos >= COMICVINE_LOTE) { pendientes++; continue; }
+    hechos++;
+
+    const universo = iUni >= 0 ? String(datos[r][iUni]).trim().toUpperCase() : "MARVEL";
+    let url = "";
+    try { url = _buscarImagenComicVine(nombre, universo, apiKey); }
+    catch (e) { Logger.log("⚠️ " + nombre + ": " + e.message); }
+
+    if (url) sheet.getRange(r + 1, iImg + 1).setValue(url);
+    else sinFoto.push(nombre);
+    Utilities.sleep(1100);   // ComicVine pide ~1 req/seg
+  }
+
+  Logger.log("✅ Procesados: " + hechos + " | Sin foto: " + sinFoto.length +
+             " | Pendientes (re-ejecutar): " + pendientes);
+  if (sinFoto.length) Logger.log("Sin foto: " + sinFoto.join(", "));
+}
