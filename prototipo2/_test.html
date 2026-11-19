@@ -485,7 +485,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .bub{animation:bub 3.2s ease-in infinite}.bub2{animation:bub 4.4s ease-in infinite -1.5s}@keyframes bub{from{transform:translateY(0);opacity:1}to{transform:translateY(-330px);opacity:0}}
 .alarm{animation:alm 1s ease-in-out infinite alternate}@keyframes alm{to{opacity:.15}}
 @media (prefers-reduced-motion:reduce){.scene svg *{animation:none!important}}
-.compact .pwr{top:262px}.compact .chips{top:344px}.compact .vs{top:104px}.compact .chip{font-size:22px;padding:3px 9px}#s-pick .scene::after{content:'';position:absolute;inset:0;background:rgba(5,7,30,.42);pointer-events:none}</style>
+.compact .pwr{top:262px}.compact .chips{top:344px}.compact .vs{top:104px}.compact .chip{font-size:22px;padding:3px 9px}#s-pick .scene::after{content:'';position:absolute;inset:0;background:rgba(5,7,30,.42);pointer-events:none}#hub{grid-template-rows:repeat(2,1fr)!important}</style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -618,14 +618,6 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <div class="disp head" id="pkT"></div><div id="pkS"></div><div id="pkgrid"></div>
     <div id="pkbar"><div id="pkdots"></div><button class="btn go" id="pkok">¡LISTO!</button></div>
   </section>
-  <!-- PIEDRA, PAPEL Y TIJERA DE PODERES -->
-  <section class="screen" id="s-rps">
-    <button class="exit" data-exit aria-label="SALIR">✕</button>
-    <div class="disp head">PIEDRA, PAPEL Y TIJERA DE PODERES</div>
-    <div class="rpsh"><span class="a"><span id="rpsN0"></span><em id="rpsS0">0</em></span><span class="b"><em id="rpsS1">0</em><span id="rpsN1"></span></span></div>
-    <div id="rpsArena"><div class="rbox" id="rpsA"></div><div class="vs2">VS</div><div class="rbox" id="rpsB"></div></div>
-    <div id="rpsMsg"></div><div id="rpsBtns"></div>
-  </section>
   <!-- FINAL -->
   <section class="screen" id="s-final">
     <svg class="tr"><use href="#i-trophy"/></svg>
@@ -635,7 +627,6 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <button class="btn round snd" id="b-snd" aria-label="SONIDO"><svg><use href="#i-snd"/></svg></button>
-  <div id="aint"><div class="aint-bg scene on"></div><div class="aint-box"><div class="al">¡LA ARENA!</div><div id="aintT"></div><div id="aintS" class="as"></div><div id="aintX"></div><button class="btn" id="aintOk">¡LISTO!<svg><use href="#i-check"/></svg></button></div></div>
   <div id="who"><div id="whoT"></div><div class="cb"><button class="btn blue" id="who-m"><svg><use href="#i-bot"/></svg>CONTRA LA MÁQUINA</button><button class="btn red" id="who-p"><svg><use href="#i-user"/></svg>DOS JUGADORES</button></div></div>
   <div id="mres"><div id="mresT"></div><div id="mresS"></div><div class="cb"><button class="btn" id="mres-again"><svg><use href="#i-play"/></svg>OTRA VEZ</button><button class="btn blue" id="mres-menu">MENÚ</button></div></div>
   <div id="conf"><div class="ct">¿SALIR DE LA PARTIDA?</div><div class="cb"><button class="btn red" id="c-no">NO, SEGUIR</button><button class="btn blue" id="c-yes">SÍ, SALIR</button></div></div>
@@ -728,7 +719,7 @@ function backEl(cw){const e=document.createElement('div');e.className='card back
 /* ===== NAVEGACIÓN ===== */
 let cur='title';
 function go(name){if(name===cur)return;$('#s-'+cur).classList.remove('on');cur=name;$('#s-'+name).classList.add('on');
-  $('#b-snd').style.display=['mem','team','battle','pvp','uno','pick','rps'].includes(name)?'none':'';stopSpeech()}
+  $('#b-snd').style.display=['mem','team','battle','pvp','uno','pick'].includes(name)?'none':'';stopSpeech()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){sfx('tap');go(b.dataset.go)}},true);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1400)}
 
@@ -744,10 +735,7 @@ const MODES=[
   {k:'pvp',t:'PERSONAJE vs PERSONAJE',img:tileImg('SPIDER-MAN','IRON MAN'),ic:'i-bolt'},
   {k:'uno',t:'ELEGÍ UNO',img:tileImg('GALACTUS','THANOS'),ic:'i-q'},
   {k:'lib',t:'BIBLIOTECA',img:tileImg('BATMAN','JOKER'),ic:'i-book'},
-  {k:'draft',t:'DRAFT',img:tileImg('SUPERMAN','FLASH'),ic:'i-swords'},
-  {k:'rps',t:'PIEDRA, PAPEL Y TIJERA DE PODERES',img:tileImg('DOCTOR STRANGE','IRON MAN'),ic:'i-bolt'},
-  {k:'team',t:'EQUIPO PERFECTO',img:tileImg('MUJER MARAVILLA','CAPITAN AMERICA'),ic:'i-check'},
-  {k:'daily',t:'DESAFÍO DEL DÍA',img:tileImg('DEADPOOL','VENOM'),ic:'i-trophy'}];
+  {k:'draft',t:'DRAFT',img:tileImg('SUPERMAN','FLASH'),ic:'i-swords'}];
 $('#hub').innerHTML=MODES.map(m=>`<button class="tile ${m.soon?'soon':''}" data-m="${m.k}">${m.img?`<img src="${m.img}" alt="">`:''}<span class="ic">${icon(m.ic)}</span>${m.soon?'<span class="tag">PRONTO</span>':''}<span class="lb">${m.t}</span></button>`).join('');
 $('#hub').onclick=e=>{const t=e.target.closest('.tile');if(!t)return;const k=t.dataset.m;sfx('tap');
   if(k==='main'||k==='pvp'){S.mode=k;$('#steps').classList.toggle('pvp',k==='pvp');renderSteps();$('#hint').style.visibility=k==='pvp'?'hidden':'visible';go('config')}
@@ -1078,8 +1066,6 @@ $('#b-again').onclick=()=>{sfx('go');go('config')};
 $('#b-menu').onclick=()=>{sfx('tap');go('hub')};
 
 /* ===== MODOS NUEVOS: DRAFT, PIEDRA PAPEL Y TIJERA DE PODERES, CARRERA, EQUIPO PERFECTO, DESAFÍO DEL DÍA ===== */
-const ELK=DATA.elements.map(e=>e.k);
-const ruleOf=(a,b)=>DATA.rules.find(r=>r.a===a&&r.d===b);
 const WITHIMG=CARDS.filter(c=>c.img);
 function smpFrom(pool,n){const a=[...pool];for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 function smp(n,rng){const a=[...(WITHIMG.length>=n?WITHIMG:CARDS)],r=rng||Math.random;for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
@@ -1114,29 +1100,6 @@ function pickCards(cards,n,chips,title,sub,ok){return new Promise(res=>{pkShow(t
 function runBattle(A,B,names,arena,after){PKAR=null;S.names=names;S.rounds=1;S.round=1;S.score=[0,0];FORCE_ARENA=arena||null;
   NEXTHOOK=()=>{FORCE_ARENA=null;after(S.score[0]>S.score[1],S.score[0]===S.score[1])};battle(A,B)}
 
-/* ---- EQUIPO PERFECTO ---- */
-async function arenaIntro(ar,txt){return new Promise(async res=>{const a=$('#aint');paintScene($('.aint-bg',a),ar);$('#aintT',a).textContent=ar.l;
-  $('#aintS',a).innerHTML=`<span class="st2" style="--c:${STATC[ar.a]}">${STATL[ar.a]}</span><span class="st2" style="--c:${STATC[ar.b]}">${STATL[ar.b]}</span>`;$('#aintX',a).textContent=txt;a.classList.add('on');sfx('slam');
-  let done=false;const fin=()=>{if(done)return;done=true;a.classList.remove('on');res()};$('#aintOk').onclick=()=>{sfx('go');stopSpeech();fin()};SKIP=false;speak(txt)})}
-async function startTeam(){const arena=pickArena(),hand=smp(10);
-  await arenaIntro(arena,`ELEGÍ LOS TRES MEJORES PARA ESTA ARENA. AQUÍ VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}.`);PKAR=arena;
-  const mine=await pickCards(hand,3,[arena.a,arena.b],'EQUIPO PERFECTO',`LA ARENA: <b>${arena.l}</b> · VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}`,'¡A PELEAR!');
-  const rival=bestN(smp(10),3,arena),best=bestN(hand,3,arena),perfect=Math.round(sumAr(mine,arena))>=Math.round(sumAr(best,arena));
-  runBattle(mine,rival,['BAUTI','MÁQUINA'],arena,(win,tie)=>showRes(perfect?'¡EQUIPO PERFECTO!':win?'¡GANASTE!':tie?'¡EMPATE!':'¡PERDISTE!',
-    perfect?'ELEGISTE A LOS MEJORES PARA ESTA ARENA':'EL EQUIPO PERFECTO ERA:<br>'+best.map(c=>c.name).join(' · '),startTeam,win||perfect))}
-
-/* ---- DESAFÍO DEL DÍA ---- */
-function dayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function dailyState(){try{return JSON.parse(localStorage.getItem('bauti_daily'))||{last:'',streak:0,done:''}}catch(e){return{last:'',streak:0,done:''}}}
-async function startDaily(){const key=dayKey(),rng=seedRng('choque-'+key),arena=ARENAS[Math.floor(rng()*ARENAS.length)],hand=smp(8,rng),rival=bestN(smp(10,rng),3,arena);
-  const st=dailyState();
-  await arenaIntro(arena,`DESAFÍO DE HOY. ELEGÍ LOS TRES MEJORES PARA ESTA ARENA. AQUÍ VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}.`);PKAR=arena;
-  const mine=await pickCards(hand,3,[arena.a,arena.b],'DESAFÍO DEL DÍA',`HOY: <b>${arena.l}</b> · RACHA: ${st.streak} 🔥`,'¡A PELEAR!');
-  runBattle(mine,rival,['BAUTI','EL RETO'],arena,(win)=>{const s=dailyState();let note='';
-    if(s.done!==key){s.done=key;if(win){s.streak=(s.last&&new Date(key)-new Date(s.last)<=2*86400000)?s.streak+1:1;s.last=key}else s.streak=0;try{localStorage.setItem('bauti_daily',JSON.stringify(s))}catch(e){}}
-    else note='<br>(YA JUGASTE HOY: LA RACHA NO CAMBIA)';
-    showRes(win?'¡RETO CUMPLIDO!':'¡MAÑANA HAY OTRO!',`RACHA: ${dailyState().streak} DÍAS${note}`,startDaily,win)})}
-
 /* ---- DRAFT (como el de FUT: 5 cartas nuevas por turno, elegís 1) ---- */
 async function startDraft(){PKAR=null;const two=await askWho('¿CON QUIÉN JUGÁS?'),names=two?['BAUTI','PAPÁ']:['BAUTI','MÁQUINA'],R=5,teams=[[],[]],seen=new Set();
   const fresh=()=>{const pool=(WITHIMG.length>=40?WITHIMG:CARDS).filter(c=>!seen.has(c.id)),a=smpFrom(pool,5);a.forEach(c=>seen.add(c.id));return a};
@@ -1154,26 +1117,7 @@ async function startDraft(){PKAR=null;const two=await askWho('¿CON QUIÉN JUGÁ
 function draftStrip(teams,names){let e=$('#pkstrip');if(!e){e=document.createElement('div');e.id='pkstrip';$('#s-pick').append(e)}
   e.innerHTML=[0,1].map(p=>`<div class="ds ${p?'b':'a'}"><b>${names[p]}</b>${teams[p].map(c=>`<i style="background-image:url(${c.img})"></i>`).join('')}</div>`).join('')}
 
-/* ---- PIEDRA, PAPEL Y TIJERA DE PODERES ---- */
-let RP=null;
-async function startRps(){const two=await askWho('¿CON QUIÉN JUGÁS?');RP={names:two?['BAUTI','PAPÁ']:['BAUTI','MÁQUINA'],two,s:[0,0],pick:[null,null],turn:0,busy:false};
-  $('#rpsBtns').innerHTML=DATA.elements.map(e=>`<button class="rb" data-k="${e.k}" style="--c:${ELC[e.k]}"><b>${e.l}</b><small>${e.d}</small></button>`).join('');
-  go('rps');rpsReset(true)}
-function rpsReset(first){RP.pick=[null,null];RP.turn=0;RP.busy=false;
-  ['#rpsA','#rpsB'].forEach(s=>{$(s).className='rbox';$(s).innerHTML='<span>?</span>'});$('#rpsN0').textContent=RP.names[0];$('#rpsN1').textContent=RP.names[1];
-  $('#rpsS0').textContent=RP.s[0];$('#rpsS1').textContent=RP.s[1];$('#rpsMsg').textContent=`ELIGE ${RP.names[0]}`;$('#rpsBtns').classList.remove('off');if(first)speak('¡Elegí tu poder!')}
-$('#rpsBtns').onclick=async e=>{const b=e.target.closest('.rb');if(!b||!RP||RP.busy)return;const k=b.dataset.k;sfx('tap');
-  if(RP.turn===0){RP.pick[0]=k;$('#rpsA').innerHTML='<span>✔</span>';
-    if(RP.two){RP.turn=1;$('#rpsMsg').textContent=`PASÁ LA TABLET · ELIGE ${RP.names[1]}`;return}
-    RP.pick[1]=pickOne(ELK)}else{RP.pick[1]=k}
-  RP.busy=true;$('#rpsBtns').classList.add('off');$('#rpsB').innerHTML='<span>✔</span>';await sleep(500);
-  const [a,c]=RP.pick;[['#rpsA',a],['#rpsB',c]].forEach(([s,x])=>{$(s).style.setProperty('--c',ELC[x]);$(s).classList.add('show');$(s).innerHTML=`<span>${ELBY[x].l}</span>`});sfx('slam');buzz(40);
-  let msg,w=-1;if(a===c)msg='¡IGUALES! NADIE GANA';else if(ruleOf(a,c)){w=0;msg=`${ELBY[a].l} VENCE A ${ELBY[c].l}: ${ruleOf(a,c).t}`}else{w=1;msg=`${ELBY[c].l} VENCE A ${ELBY[a].l}: ${ruleOf(c,a).t}`}
-  $('#rpsMsg').textContent=msg;if(w>=0){RP.s[w]++;$(w?'#rpsB':'#rpsA').classList.add('win');sfx('win')}
-  $('#rpsS0').textContent=RP.s[0];$('#rpsS1').textContent=RP.s[1];await speak(msg);await sleep(900);
-  if(RP.s[0]>=3||RP.s[1]>=3){const wi=RP.s[0]>=3?0:1;showRes(`¡GANÓ ${RP.names[wi]}!`,`${RP.s[0]} A ${RP.s[1]}`,startRps)}else rpsReset()};
-
-const MODE_START={draft:startDraft,rps:startRps,team:startTeam,daily:startDaily};
+const MODE_START={draft:startDraft};
 
 /* ===== BIBLIOTECA ===== */
 const nrm=t=>t.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();

@@ -9,10 +9,10 @@ Lista de todos los modos elegidos y sus reglas. Las constantes están en `balanc
 | DRAFT | 2 o máquina | Prototipo hecho |
 | PERSONAJE vs PERSONAJE | 2 o más, o contra la máquina | Reglas abajo |
 | ELEGÍ UNO | 1 | Reglas abajo, TIER calibrados |
-| PIEDRA, PAPEL Y TIJERA DE PODERES | 2 o máquina | Prototipo hecho |
+| PIEDRA, PAPEL Y TIJERA DE PODERES | — | Descartado por el usuario (19/11) |
 | CARRERA DE HÉROES | — | Descartado (no gustó) |
-| EQUIPO PERFECTO | 1 | Prototipo hecho |
-| DESAFÍO DEL DÍA | 1 | Prototipo hecho |
+| EQUIPO PERFECTO | — | Descartado por el usuario (19/11) |
+| DESAFÍO DEL DÍA | — | Descartado por el usuario (19/11) |
 
 ## Regla general de la batalla por equipos
 Competir en una arena favorable **no alcanza para ganar**. El puntaje de un equipo es la suma de lo que rinde cada integrante en esa arena. Las 2 estadísticas de la arena pesan 3 veces, pero las otras 4 siguen contando. Comprobado: el equipo de Hulk, Hombre Hormiga y Batman pierde en las 8 arenas contra Doom Emperador, Galactus y Fénix. En "Ciudad en ruinas", que favorece a Hulk, el resultado es 181,5 contra 281.
@@ -61,9 +61,6 @@ Para que sea más fácil o más difícil se cambia el piso de S+ (`elegiuno_piso
 
 ## Modos nuevos del prototipo (reglas que tomé; se pueden cambiar)
 - **DRAFT (estilo FUT):** 5 rondas. En cada turno el jugador ve 5 cartas nuevas (nunca repetidas), con su habilidad escrita, y elige 1. La voz dice "elegiste a XXX" y su habilidad. La máquina toma la de más poder. Al final, batalla de 5 contra 5 con arena al azar.
-- **PIEDRA, PAPEL Y TIJERA DE PODERES:** cada uno elige un elemento; cada elemento le gana a dos y pierde con dos (`element_rules`). Gana el primero que llega a 3. Dos jugadores: se pasan la tablet y el segundo elige sin ver al primero.
-- **EQUIPO PERFECTO:** primero una pantalla muestra la arena y qué dos estadísticas valen más. Después, 10 cartas con los valores de esa arena a la vista. Se eligen 3 y se pelea contra el mejor equipo de otras 10 cartas. Si el equipo elegido es el mejor posible de esa mano, sale "¡EQUIPO PERFECTO!".
-- **DESAFÍO DEL DÍA:** la arena, las 8 cartas y el rival salen de la fecha (iguales para todos ese día). Se guarda la racha en el dispositivo.
 
 ## Cambios de la devolución del 19/11
 - Equipos de hasta 5 héroes. Se elige MARVEL, DC o LOS DOS antes de empezar. Al encontrar un par la voz dice "¡Bien, NOMBRE! ¡Conseguiste a XXX!".
