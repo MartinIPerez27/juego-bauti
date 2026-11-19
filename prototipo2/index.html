@@ -105,15 +105,16 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .voice select{flex:1;min-width:0;height:60px;border-radius:14px;border:4px solid var(--ink);background:var(--paper);color:var(--ink);font:900 21px var(--body);padding:0 14px;text-transform:uppercase}
 .voice .btn{height:60px;font-size:34px;padding:0 26px;box-shadow:0 5px 0 var(--ink);border-width:4px}
 /* ===== CONFIG ===== */
-#s-config .pl{position:absolute;top:120px;width:520px;height:252px;border-radius:26px;border:6px solid var(--ink);padding:22px 26px;
+#s-config .head{font-size:62px;top:12px}
+#s-config .pl{position:absolute;top:158px;width:520px;height:230px;border-radius:26px;border:6px solid var(--ink);padding:22px 26px;
   background:var(--bg2);box-shadow:0 10px 0 var(--ink),0 18px 26px rgba(0,0,0,.35)}
 #s-config .pl.a{left:70px;border-top-color:var(--blue)}#s-config .pl.b{right:70px;border-top-color:var(--red)}
 .pl .who{font-family:var(--display);font-size:38px;line-height:1;color:var(--yellow)}
-.pl input{width:100%;margin-top:10px;height:84px;border-radius:18px;border:5px solid var(--ink);background:var(--paper);color:var(--ink);
+.pl input{width:100%;margin-top:8px;height:72px;border-radius:18px;border:5px solid var(--ink);background:var(--paper);color:var(--ink);
   font-family:var(--display);font-size:56px;text-transform:uppercase;padding:0 20px;letter-spacing:.04em}
 .pl input::selection{background:var(--blue);color:#fff}
 .seg{display:flex;gap:10px;margin-top:12px}
-.seg button{flex:1;height:60px;border-radius:16px;border:4px solid var(--ink);background:var(--bg);font-family:var(--display);font-size:32px;
+.seg button{flex:1;height:54px;border-radius:16px;border:4px solid var(--ink);background:var(--bg);font-family:var(--display);font-size:32px;
   display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .16s var(--ease-out),background .16s}
 .seg button svg{width:34px;height:34px}
 .seg button:active{transform:scale(.97)}
@@ -125,7 +126,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .stp .val{font-family:var(--display);font-size:92px;line-height:1;min-width:110px;color:#fff;text-shadow:0 5px 0 var(--ink)}
 .stp .btn{width:76px;height:76px;padding:0;border-radius:50%;font-size:0;box-shadow:0 7px 0 var(--ink)}
 .stp .btn svg{width:40px;height:40px}
-.hint{position:absolute;left:70px;right:470px;bottom:56px;font-size:25px;line-height:1.25;color:var(--paper)}
+.hint{position:absolute;left:70px;right:560px;bottom:30px;font-size:23px;line-height:1.25;color:var(--paper)}
 .hint.warn{color:var(--yellow)}
 #s-config .btn.go{position:absolute;right:70px;bottom:24px}
 
@@ -440,7 +441,51 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .lane.win{box-shadow:0 8px 0 var(--ink),0 0 0 7px var(--yellow)}
 #rcount{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;font-family:var(--display);font-size:260px;color:var(--yellow);-webkit-text-stroke:10px var(--ink);paint-order:stroke fill;background:rgba(5,7,30,.55)}
 #rcount.on{display:flex}
-</style>
+
+/* ===== v3 ===== */
+.uniseg{position:absolute;left:50%;top:92px;translate:-50% 0;display:flex;gap:10px;z-index:3}
+.uniseg button{height:58px;padding:0 30px;border-radius:18px;border:5px solid var(--ink);background:var(--bg2);color:#fff;font-family:var(--display);font-size:34px;box-shadow:0 5px 0 var(--ink);transition:transform .16s var(--ease-out)}
+.uniseg button.on{background:var(--yellow);color:var(--ink)}.uniseg button:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+#mmsg{position:absolute;left:50%;bottom:22px;translate:-50% 0;z-index:12;max-width:1100px;padding:10px 30px;border-radius:20px;border:6px solid var(--ink);background:var(--yellow);color:var(--ink);font-family:var(--display);font-size:46px;line-height:1;text-align:center;box-shadow:0 8px 0 var(--ink);opacity:0;pointer-events:none;transform:translateY(20px)}
+#mmsg.on{opacity:1;transform:none;transition:opacity .2s,transform .3s var(--ease-out)}
+#pkgrid.big{grid-template-columns:repeat(5,1fr);top:150px;gap:10px}
+.pab{margin-top:8px;max-width:176px;font-family:var(--body);font-weight:900;font-size:16px;line-height:1.1;color:#fff;background:rgba(11,14,51,.78);border-radius:10px;padding:5px 8px;text-align:center}
+.pkc.gone{opacity:.35;pointer-events:none}.pkc.gone .tk{display:none}
+#pkstrip{position:absolute;left:30px;right:30px;bottom:12px;display:flex;justify-content:space-between;gap:20px}
+#pkstrip .ds{display:flex;align-items:center;gap:6px;background:rgba(11,14,51,.72);border:4px solid var(--ink);border-radius:16px;padding:6px 12px;min-height:84px}
+#pkstrip .ds b{font-family:var(--display);font-weight:400;font-size:30px}#pkstrip .ds.a b{color:var(--blue)}#pkstrip .ds.b b{color:var(--red)}
+#pkstrip .ds i{display:block;width:52px;height:76px;border-radius:8px;border:3px solid var(--ink);background:#222 center/cover}
+#s-pick .scene{z-index:0}#s-pick>*:not(.scene){position:absolute;z-index:1}
+#aint{position:absolute;inset:0;z-index:66;display:none}#aint.on{display:block}
+#aint .aint-bg{position:absolute;inset:0}
+.aint-box{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:radial-gradient(ellipse at center,rgba(5,7,30,.15),rgba(5,7,30,.7));padding:0 80px}
+.aint-box .al{font-family:var(--display);font-size:40px;color:var(--paper);text-shadow:0 4px 0 var(--ink)}
+#aintT{font-family:var(--display);font-size:118px;line-height:.95;color:var(--yellow);-webkit-text-stroke:7px var(--ink);paint-order:stroke fill;text-shadow:0 8px 0 var(--ink)}
+.aint-box .as{display:flex;gap:16px;margin-top:6px}
+#aintX{font-family:var(--display);font-size:42px;color:#fff;text-shadow:0 4px 0 var(--ink);max-width:980px;line-height:1.05}
+#aintOk{height:92px;font-size:48px;margin-top:10px}
+
+/* escenas v3 */
+.scene svg{position:absolute;inset:0;left:0;bottom:auto;width:100%;height:100%}
+.scene svg *{transform-box:fill-box}
+#s-battle .scene::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,30,.28),rgba(5,7,30,.06) 38%,rgba(5,7,30,.4));pointer-events:none}
+.tw{animation:tw 2.6s ease-in-out infinite}@keyframes tw{50%{opacity:.12}}
+.drift{animation:drift 24s ease-in-out infinite alternate}.drift2{animation:drift 30s ease-in-out infinite alternate-reverse}@keyframes drift{to{transform:translateX(70px)}}
+.smoke{animation:smk 7s ease-in-out infinite alternate;transform-origin:50% 100%}.smoke2{animation:smk 9s ease-in-out infinite alternate-reverse;transform-origin:50% 100%}@keyframes smk{to{transform:translateX(26px) scaleY(1.1);opacity:.45}}
+.flame{animation:fl .5s ease-in-out infinite alternate}.flame2{animation:fl .6s ease-in-out infinite alternate-reverse}.car{animation:fl .9s ease-in-out infinite alternate}.car2{animation:fl 1.1s ease-in-out infinite alternate-reverse}@keyframes fl{to{opacity:.55;transform:scale(1.18)}}
+.bat{animation:bat 14s linear infinite}.bat2{animation:bat 19s linear infinite -6s}@keyframes bat{from{transform:translateX(-260px)}to{transform:translateX(1500px) translateY(40px)}}
+.shoot{animation:sht 6s ease-in infinite}.shoot2{animation:sht 9s ease-in infinite -3s}@keyframes sht{0%{transform:translate(0,0);opacity:0}6%{opacity:1}22%{transform:translate(-340px,120px);opacity:0}100%{opacity:0}}
+.dash{animation:dsh .45s linear infinite}@keyframes dsh{to{transform:translateY(70px);opacity:.15}}
+.speed{animation:spd 1.3s linear infinite}.speed2{animation:spd 1.9s linear infinite -.7s}@keyframes spd{from{transform:translateX(160px);opacity:0}30%{opacity:.9}to{transform:translateX(-620px);opacity:0}}
+.eyes{animation:blk 5s infinite}@keyframes blk{0%,92%,100%{opacity:1}95%{opacity:0}}
+.drop{animation:drp .8s linear infinite}@keyframes drp{from{transform:translateY(-20px)}to{transform:translateY(760px)}}
+.ember{animation:emb 5s ease-in infinite}@keyframes emb{from{transform:translateY(0);opacity:1}to{transform:translateY(-440px) translateX(34px);opacity:0}}
+.lava{animation:lv 1.8s ease-in-out infinite alternate}.lava2{animation:lv 2.4s ease-in-out infinite alternate-reverse}@keyframes lv{to{filter:brightness(1.6)}}
+.scan{animation:scn 2.6s ease-in-out infinite alternate}.scan2{animation:scn 3.4s ease-in-out infinite alternate-reverse}@keyframes scn{to{transform:translateY(-14px)}}
+.bub{animation:bub 3.2s ease-in infinite}.bub2{animation:bub 4.4s ease-in infinite -1.5s}@keyframes bub{from{transform:translateY(0);opacity:1}to{transform:translateY(-330px);opacity:0}}
+.alarm{animation:alm 1s ease-in-out infinite alternate}@keyframes alm{to{opacity:.15}}
+@media (prefers-reduced-motion:reduce){.scene svg *{animation:none!important}}
+.compact .pwr{top:262px}.compact .chips{top:344px}.compact .vs{top:104px}.compact .chip{font-size:22px;padding:3px 9px}#s-pick .scene::after{content:'';position:absolute;inset:0;background:rgba(5,7,30,.42);pointer-events:none}</style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -490,6 +535,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <div class="pl a"><div class="who">JUGADOR 1</div><label for="n1" style="position:absolute;left:-9999px">NOMBRE JUGADOR 1</label><input id="n1" maxlength="9" value="BAUTI" autocomplete="off"></div>
     <div class="pl b"><div class="who">JUGADOR 2</div><label for="n2" style="position:absolute;left:-9999px">NOMBRE JUGADOR 2</label><input id="n2" maxlength="9" value="PAPÁ" autocomplete="off">
       <div class="seg"><button data-ai="0" class="on"><svg><use href="#i-user"/></svg>PERSONA</button><button data-ai="1"><svg><use href="#i-bot"/></svg>MÁQUINA</button></div></div>
+    <div class="uniseg" id="uniseg"><button data-u="MARVEL">MARVEL</button><button data-u="DC">DC</button><button data-u="BOTH" class="on">LOS DOS</button></div>
     <div class="steps" id="steps"></div>
     <div class="hint" id="hint"></div>
     <button class="btn xl go" id="b-start" style="height:112px;font-size:62px;padding:0 44px"><svg><use href="#i-play"/></svg>¡EMPEZAR!</button>
@@ -503,6 +549,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <div id="mturn" aria-live="polite"><span class="tn"></span><i class="pip"></i><i class="pip"></i></div>
     <div id="board"></div>
     <div class="disp banner" id="mbanner"></div>
+    <div id="mmsg"></div>
   </section>
 
   <!-- EQUIPOS -->
@@ -567,6 +614,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   <!-- ELEGIR CARTAS (equipo perfecto, desafío, draft, carrera) -->
   <section class="screen" id="s-pick">
     <button class="exit" data-exit aria-label="SALIR">✕</button>
+    <div class="scene on" id="pkscene"></div>
     <div class="disp head" id="pkT"></div><div id="pkS"></div><div id="pkgrid"></div>
     <div id="pkbar"><div id="pkdots"></div><button class="btn go" id="pkok">¡LISTO!</button></div>
   </section>
@@ -578,15 +626,6 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <div id="rpsArena"><div class="rbox" id="rpsA"></div><div class="vs2">VS</div><div class="rbox" id="rpsB"></div></div>
     <div id="rpsMsg"></div><div id="rpsBtns"></div>
   </section>
-  <!-- CARRERA DE HÉROES -->
-  <section class="screen" id="s-race">
-    <button class="exit" data-exit aria-label="SALIR">✕</button>
-    <div class="disp head">CARRERA DE HÉROES</div>
-    <div class="lane" id="ln0"><div class="lname"></div><div class="tap"></div><div class="trk"><div class="fin"></div><div class="runner"></div></div></div>
-    <div class="lane" id="ln1"><div class="lname"></div><div class="tap"></div><div class="trk"><div class="fin"></div><div class="runner"></div></div></div>
-    <div id="rcount"></div>
-  </section>
-
   <!-- FINAL -->
   <section class="screen" id="s-final">
     <svg class="tr"><use href="#i-trophy"/></svg>
@@ -596,6 +635,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <button class="btn round snd" id="b-snd" aria-label="SONIDO"><svg><use href="#i-snd"/></svg></button>
+  <div id="aint"><div class="aint-bg scene on"></div><div class="aint-box"><div class="al">¡LA ARENA!</div><div id="aintT"></div><div id="aintS" class="as"></div><div id="aintX"></div><button class="btn" id="aintOk">¡LISTO!<svg><use href="#i-check"/></svg></button></div></div>
   <div id="who"><div id="whoT"></div><div class="cb"><button class="btn blue" id="who-m"><svg><use href="#i-bot"/></svg>CONTRA LA MÁQUINA</button><button class="btn red" id="who-p"><svg><use href="#i-user"/></svg>DOS JUGADORES</button></div></div>
   <div id="mres"><div id="mresT"></div><div id="mresS"></div><div class="cb"><button class="btn" id="mres-again"><svg><use href="#i-play"/></svg>OTRA VEZ</button><button class="btn blue" id="mres-menu">MENÚ</button></div></div>
   <div id="conf"><div class="ct">¿SALIR DE LA PARTIDA?</div><div class="cb"><button class="btn red" id="c-no">NO, SEGUIR</button><button class="btn blue" id="c-yes">SÍ, SALIR</button></div></div>
@@ -688,7 +728,7 @@ function backEl(cw){const e=document.createElement('div');e.className='card back
 /* ===== NAVEGACIÓN ===== */
 let cur='title';
 function go(name){if(name===cur)return;$('#s-'+cur).classList.remove('on');cur=name;$('#s-'+name).classList.add('on');
-  $('#b-snd').style.display=['mem','team','battle','pvp','uno','pick','rps','race'].includes(name)?'none':'';stopSpeech()}
+  $('#b-snd').style.display=['mem','team','battle','pvp','uno','pick','rps'].includes(name)?'none':'';stopSpeech()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){sfx('tap');go(b.dataset.go)}},true);
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1400)}
 
@@ -706,7 +746,6 @@ const MODES=[
   {k:'lib',t:'BIBLIOTECA',img:tileImg('BATMAN','JOKER'),ic:'i-book'},
   {k:'draft',t:'DRAFT',img:tileImg('SUPERMAN','FLASH'),ic:'i-swords'},
   {k:'rps',t:'PIEDRA, PAPEL Y TIJERA DE PODERES',img:tileImg('DOCTOR STRANGE','IRON MAN'),ic:'i-bolt'},
-  {k:'race',t:'CARRERA DE HÉROES',img:tileImg('FLASH','WOLVERINE'),ic:'i-play'},
   {k:'team',t:'EQUIPO PERFECTO',img:tileImg('MUJER MARAVILLA','CAPITAN AMERICA'),ic:'i-check'},
   {k:'daily',t:'DESAFÍO DEL DÍA',img:tileImg('DEADPOOL','VENOM'),ic:'i-trophy'}];
 $('#hub').innerHTML=MODES.map(m=>`<button class="tile ${m.soon?'soon':''}" data-m="${m.k}">${m.img?`<img src="${m.img}" alt="">`:''}<span class="ic">${icon(m.ic)}</span>${m.soon?'<span class="tag">PRONTO</span>':''}<span class="lb">${m.t}</span></button>`).join('');
@@ -715,17 +754,21 @@ $('#hub').onclick=e=>{const t=e.target.closest('.tile');if(!t)return;const k=t.d
   else if(k==='uno'){UN=null;startUno()}else if(k==='lib'){buildLib();go('lib')}else if(MODE_START[k])MODE_START[k]();else toast('¡PRONTO!')};
 
 /* CONFIG */
-const S={mode:'main',names:['BAUTI','PAPÁ'],ai:[false,false],pairs:Math.min(8,CARDS.length),team:2,rounds:3,coll:[[],[]],score:[0,0],round:0,turn:0};
-const OPT={pairs:[4,6,8,10,12,15,20,25,30,40,50,60,75,100,150,200,300].filter(n=>n<=CARDS.length||n===4),team:[1,2,3],rounds:[1,2,3,4,5]},LBL={pairs:'PARES A BUSCAR',team:'HÉROES POR EQUIPO',rounds:'RONDAS'};
+const S={mode:'main',names:['BAUTI','PAPÁ'],ai:[false,false],pairs:Math.min(8,CARDS.length),team:2,rounds:3,uni:'BOTH',coll:[[],[]],score:[0,0],round:0,turn:0};
+const POOL=()=>S.uni==='BOTH'?CARDS:CARDS.filter(c=>c.u===S.uni);
+const optsFor=k=>k==='pairs'?OPT.pairs.filter(n=>n<=POOL().length||n===4):OPT[k];
+const OPT={pairs:[4,6,8,10,12,15,20,25,30,40,50,60,75,100,150,200,300].filter(n=>n<=CARDS.length||n===4),team:[1,2,3,4,5],rounds:[1,2,3,4,5]},LBL={pairs:'PARES A BUSCAR',team:'HÉROES POR EQUIPO',rounds:'RONDAS'};
 function renderSteps(){$('#steps').innerHTML=Object.keys(OPT).map(k=>`<div class="stp"><div class="lbl">${LBL[k]}</div><div class="row">
   <button class="btn red" data-s="${k}" data-d="-1" aria-label="MENOS">${icon('i-minus')}</button><div class="val">${S[k]}</div>
   <button class="btn blue" data-s="${k}" data-d="1" aria-label="MÁS">${icon('i-plus')}</button></div></div>`).join('');
   const need=S.team*S.rounds,avg=S.pairs/2,h=$('#hint');
   h.classList.toggle('warn',need>avg);
   h.textContent=need>avg?`OJO: CADA UNO NECESITA ${need} CARTAS Y EN PROMEDIO JUNTA ${avg}. LAS ÚLTIMAS RONDAS SERÁN MÁS CORTAS.`:`CADA UNO NECESITA ${need} CARTAS Y EN PROMEDIO JUNTA ${avg}.`}
-$('#steps').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;const k=b.dataset.s,o=OPT[k];let i=o.indexOf(S[k])+(+b.dataset.d);i=Math.max(0,Math.min(o.length-1,i));S[k]=o[i];sfx('tap');renderSteps()};
+$('#steps').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;const k=b.dataset.s,o=optsFor(k);let i=o.indexOf(S[k])+(+b.dataset.d);i=Math.max(0,Math.min(o.length-1,i));S[k]=o[i];sfx('tap');renderSteps()};
 $$('.seg button').forEach(b=>b.onclick=()=>{S.ai[1]=b.dataset.ai==='1';$$('.seg button').forEach(x=>x.classList.toggle('on',x===b));sfx('tap');
   const n=$('#n2');if(S.ai[1]&&(n.value==='PAPÁ'||!n.value))n.value='MÁQUINA';else if(!S.ai[1]&&n.value==='MÁQUINA')n.value='PAPÁ'});
+$('#uniseg').onclick=e=>{const b=e.target.closest('button');if(!b)return;sfx('tap');S.uni=b.dataset.u;$$('#uniseg button').forEach(x=>x.classList.toggle('on',x===b));
+  const o=optsFor('pairs');if(!o.includes(S.pairs))S.pairs=o.filter(n=>n<=S.pairs).pop()||o[0];renderSteps()};
 renderSteps();
 $('#b-start').onclick=()=>{S.names=[$('#n1').value.trim().toUpperCase()||'JUGADOR 1',$('#n2').value.trim().toUpperCase()||(S.ai[1]?'MÁQUINA':'JUGADOR 2')];
   if(S.names[0]===S.names[1])S.names[1]+=' 2';sfx('go');S.mode==='pvp'?startPvp():startMemory()};
@@ -735,7 +778,7 @@ $('#b-start').onclick=()=>{S.names=[$('#n1').value.trim().toUpperCase()||'JUGADO
    Cada turno se dan vuelta hasta 2 cartas. Si una carta repite a otra que ya está a la vista, quien la dio vuelta
    se lleva el par y sigue jugando. Si no hay par, las cartas siguen a la vista y pasa el turno. */
 let deck=[],matched=[],faceUp=new Set(),busy=false,left=0,flips=0;
-const MINW=88;
+const MINW=150;
 function layout(n,W,H){const gap=14;let best=null;
   for(let cols=3;cols<=16;cols++){const rows=Math.ceil(n/cols),w=Math.min((W-gap*(cols-1))/cols,(H-gap*(rows-1))/rows/1.5);if(!best||w>best.w)best={cols,rows,w}}
   if(best.w<MINW){best.cols=Math.max(3,Math.floor((W+gap)/(MINW+gap)));best.rows=Math.ceil(n/best.cols);best.w=Math.min(MINW,(W-gap*(best.cols-1))/best.cols)}
@@ -746,7 +789,7 @@ function sideUpdate(){[0,1].forEach(i=>{const s=$('#sd'+i);s.classList.toggle('t
 function addThumb(p){const sc=$('.sc',$('#sd'+p));sc.textContent=S.coll[p].length;sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump')}
 function startMemory(){
   S.coll=[[],[]];S.score=[0,0];S.round=0;S.turn=0;busy=true;faceUp=new Set();flips=0;
-  const pick=shuffle(CARDS).slice(0,Math.min(S.pairs,CARDS.length));deck=shuffle([...pick,...pick].map(c=>c.id));matched=deck.map(()=>false);left=pick.length;
+  SKIP=false;const pick=shuffle(POOL()).slice(0,Math.min(S.pairs,POOL().length));deck=shuffle([...pick,...pick].map(c=>c.id));matched=deck.map(()=>false);left=pick.length;
   [0,1].forEach(i=>{$('.sc',$('#sd'+i)).textContent='0'});sideUpdate();
   go('mem');
   const board=$('#board');board.innerHTML='';board.scrollTop=0;
@@ -759,13 +802,14 @@ function startMemory(){
     s.style.cssText=`width:${L.w}px;height:${L.w*1.5}px;left:${offX+rowOff+c*(L.w+L.gap)}px;top:${offY+r*(L.w*1.5+L.gap)}px;animation:rise .5s var(--ease-out) ${Math.min(i,40)*30}ms both`;
     const f=document.createElement('div');f.className='flip';
     const bk=document.createElement('div');bk.className='face';bk.append(backEl(L.w));
-    const fr=document.createElement('div');fr.className='face fr';fr.append(cardEl(BYID[id],L.w));f.append(bk,fr);s.append(f);
+    const fr=document.createElement('div');fr.className='face fr';s.dataset.w=L.w;f.append(bk,fr);s.append(f);
     s.onclick=()=>humanFlip(i);bi.append(s)});
   setTimeout(()=>{busy=false;turnStart()},Math.min(deck.length,40)*30+500)}
+const ART={inteligencia:'el',fuerza:'la',velocidad:'la',aguante:'el',poder:'el',combate:'el'};
 const slotEl=i=>$$('.slot',$('#board'))[i];
 function focusSlot(i){const s=slotEl(i),b=$('#board'),t=s.offsetTop;
   if(t<b.scrollTop||t+s.offsetHeight>b.scrollTop+b.clientHeight)b.scrollTo({top:Math.max(0,t-(b.clientHeight-s.offsetHeight)/2),behavior:REDUCE?'auto':'smooth'})}
-function showCard(i){faceUp.add(i);slotEl(i).classList.add('up');sfx('flip');buzz(8)}
+function showCard(i){faceUp.add(i);const sl=slotEl(i),fr=$('.fr',sl);if(!fr.firstChild)fr.append(cardEl(BYID[deck[i]],+sl.dataset.w));sl.classList.add('up');sfx('flip');buzz(8)}
 function humanFlip(i){if(busy||S.ai[S.turn]||matched[i]||faceUp.has(i))return;ac();flipCard(i)}
 async function flipCard(i){busy=true;showCard(i);flips++;sideUpdate();await sleep(650);
   const mate=[...faceUp].find(j=>j!==i&&!matched[j]&&deck[j]===deck[i]);
@@ -774,12 +818,15 @@ async function flipCard(i){busy=true;showCard(i);flips++;sideUpdate();await slee
   if(flips>=2){await sleep(500);flips=0;S.turn^=1}   // regla del modo principal: siempre 2 cartas por turno, aciertes o no
   sideUpdate();busy=false;turnStart()}
 async function doMatch(a,b){const c=BYID[deck[a]],p=S.turn;matched[a]=matched[b]=true;left--;sfx('match');buzz([20,30,20]);
+  const mm=S.ai[p]?`¡BIEN, ${S.names[p]}! ¡CONSIGUIÓ A ${c.name}!`:`¡BIEN, ${S.names[p]}! ¡CONSEGUISTE A ${c.name}!`;
+  const mb=$('#mmsg');mb.textContent=mm;mb.classList.remove('on');void mb.offsetWidth;mb.classList.add('on');const said=speak(mm);
   [a,b].forEach(i=>slotEl(i).classList.add('ok'));
   focusSlot(a);
   await sleep(450);
   const from=[slotEl(a),slotEl(b)],dst=$('#sd'+p+' .sc');
   await Promise.all(from.map((s,k)=>fly(s,dst,c.img,k*90)));
   from.forEach(s=>s.classList.add('gone'));S.coll[p].push(c);addThumb(p);
+  await said;$('#mmsg').classList.remove('on');
   if(left>0)await sleep(250)}
 function fly(src,dst,img,delay=0){const a=rectIn(src),b=rectIn(dst),e=document.createElement('div');e.className='fly';
   e.style.cssText=`left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px;background-image:url(${img})`;stage.append(e);
@@ -865,24 +912,110 @@ function narrate(res,A,B){
 /* ===== BATALLA ===== */
 let bres=null,bDone=null;
 
-const SCN={
-ciudad:['#3b2a5a','#c4572f','<g fill="#1a1230"><rect x="40" y="60" width="90" height="140"/><rect x="150" y="20" width="70" height="180"/><rect x="240" y="80" width="110" height="120"/><rect x="380" y="30" width="80" height="170"/><rect x="480" y="70" width="100" height="130"/><rect x="610" y="10" width="75" height="190"/><rect x="710" y="60" width="95" height="140"/><rect x="830" y="30" width="80" height="170"/><rect x="940" y="80" width="110" height="120"/><rect x="1070" y="20" width="70" height="180"/><rect x="1160" y="70" width="100" height="130"/></g><path d="M150 20l25 40 20-30 25 50z" fill="#ff7a2f" opacity=".7"/>'],
-castillo:['#1e1250','#6a3fb5','<g fill="#0e0a2e"><rect x="420" y="50" width="440" height="150"/><rect x="400" y="10" width="60" height="190"/><rect x="820" y="10" width="60" height="190"/><rect x="560" y="0" width="160" height="200"/><path d="M400 10l30-40 30 40zM820 10l30-40 30 40zM560 0l80-50 80 50z"/></g><g fill="#ffd23f"><rect x="610" y="60" width="20" height="34" rx="9"/><rect x="650" y="60" width="20" height="34" rx="9"/><circle cx="1050" cy="30" r="26"/></g>'],
-espacio:['#05051f','#1a1a6e','<g fill="#fff"><circle cx="90" cy="30" r="3"/><circle cx="260" cy="90" r="2"/><circle cx="410" cy="20" r="3"/><circle cx="620" cy="70" r="2"/><circle cx="780" cy="30" r="3"/><circle cx="960" cy="100" r="2"/><circle cx="1130" cy="40" r="3"/></g><circle cx="1010" cy="130" r="70" fill="#ff7a2f"/><ellipse cx="1010" cy="130" rx="115" ry="18" fill="none" stroke="#ffd23f" stroke-width="8"/><circle cx="210" cy="150" r="38" fill="#2fa8ff"/>'],
-autopista:['#10204f','#2c7fd6','<rect y="140" width="1280" height="60" fill="#1b1b3a"/><g fill="#ffd23f"><rect x="40" y="166" width="90" height="8"/><rect x="240" y="166" width="90" height="8"/><rect x="440" y="166" width="90" height="8"/><rect x="640" y="166" width="90" height="8"/><rect x="840" y="166" width="90" height="8"/><rect x="1040" y="166" width="90" height="8"/></g><g stroke="#fff" stroke-width="5" opacity=".5"><path d="M0 60h300M200 100h400M700 40h450M900 110h300"/></g>'],
-callejon:['#0b0b1c','#2b2860','<g fill="#06060f"><rect x="0" y="0" width="250" height="200"/><rect x="1030" y="0" width="250" height="200"/></g><rect x="610" y="20" width="14" height="180" fill="#06060f"/><circle cx="617" cy="26" r="26" fill="#ffd23f" opacity=".5"/><g fill="#ffd23f" opacity=".7"><rect x="60" y="50" width="30" height="40"/><rect x="1130" y="90" width="30" height="40"/></g>'],
-ring:['#2a0f3a','#b22453','<g stroke="#fff" stroke-width="7"><path d="M60 80h1160M30 125h1220M0 170h1280"/></g><g fill="#ff3d52"><rect x="50" y="40" width="26" height="160"/><rect x="1204" y="40" width="26" height="160"/></g><rect y="180" width="1280" height="20" fill="#2fa8ff"/>'],
-laboratorio:['#0c2a3a','#1d7a8c','<g fill="#08202b"><rect x="60" y="50" width="130" height="150"/><rect x="1090" y="40" width="130" height="160"/></g><g fill="#35d98a" opacity=".85"><rect x="80" y="110" width="40" height="70" rx="8"/><rect x="135" y="130" width="40" height="50" rx="8"/><circle cx="1155" cy="120" r="34"/></g><rect y="170" width="1280" height="30" fill="#08202b"/><g stroke="#ff3d52" stroke-width="8"><path d="M560 20l40 40-40 40M720 20l-40 40 40 40" fill="none"/></g>'],
-volcan:['#2a0a0a','#e0481d','<path d="M300 200L560 40l-60-30h280l-60 30 260 160z" fill="#2a0f0f"/><path d="M560 40l40 60 40-70 40 70 40-60" fill="none" stroke="#ffd23f" stroke-width="10"/><g fill="#ff7a2f"><circle cx="640" cy="10" r="14"/><circle cx="700" cy="-10" r="9"/><circle cx="590" cy="0" r="8"/></g><rect y="185" width="1280" height="15" fill="#ff7a2f"/>']
+/* ===== ESCENAS DE LAS ARENAS (pantalla completa, con animación) ===== */
+function sr(seed){let h=seed*2654435761>>>0;return()=>{h=Math.imul(h^h>>>15,2246822507)>>>0;h=Math.imul(h^h>>>13,3266489909)>>>0;h^=h>>>16;return(h>>>0)/4294967296}}
+const SV=(defs,body)=>`<svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice"><defs>${defs}</defs>${body}</svg>`;
+const lin=(id,a,stops)=>`<linearGradient id="${id}" x1="0" y1="0" x2="${a?1:0}" y2="${a?0:1}">${stops.map(([o,c,op])=>`<stop offset="${o}" stop-color="${c}" stop-opacity="${op==null?1:op}"/>`).join('')}</linearGradient>`;
+const rad=(id,stops)=>`<radialGradient id="${id}">${stops.map(([o,c,op])=>`<stop offset="${o}" stop-color="${c}" stop-opacity="${op==null?1:op}"/>`).join('')}</radialGradient>`;
+function skyline(seed,base,minH,maxH,color,win,wcolor,wprob){const r=sr(seed);let x=-20,o='';
+  while(x<1300){const w=50+r()*80,h=minH+r()*(maxH-minH);o+=`<rect x="${x|0}" y="${base-h|0}" width="${w|0}" height="${h|0}" fill="${color}"/>`;
+    if(win)for(let wy=base-h+14;wy<base-14;wy+=22)for(let wx=x+10;wx<x+w-14;wx+=18)if(r()<wprob)o+=`<rect x="${wx|0}" y="${wy|0}" width="8" height="11" fill="${wcolor}" opacity="${.5+r()*.5}"/>`;
+    x+=w+4+r()*10}return o}
+function stars(seed,n,ymax,tw){const r=sr(seed);let o='';for(let i=0;i<n;i++){const big=r()<.12;o+=`<circle class="${tw&&r()<.5?'tw':''}" style="animation-delay:${(r()*4).toFixed(1)}s" cx="${(r()*1280)|0}" cy="${(r()*ymax)|0}" r="${big?2.4:r()*1.3+.5}" fill="#fff" opacity="${.4+r()*.6}"/>`}return o}
+function embers(seed,n,color,x0,x1,y0){const r=sr(seed);let o='';for(let i=0;i<n;i++)o+=`<circle class="ember" style="animation-delay:${(r()*5).toFixed(1)}s;animation-duration:${(3+r()*4).toFixed(1)}s" cx="${(x0+r()*(x1-x0))|0}" cy="${y0}" r="${(1.5+r()*3).toFixed(1)}" fill="${color}"/>`;return o}
+function rain(seed,n,color){const r=sr(seed);let o='';for(let i=0;i<n;i++){const x=(r()*1300)|0;o+=`<line class="drop" style="animation-delay:${(r()*1).toFixed(2)}s;animation-duration:${(.5+r()*.5).toFixed(2)}s" x1="${x}" y1="-30" x2="${x-14}" y2="0" stroke="${color}" stroke-width="2" opacity=".5"/>`}return o}
+
+const SCENES={
+ciudad:()=>SV(lin('c1',0,[[0,'#2b1b52'],[.55,'#b2484f'],[1,'#ffb35c']])+rad('c2',[[0,'#fff2b0'],[.4,'#ffb35c',.6],[1,'#ffb35c',0]]),
+  `<rect width="1280" height="720" fill="url(#c1)"/><circle cx="880" cy="470" r="230" fill="url(#c2)"/><circle cx="880" cy="470" r="70" fill="#fff1c1"/>
+   <g opacity=".5" fill="#5b2a56"><ellipse class="drift" cx="300" cy="150" rx="260" ry="34"/><ellipse class="drift2" cx="900" cy="110" rx="300" ry="30"/></g>
+   ${skyline(11,560,120,300,'#6a3a63')}${skyline(23,610,140,380,'#3b2255',true,'#ffc766',.25)}${skyline(37,680,120,300,'#1d1233',true,'#ffd98a',.22)}
+   <g fill="#3a2038" opacity=".5"><path class="smoke" d="M250 400q-30-60 10-110q-24-50 8-90q28 50 4 90q40 50-22 110z"/><path class="smoke2" d="M1030 400q-30-70 10-130q-24-60 8-100q28 60 4 100q40 60-22 130z"/></g>
+   <path d="M0 690 L180 640 L330 700 L560 650 L760 705 L1000 655 L1280 700 V720 H0Z" fill="#150c22"/>
+   <g stroke="#ff9d42" stroke-width="3" opacity=".7"><path d="M130 676l30-22 14 26M610 674l24-18 20 22M1060 676l34-26 12 28" fill="none"/></g>
+   ${embers(5,16,'#ffb35c',100,1200,700)}`),
+castillo:()=>SV(lin('k1',0,[[0,'#0a0a2e'],[.7,'#33206b'],[1,'#6a3fb5']])+rad('k2',[[0,'#fff6c8'],[.3,'#d8d8ff',.5],[1,'#8a7bff',0]]),
+  `<rect width="1280" height="720" fill="url(#k1)"/>${stars(3,120,420,true)}<circle cx="1010" cy="140" r="170" fill="url(#k2)"/><circle cx="1010" cy="140" r="58" fill="#fffbe0"/><circle cx="990" cy="126" r="9" fill="#dcd6ff" opacity=".6"/><circle cx="1030" cy="160" r="6" fill="#dcd6ff" opacity=".6"/>
+   <g fill="#1a1050" opacity=".9"><path d="M0 560 Q200 470 420 540 T820 520 T1280 540 V720 H0Z"/></g>
+   <g fill="#0d0830"><rect x="440" y="330" width="400" height="250"/><rect x="400" y="230" width="86" height="350"/><rect x="794" y="230" width="86" height="350"/><rect x="560" y="170" width="160" height="410"/>
+     <path d="M388 230l55-90 55 90zM782 230l55-90 55 90zM548 170l92-120 92 120z"/><rect x="430" y="330" width="420" height="22"/>
+     <path d="M440 330v-30h24v30h24v-30h24v30h24v-30h24v30h24v-30h24v30h24v-30h24v30h24v-30h24v30h24v-30h24v30h24v-30h24v30h24v-30h24v30" /></g>
+   <g fill="#ffcf5c"><rect x="613" y="232" width="22" height="42" rx="11"/><rect x="645" y="232" width="22" height="42" rx="11"/><rect x="427" y="290" width="16" height="30" rx="8"/><rect x="821" y="290" width="16" height="30" rx="8"/><rect x="603" y="420" width="74" height="160" rx="37" fill="#ffa63d"/><rect x="480" y="400" width="14" height="26" rx="7"/><rect x="760" y="400" width="14" height="26" rx="7"/></g>
+   <g><circle class="flame" cx="560" cy="500" r="9" fill="#ffb347"/><circle class="flame2" cx="720" cy="500" r="9" fill="#ffb347"/><circle class="flame" cx="560" cy="500" r="30" fill="#ff8a1f" opacity=".25"/><circle class="flame2" cx="720" cy="500" r="30" fill="#ff8a1f" opacity=".25"/></g>
+   <g fill="#0b0626"><path d="M0 640 Q300 580 640 620 T1280 600 V720 H0Z"/></g>
+   <g opacity=".35" fill="#cfc4ff"><ellipse class="drift" cx="300" cy="610" rx="320" ry="26"/><ellipse class="drift2" cx="980" cy="640" rx="340" ry="30"/></g>
+   <g fill="#0b0626"><path class="bat" d="M140 150q18-18 36 0q-18-8-36 0z"/><path class="bat2" d="M300 110q14-14 28 0q-14-6-28 0z"/><path class="bat" d="M1180 260q16-16 32 0q-16-7-32 0z"/></g>`),
+espacio:()=>SV(rad('s1',[[0,'#3a1c7a'],[.5,'#13124a'],[1,'#04041a']])+rad('s2',[[0,'#ff4fa3',.55],[1,'#ff4fa3',0]])+rad('s3',[[0,'#2fa8ff',.5],[1,'#2fa8ff',0]])+lin('s4',0,[[0,'#ffb25a'],[1,'#c44a2b']]),
+  `<rect width="1280" height="720" fill="url(#s1)"/><ellipse cx="260" cy="200" rx="420" ry="220" fill="url(#s2)"/><ellipse cx="1040" cy="520" rx="480" ry="260" fill="url(#s3)"/>${stars(8,200,720,true)}
+   <g transform="rotate(-18 960 190)"><circle cx="960" cy="190" r="96" fill="url(#s4)"/><ellipse cx="960" cy="190" rx="190" ry="34" fill="none" stroke="#ffe3a3" stroke-width="12" opacity=".9"/><path d="M866 190a96 96 0 0 0 188 0" fill="none"/></g>
+   <circle cx="260" cy="520" r="54" fill="#7fb8ff"/><circle cx="244" cy="506" r="14" fill="#b4d8ff"/><circle cx="278" cy="540" r="10" fill="#5c97e6"/>
+   <circle cx="640" cy="90" r="22" fill="#d9d3ff"/><circle cx="632" cy="84" r="5" fill="#b9b1ee"/>
+   <g fill="#2a2457"><path d="M70 640q30-30 70-12l20 22-40 24z"/><path d="M1130 640q26-24 60-8l14 22-36 18z"/><path d="M560 660q22-16 48-4l8 16-30 12z"/></g>
+   <line class="shoot" x1="1200" y1="40" x2="900" y2="160" stroke="#fff" stroke-width="3"/><line class="shoot2" x1="500" y1="20" x2="300" y2="100" stroke="#fff" stroke-width="2"/>`),
+autopista:()=>SV(lin('a1',0,[[0,'#0d1b52'],[.6,'#3b6fd8'],[1,'#ffb36b']])+lin('a2',0,[[0,'#2b2b55'],[1,'#12122b']]),
+  `<rect width="1280" height="720" fill="url(#a1)"/><circle cx="640" cy="360" r="130" fill="#ffd48a" opacity=".7"/>${skyline(41,380,50,150,'#27346e')}${skyline(53,400,40,110,'#182250',true,'#ffd98a',.2)}
+   <path d="M0 720V420H1280V720Z" fill="#1c3a2c"/><path d="M-300 720L560 380H720L1580 720Z" fill="url(#a2)"/>
+   <path d="M560 380L-300 720M720 380L1580 720" stroke="#ffd23f" stroke-width="6" opacity=".8"/>
+   <g stroke="#fff" stroke-width="8"><line class="dash" x1="640" y1="400" x2="640" y2="440"/><line class="dash" x1="640" y1="470" x2="640" y2="560"/><line class="dash" x1="640" y1="600" x2="640" y2="760"/></g>
+   <g fill="#fff" opacity=".8"><rect class="speed" x="80" y="300" width="260" height="4"/><rect class="speed2" x="900" y="250" width="320" height="4"/><rect class="speed" x="520" y="200" width="200" height="3"/><rect class="speed2" x="200" y="170" width="300" height="3"/></g>
+   <g fill="#ff3d52"><circle class="car" cx="560" cy="470" r="9"/><circle class="car" cx="590" cy="470" r="9"/></g><g fill="#fff6c8"><circle class="car2" cx="700" cy="480" r="10"/><circle class="car2" cx="736" cy="480" r="10"/></g>
+   <g fill="#0c0f2a"><rect x="130" y="420" width="10" height="170"/><rect x="1140" y="420" width="10" height="170"/></g><g fill="#fff1b0"><circle cx="135" cy="416" r="16"/><circle cx="1145" cy="416" r="16"/></g>`),
+callejon:()=>SV(lin('l1',0,[[0,'#06061a'],[1,'#26225a']])+rad('l2',[[0,'#ffd98a',.8],[1,'#ffd98a',0]])+lin('l3',0,[[0,'#ffe9a8',.5],[1,'#ffe9a8',0]]),
+  `<rect width="1280" height="720" fill="url(#l1)"/>
+   <g fill="#2a1b2e"><rect x="0" y="0" width="360" height="720"/><rect x="920" y="0" width="360" height="720"/></g>
+   <g stroke="#3d2a40" stroke-width="2" opacity=".8">${Array.from({length:22},(_,i)=>`<line x1="0" y1="${i*34}" x2="360" y2="${i*34}"/><line x1="920" y1="${i*34}" x2="1280" y2="${i*34}"/>`).join('')}</g>
+   <g fill="#0b0818"><rect x="360" y="0" width="560" height="470"/></g>
+   <g fill="#16102a"><rect x="560" y="140" width="160" height="330"/><rect x="740" y="210" width="110" height="260"/></g><g fill="#ffd05a" opacity=".8"><rect x="590" y="190" width="22" height="30"/><rect x="640" y="250" width="22" height="30"/><rect x="590" y="300" width="22" height="30"/><rect x="770" y="260" width="20" height="26"/></g>
+   <g stroke="#0a0714" stroke-width="10" fill="none"><path d="M60 140h230M60 300h230M70 140v160M280 140v160M120 140l140 160M120 300l140-160"/></g>
+   <rect x="1040" y="430" width="180" height="140" rx="8" fill="#1d3a2c"/><rect x="1030" y="420" width="200" height="22" rx="6" fill="#274f3b"/>
+   <rect x="610" y="104" width="12" height="470" fill="#0a0714"/><path d="M586 104h86l-16-36h-54z" fill="#0a0714"/><circle cx="628" cy="116" r="150" fill="url(#l2)"/><path d="M590 116L520 560h216L666 116z" fill="url(#l3)"/>
+   <rect x="0" y="560" width="1280" height="160" fill="#100c20"/><ellipse cx="640" cy="620" rx="220" ry="26" fill="#ffd98a" opacity=".25"/><ellipse cx="300" cy="660" rx="110" ry="14" fill="#6fa8ff" opacity=".3"/><ellipse cx="980" cy="640" rx="90" ry="12" fill="#6fa8ff" opacity=".3"/>
+   <g class="eyes"><circle cx="1100" cy="400" r="5" fill="#9cff6a"/><circle cx="1120" cy="400" r="5" fill="#9cff6a"/></g>
+   ${rain(9,70,'#a8c4ff')}<g opacity=".25" fill="#cfc4ff"><ellipse class="drift" cx="500" cy="590" rx="360" ry="22"/></g>`),
+ring:()=>SV(lin('r1',0,[[0,'#150628'],[1,'#3a0f45']])+lin('r2',0,[[0,'#2f6fe0'],[1,'#173c8a']])+rad('r3',[[0,'#fff6c8',.9],[1,'#fff6c8',0]]),
+  `<rect width="1280" height="720" fill="url(#r1)"/>
+   <g fill="#0b0414">${Array.from({length:80},(_,i)=>{const r=sr(i+7),x=(i*17)%1280,y=190+(i%5)*26+r()*10;return `<circle cx="${x}" cy="${y|0}" r="${(10+r()*6)|0}"/><rect x="${x-12}" y="${(y+8)|0}" width="24" height="26" rx="8"/>`}).join('')}</g>
+   <g fill="#fff" opacity=".8">${Array.from({length:30},(_,i)=>{const r=sr(i+90);return `<circle class="tw" style="animation-delay:${(r()*3).toFixed(1)}s" cx="${(r()*1280)|0}" cy="${(180+r()*130)|0}" r="2.4"/>`}).join('')}</g>
+   <g><path d="M240 0L420 520H100z" fill="url(#r3)" opacity=".45"/><path d="M640 0L760 520H520z" fill="url(#r3)" opacity=".55"/><path d="M1040 0L1180 520H860z" fill="url(#r3)" opacity=".45"/></g>
+   <path d="M-100 720L240 400H1040L1380 720Z" fill="url(#r2)"/><path d="M240 400H1040" stroke="#fff" stroke-width="4" opacity=".7"/>
+   <g stroke-width="9" fill="none"><path d="M200 440L120 700" stroke="#ff3d52"/><path d="M1080 440L1160 700" stroke="#ff3d52"/>
+     <path d="M200 440H1080M170 520H1110M140 600H1140" stroke="#fff" opacity=".9"/><path d="M185 470H1095M155 550H1125M125 640H1155" stroke="#ff3d52" opacity=".9"/></g>
+   <g fill="#ff3d52"><rect x="188" y="390" width="26" height="70" rx="8"/><rect x="1066" y="390" width="26" height="70" rx="8"/></g>
+   <ellipse cx="640" cy="640" rx="260" ry="40" fill="#fff" opacity=".12"/><circle class="tw" cx="880" cy="250" r="6" fill="#fff"/>`),
+volcan:()=>SV(lin('v1',0,[[0,'#220808'],[.55,'#a32a14'],[1,'#ff8a2b']])+lin('v2',0,[[0,'#2a1210'],[1,'#120606']])+rad('v3',[[0,'#fff1a0'],[.35,'#ff8a2b',.7],[1,'#ff4a1b',0]])+lin('v4',0,[[0,'#ffd23f'],[1,'#ff3d1b']]),
+  `<rect width="1280" height="720" fill="url(#v1)"/><g fill="#2a0c0a" opacity=".7"><ellipse class="drift" cx="380" cy="120" rx="360" ry="60"/><ellipse class="drift2" cx="960" cy="90" rx="380" ry="54"/></g>
+   <circle cx="640" cy="190" r="260" fill="url(#v3)"/>
+   <g fill="#3a1812" opacity=".8"><path d="M0 500L180 340L330 470L460 380V720H0Z"/><path d="M1280 500L1100 330L950 470L840 390V720H1280Z"/></g>
+   <path d="M200 720L560 230L520 190H760L720 230L1080 720Z" fill="url(#v2)"/>
+   <path d="M520 190L560 230L600 200L640 236L680 200L720 230L760 190" fill="url(#v4)"/>
+   <g fill="none" stroke="url(#v4)" stroke-linecap="round"><path class="lava" d="M600 220Q570 330 600 420T560 640" stroke-width="12"/><path class="lava2" d="M680 224Q720 330 690 440T740 660" stroke-width="10"/><path class="lava" d="M640 236Q630 380 650 520" stroke-width="8"/></g>
+   <path d="M0 640Q320 600 640 640T1280 620V720H0Z" fill="#1a0808"/><path class="lava2" d="M0 690Q320 664 640 690T1280 680V720H0Z" fill="#ff6a1f"/>
+   <g fill="#150606"><path d="M120 650l40-60 50 60zM1040 660l44-70 54 70z"/></g>
+   ${embers(21,34,'#ffd23f',300,980,300)}${embers(22,18,'#ff6a1f',100,1180,700)}`),
+laboratorio:()=>SV(lin('b1',0,[[0,'#0a2230'],[1,'#12546a']])+lin('b2',0,[[0,'#7dffc0',.85],[1,'#1fb87a',.9]])+rad('b3',[[0,'#7dffc0',.5],[1,'#7dffc0',0]]),
+  `<rect width="1280" height="720" fill="url(#b1)"/>
+   <g stroke="#0b3446" stroke-width="3" opacity=".8">${Array.from({length:12},(_,i)=>`<line x1="${i*110}" y1="0" x2="${i*110}" y2="540"/>`).join('')}<line x1="0" y1="180" x2="1280" y2="180"/><line x1="0" y1="360" x2="1280" y2="360"/></g>
+   <g fill="#0b2c3d"><rect x="60" y="80" width="260" height="170" rx="10"/><rect x="960" y="80" width="260" height="170" rx="10"/></g>
+   <g stroke="#6fe8ff" stroke-width="3" fill="none" opacity=".9"><path class="scan" d="M80 200l40-30 40 20 40-50 40 40 40-20 40 30"/><path class="scan2" d="M980 190l40-20 40 40 40-60 40 50 40-30 40 20"/></g>
+   <g fill="#6fe8ff" opacity=".8"><circle cx="90" cy="108" r="5"/><circle cx="110" cy="108" r="5" fill="#ffd23f"/><circle cx="990" cy="108" r="5"/><circle cx="1010" cy="108" r="5" fill="#ff3d52"/></g>
+   <g><rect x="470" y="130" width="340" height="400" rx="40" fill="#0c3a4f" opacity=".7"/><rect x="490" y="150" width="300" height="360" rx="30" fill="url(#b2)" opacity=".55"/><circle cx="640" cy="340" r="220" fill="url(#b3)"/>
+     <g fill="#d6fff0" opacity=".9"><circle class="bub" cx="560" cy="500" r="9"/><circle class="bub2" cx="640" cy="500" r="13"/><circle class="bub" cx="720" cy="500" r="8"/><circle class="bub2" cx="600" cy="500" r="6"/><circle class="bub" cx="690" cy="500" r="7"/></g>
+     <path d="M600 520q-20-120 40-190q20-30 0-90" fill="none" stroke="#0a2a3a" stroke-width="12" opacity=".6"/><rect x="450" y="112" width="380" height="30" rx="12" fill="#0a2a3a"/><rect x="450" y="520" width="380" height="36" rx="12" fill="#0a2a3a"/></g>
+   <g fill="#0a2a3a"><rect x="120" y="330" width="26" height="220"/><rect x="1134" y="330" width="26" height="220"/></g>
+   <g><rect x="106" y="360" width="54" height="40" rx="10" fill="#1fb87a" opacity=".8"/><rect x="1120" y="400" width="54" height="40" rx="10" fill="#ff8a3d" opacity=".8"/></g>
+   <path d="M0 560H1280V720H0Z" fill="#0a2634"/><g stroke="#10475c" stroke-width="3">${Array.from({length:10},(_,i)=>`<line x1="${640+(i-5)*40}" y1="560" x2="${640+(i-5)*230}" y2="720"/>`).join('')}<line x1="0" y1="620" x2="1280" y2="620"/><line x1="0" y1="680" x2="1280" y2="680"/></g>
+   <circle class="alarm" cx="640" cy="40" r="22" fill="#ff3d52"/><circle class="alarm" cx="640" cy="40" r="90" fill="#ff3d52" opacity=".15"/>`)
 };
-const ARNAME=Object.fromEntries(Object.keys(SCN).map(k=>[k,k]));
-function setScene(ar){const sc=SCN[ar.k]||['#141a52','#222b8a',''];$('#scene').innerHTML=`<svg viewBox="0 0 1280 200" preserveAspectRatio="none">${sc[2]}</svg>`;
-  $('#s-battle').style.background=`linear-gradient(180deg,${sc[0]},${sc[1]})`;$('#scene').classList.add('on');}
+function sceneSVG(k){const f=SCENES[k];return f?f():''}
+function paintScene(el,ar){if(!el)return;el.innerHTML=ar?sceneSVG(ar.k):'';el.classList.toggle('on',!!ar)}
+
+function setScene(ar){paintScene($('#scene'),ar);$('#s-battle').style.background='none'}
 async function battle(A,B){
   SKIP=false;curArena=FORCE_ARENA||pickArena();const res=evaluate(A,B),lines=narrate(res,A,B);
   go('battle');
   $('#bn0').textContent=S.names[0];$('#bn1').textContent=S.names[1];$('#bs0').textContent=S.score[0];$('#bs1').textContent=S.score[1];
   $('#brd').innerHTML=`RONDA ${S.round} DE ${S.rounds} · ${curArena.l}<br><small style="font-size:.72em;color:#fff">VALEN MÁS: ${STATL[curArena.a]} Y ${STATL[curArena.b]}</small>`;
+  $('#s-battle').classList.toggle('compact',A.length>=4);
   ['#ta','#tb'].forEach(s=>{$(s).className='team '+(s==='#ta'?'a':'b');$(s).innerHTML=''});
   ['#pa','#pb'].forEach(s=>{$(s).classList.remove('show');$('span',$(s)).textContent='0'});
   ['#ca','#cb'].forEach(s=>$(s).innerHTML='');
@@ -948,12 +1081,14 @@ $('#b-menu').onclick=()=>{sfx('tap');go('hub')};
 const ELK=DATA.elements.map(e=>e.k);
 const ruleOf=(a,b)=>DATA.rules.find(r=>r.a===a&&r.d===b);
 const WITHIMG=CARDS.filter(c=>c.img);
+function smpFrom(pool,n){const a=[...pool];for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 function smp(n,rng){const a=[...(WITHIMG.length>=n?WITHIMG:CARDS)],r=rng||Math.random;for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 function seedRng(str){let h=1779033703;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}
   return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);h^=h>>>16;return(h>>>0)/4294967296}}
 const bestN=(cards,n,ar)=>[...cards].sort((a,b)=>arenaScore(b,ar)-arenaScore(a,ar)).slice(0,n);
 const sumAr=(t,ar)=>t.reduce((s,c)=>s+arenaScore(c,ar),0);
 let FORCE_ARENA=null,NEXTHOOK=null;
+let PKAR=null;
 
 function askWho(title){return new Promise(res=>{$('#whoT').textContent=title;$('#who').classList.add('on');
   $('#who-m').onclick=()=>{$('#who').classList.remove('on');sfx('go');res(false)};
@@ -965,10 +1100,10 @@ function showRes(title,sub,again,win){$('#mresT').textContent=title;$('#mresS').
 
 /* pantalla de elegir cartas (equipo, corredor, draft) */
 function chipsHTML(c,chips){return chips.length?`<div class="pkv">${chips.map(k=>`<span style="--c:${STATC[k]}">${STATL[k].slice(0,3)} ${c.stats[k]}</span>`).join('')}</div>`:''}
-function pkShow(title,sub,cards,chips){go('pick');$('#pkT').textContent=title;$('#pkS').innerHTML=sub||'';const g=$('#pkgrid');g.innerHTML='';
+function pkShow(title,sub,cards,chips,o){o=o||{};go('pick');$('#pkgrid').classList.toggle('big',!!o.w);paintScene($('#pkscene'),PKAR);$('#pkstrip')&&$('#pkstrip').remove();$('#pkT').textContent=title;$('#pkS').innerHTML=sub||'';const g=$('#pkgrid');g.innerHTML='';
   cards.forEach((c,i)=>{const b=document.createElement('button');b.className='pkc rise';b.style.animationDelay=i*40+'ms';b.dataset.id=c.id;b.setAttribute('aria-label',c.name);
-    b.append(cardEl(c,122));b.insertAdjacentHTML('beforeend',chipsHTML(c,chips||[])+'<div class="tk"></div>');g.append(b)})}
-function pickTeam(cards,n,chips,title,sub,ok){return new Promise(res=>{pkShow(title,sub,cards,chips);const sel=[];$('#pkbar').hidden=false;$('#pkok').innerHTML=(ok||'¡LISTO!')+icon('i-check');
+    b.append(cardEl(c,o.w||122));b.insertAdjacentHTML('beforeend',chipsHTML(c,chips||[])+(o.ab&&c.ab?`<div class="pab">${c.ab}</div>`:'')+'<div class="tk"></div>');g.append(b)})}
+function pickCards(cards,n,chips,title,sub,ok){return new Promise(res=>{pkShow(title,sub,cards,chips);const sel=[];$('#pkbar').hidden=false;$('#pkok').innerHTML=(ok||'¡LISTO!')+icon('i-check');
   const render=()=>{$$('#pkgrid .pkc').forEach(b=>b.classList.toggle('sel',sel.includes(b.dataset.id)));
     $('#pkdots').innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<sel.length?'on':''}"></i>`).join('');$('#pkok').disabled=sel.length<n};
   $('#pkgrid').onclick=e=>{const b=e.target.closest('.pkc');if(!b)return;const id=b.dataset.id,k=sel.indexOf(id);sfx('tap');
@@ -976,12 +1111,16 @@ function pickTeam(cards,n,chips,title,sub,ok){return new Promise(res=>{pkShow(ti
   $('#pkok').onclick=()=>{sfx('go');res(sel.map(id=>BYID[id]))};render()})}
 
 /* lanzar una batalla de un solo round con arena propia */
-function runBattle(A,B,names,arena,after){S.names=names;S.rounds=1;S.round=1;S.score=[0,0];FORCE_ARENA=arena||null;
+function runBattle(A,B,names,arena,after){PKAR=null;S.names=names;S.rounds=1;S.round=1;S.score=[0,0];FORCE_ARENA=arena||null;
   NEXTHOOK=()=>{FORCE_ARENA=null;after(S.score[0]>S.score[1],S.score[0]===S.score[1])};battle(A,B)}
 
 /* ---- EQUIPO PERFECTO ---- */
+async function arenaIntro(ar,txt){return new Promise(async res=>{const a=$('#aint');paintScene($('.aint-bg',a),ar);$('#aintT',a).textContent=ar.l;
+  $('#aintS',a).innerHTML=`<span class="st2" style="--c:${STATC[ar.a]}">${STATL[ar.a]}</span><span class="st2" style="--c:${STATC[ar.b]}">${STATL[ar.b]}</span>`;$('#aintX',a).textContent=txt;a.classList.add('on');sfx('slam');
+  let done=false;const fin=()=>{if(done)return;done=true;a.classList.remove('on');res()};$('#aintOk').onclick=()=>{sfx('go');stopSpeech();fin()};SKIP=false;speak(txt)})}
 async function startTeam(){const arena=pickArena(),hand=smp(10);
-  const mine=await pickTeam(hand,3,[arena.a,arena.b],'EQUIPO PERFECTO',`LA ARENA: <b>${arena.l}</b> · VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}`,'¡A PELEAR!');
+  await arenaIntro(arena,`ELEGÍ LOS TRES MEJORES PARA ESTA ARENA. AQUÍ VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}.`);PKAR=arena;
+  const mine=await pickCards(hand,3,[arena.a,arena.b],'EQUIPO PERFECTO',`LA ARENA: <b>${arena.l}</b> · VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}`,'¡A PELEAR!');
   const rival=bestN(smp(10),3,arena),best=bestN(hand,3,arena),perfect=Math.round(sumAr(mine,arena))>=Math.round(sumAr(best,arena));
   runBattle(mine,rival,['BAUTI','MÁQUINA'],arena,(win,tie)=>showRes(perfect?'¡EQUIPO PERFECTO!':win?'¡GANASTE!':tie?'¡EMPATE!':'¡PERDISTE!',
     perfect?'ELEGISTE A LOS MEJORES PARA ESTA ARENA':'EL EQUIPO PERFECTO ERA:<br>'+best.map(c=>c.name).join(' · '),startTeam,win||perfect))}
@@ -991,24 +1130,29 @@ function dayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMont
 function dailyState(){try{return JSON.parse(localStorage.getItem('bauti_daily'))||{last:'',streak:0,done:''}}catch(e){return{last:'',streak:0,done:''}}}
 async function startDaily(){const key=dayKey(),rng=seedRng('choque-'+key),arena=ARENAS[Math.floor(rng()*ARENAS.length)],hand=smp(8,rng),rival=bestN(smp(10,rng),3,arena);
   const st=dailyState();
-  const mine=await pickTeam(hand,3,[arena.a,arena.b],'DESAFÍO DEL DÍA',`HOY: <b>${arena.l}</b> · RACHA: ${st.streak} 🔥`,'¡A PELEAR!');
+  await arenaIntro(arena,`DESAFÍO DE HOY. ELEGÍ LOS TRES MEJORES PARA ESTA ARENA. AQUÍ VALEN MÁS ${STATL[arena.a]} Y ${STATL[arena.b]}.`);PKAR=arena;
+  const mine=await pickCards(hand,3,[arena.a,arena.b],'DESAFÍO DEL DÍA',`HOY: <b>${arena.l}</b> · RACHA: ${st.streak} 🔥`,'¡A PELEAR!');
   runBattle(mine,rival,['BAUTI','EL RETO'],arena,(win)=>{const s=dailyState();let note='';
     if(s.done!==key){s.done=key;if(win){s.streak=(s.last&&new Date(key)-new Date(s.last)<=2*86400000)?s.streak+1:1;s.last=key}else s.streak=0;try{localStorage.setItem('bauti_daily',JSON.stringify(s))}catch(e){}}
     else note='<br>(YA JUGASTE HOY: LA RACHA NO CAMBIA)';
     showRes(win?'¡RETO CUMPLIDO!':'¡MAÑANA HAY OTRO!',`RACHA: ${dailyState().streak} DÍAS${note}`,startDaily,win)})}
 
-/* ---- DRAFT ---- */
-async function startDraft(){const two=await askWho('¿CON QUIÉN JUGÁS?'),names=two?['BAUTI','PAPÁ']:['BAUTI','MÁQUINA'],pool=smp(10),teams=[[],[]];
-  pkShow('DRAFT','',pool,[]);$('#pkbar').hidden=true;
-  for(let turn=0;teams[0].length<3||teams[1].length<3;turn++){
-    const p=turn%2===0?0:1;if(teams[p].length>=3)continue;
-    $('#pkS').innerHTML=`<span style="color:${p?'var(--red)':'var(--blue)'}">ELIGE ${names[p]}</span> · ${teams[p].length+1} DE 3`;
+/* ---- DRAFT (como el de FUT: 5 cartas nuevas por turno, elegís 1) ---- */
+async function startDraft(){PKAR=null;const two=await askWho('¿CON QUIÉN JUGÁS?'),names=two?['BAUTI','PAPÁ']:['BAUTI','MÁQUINA'],R=5,teams=[[],[]],seen=new Set();
+  const fresh=()=>{const pool=(WITHIMG.length>=40?WITHIMG:CARDS).filter(c=>!seen.has(c.id)),a=smpFrom(pool,5);a.forEach(c=>seen.add(c.id));return a};
+  for(let r=1;r<=R;r++)for(const p of [0,1]){
+    const opts=fresh();pkShow('DRAFT',`RONDA ${r} DE ${R} · <span style="color:${p?'var(--red)':'var(--blue)'}">ELIGE ${names[p]}</span>`,opts,[],{w:176,ab:true});$('#pkbar').hidden=true;
+    draftStrip(teams,names);
     let pick;
-    if(!two&&p===1){await sleep(900);pick=[...$$('#pkgrid .pkc:not(.gone)')].sort((x,y)=>BYID[y.dataset.id].pw-BYID[x.dataset.id].pw)[0]}
-    else pick=await new Promise(r=>{$('#pkgrid').onclick=e=>{const b=e.target.closest('.pkc:not(.gone)');if(b){sfx('tap');r(b)}}});
-    pick.classList.add('gone',p?'b':'a');$('.tk',pick).textContent=names[p];sfx('pop');teams[p].push(BYID[pick.dataset.id]);await sleep(250)}
-  await sleep(700);
-  runBattle(teams[0],teams[1],names,null,(win,tie)=>showRes(tie?'¡EMPATE!':`¡GANÓ ${names[win?0:1]}!`,'CADA UNO ARMÓ SU EQUIPO ELIGIENDO UNO POR TURNO',startDraft))}
+    if(!two&&p===1){await sleep(1200);pick=[...$$('#pkgrid .pkc')].sort((x,y)=>BYID[y.dataset.id].pw-BYID[x.dataset.id].pw)[0]}
+    else pick=await new Promise(rs=>{$('#pkgrid').onclick=e=>{const b=e.target.closest('.pkc');if(b){sfx('tap');rs(b)}}});
+    const c=BYID[pick.dataset.id];$$('#pkgrid .pkc').forEach(b=>b.classList.toggle('gone',b!==pick));pick.classList.add('sel');sfx('match');teams[p].push(c);draftStrip(teams,names);
+    const say=(two||p===0?`¡ELEGISTE A ${c.name}!`:`¡${names[p]} ELIGIÓ A ${c.name}!`)+(c.ab?` ${c.ab}.`:'');
+    $('#pkS').textContent=say;SKIP=false;await speak(say);await sleep(300)}
+  await sleep(500);
+  runBattle(teams[0],teams[1],names,null,(win,tie)=>showRes(tie?'¡EMPATE!':`¡GANÓ ${names[win?0:1]}!`,'CADA UNO ARMÓ SU EQUIPO ELIGIENDO UNA CARTA POR TURNO',startDraft))}
+function draftStrip(teams,names){let e=$('#pkstrip');if(!e){e=document.createElement('div');e.id='pkstrip';$('#s-pick').append(e)}
+  e.innerHTML=[0,1].map(p=>`<div class="ds ${p?'b':'a'}"><b>${names[p]}</b>${teams[p].map(c=>`<i style="background-image:url(${c.img})"></i>`).join('')}</div>`).join('')}
 
 /* ---- PIEDRA, PAPEL Y TIJERA DE PODERES ---- */
 let RP=null;
@@ -1029,25 +1173,7 @@ $('#rpsBtns').onclick=async e=>{const b=e.target.closest('.rb');if(!b||!RP||RP.b
   $('#rpsS0').textContent=RP.s[0];$('#rpsS1').textContent=RP.s[1];await speak(msg);await sleep(900);
   if(RP.s[0]>=3||RP.s[1]>=3){const wi=RP.s[0]>=3?0:1;showRes(`¡GANÓ ${RP.names[wi]}!`,`${RP.s[0]} A ${RP.s[1]}`,startRps)}else rpsReset()};
 
-/* ---- CARRERA DE HÉROES ---- */
-async function startRace(){const two=await askWho('¿CON QUIÉN JUGÁS?'),names=two?['BAUTI','PAPÁ']:['BAUTI','MÁQUINA'],pool=smp(8);
-  const c0=(await pickTeam(pool.slice(0,4),1,['velocidad'],`ELEGÍ TU CORREDOR, ${names[0]}`,'MIRÁ LA VELOCIDAD','¡ESTE!'))[0];
-  let c1;if(two)c1=(await pickTeam(pool.slice(4),1,['velocidad'],`ELEGÍ TU CORREDOR, ${names[1]}`,'MIRÁ LA VELOCIDAD','¡ESTE!'))[0];else c1=[...pool.slice(4)].sort((a,b)=>b.stats.velocidad-a.stats.velocidad)[0];
-  const cs=[c0,c1];go('race');
-  [0,1].forEach(i=>{const L=$('#ln'+i);$('.lname',L).textContent=names[i];const r=$('.runner',L);r.innerHTML='';r.append(cardEl(cs[i],92));r.style.transform='translateX(0)';L.classList.remove('win');
-    $('.tap',L).textContent=(two||i===0)?'¡TOCÁ RÁPIDO!':'MÁQUINA'});
-  const pos=[0,0];let running=false,done=false;const track=1010-92;
-  const move=(i)=>{pos[i]=Math.min(1,pos[i]+0.024+cs[i].stats.velocidad*0.00022);$('#ln'+i+' .runner').style.transform=`translateX(${pos[i]*track}px)`;if(pos[i]>=1&&!done)finish(i)};
-  const finish=i=>{done=true;running=false;clearInterval(mt);$('#ln'+i).classList.add('win');setTimeout(()=>showRes(`¡GANÓ ${names[i]}!`,`${cs[i].name} CRUZÓ PRIMERO LA META`,startRace),700)};
-  let mt=null;
-  const tap=i=>e=>{e.preventDefault();if(running&&!done){move(i);sfx('tick')}};
-  $('#ln0').onpointerdown=tap(0);if(two)$('#ln1').onpointerdown=tap(1);else $('#ln1').onpointerdown=null;
-  const cnt=$('#rcount');cnt.classList.add('on');
-  for(const t of['3','2','1','¡YA!']){cnt.textContent=t;sfx(t==='¡YA!'?'go':'tick');await sleep(t==='¡YA!'?500:800)}
-  cnt.classList.remove('on');running=true;
-  if(!two)mt=setInterval(()=>{if(running&&!done)move(1)},210+Math.random()*30)}
-
-const MODE_START={draft:startDraft,rps:startRps,race:startRace,team:startTeam,daily:startDaily};
+const MODE_START={draft:startDraft,rps:startRps,team:startTeam,daily:startDaily};
 
 /* ===== BIBLIOTECA ===== */
 const nrm=t=>t.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
@@ -1110,7 +1236,7 @@ async function pvTurn(){
 }
 async function pvSpin(){
   if(PV.busy)return;PV.busy=true;const p=PV.turn;$('#pvspin').hidden=true;
-  const target=pickOne(CARDS);PV.cur=target;ac();
+  const target=pickOne(POOL());PV.cur=target;ac();
   await roulette($('#pvcard'),target);
   const free=STK.filter(k=>PV.slots[p][k]==null);$('#pvmsg').textContent=S.ai[p]?'':'ELEGÍ UNA ESTADÍSTICA';
   const opts=$('#pvopts');opts.innerHTML='';
@@ -1121,7 +1247,8 @@ async function pvSpin(){
 }
 async function pvPick(k){
   if(PV.busy)return;PV.busy=true;const p=PV.turn;PV.slots[p][k]=PV.cur.stats[k];sfx('match');buzz(15);
-  $('#pvopts').innerHTML='';pvDraw();await sleep(700);PV.busy=false;PV.turn^=1;
+  const said=S.ai[p]?`¡${S.names[p]} ELIGIÓ ${ART[k]} ${STATL[k]} DE ${PV.cur.name}!`:`¡ELEGISTE ${ART[k]} ${STATL[k]} DE ${PV.cur.name}!`;
+  $('#pvmsg').textContent=said;$('#pvopts').innerHTML='';pvDraw();SKIP=false;await speak(said);await sleep(250);PV.busy=false;PV.turn^=1;
   if(Object.keys(PV.slots[0]).length===6&&Object.keys(PV.slots[1]).length===6)return pvCompare();
   pvTurn()}
 async function pvCompare(){
@@ -1149,7 +1276,8 @@ async function unoSpin(){
   await Promise.all(free.map(async(k,i)=>{const el=$(`#unogrid .ut[data-k=${k}] .uf`);await sleep(i*180);await roulette(el,tg[k],10+i);UN.opts[k]=tg[k];}));
   unoDraw();UN.busy=false;$('#unomsg').textContent='ELEGÍ UNA OPCIÓN';}
 async function unoPick(k){
-  if(UN.busy)return;UN.busy=true;UN.locked[k]={c:UN.opts[k]};sfx('match');buzz(15);UN.opts={};unoDraw();await sleep(500);UN.busy=false;
+  if(UN.busy)return;UN.busy=true;const cd=UN.opts[k];UN.locked[k]={c:cd};sfx('match');buzz(15);UN.opts={};unoDraw();
+  const said=`¡ELEGISTE ${ART[k]} ${STATL[k]} DE ${cd.name}!`;$('#unomsg').textContent=said;SKIP=false;await speak(said);await sleep(200);UN.busy=false;
   const left=STK.filter(x=>!UN.locked[x]);
   if(!left.length)return unoResult();
   $('#unomsg').textContent=`QUEDAN ${left.length}. GIRÁ OTRA VEZ`;$('#unospin').hidden=false}
