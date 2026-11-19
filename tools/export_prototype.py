@@ -9,8 +9,14 @@ from catalog_lib import ROOT, connect
 
 OUT = os.path.join(ROOT, 'prototipo2')
 # La plataforma de prueba admite 511 archivos por versión: los personajes nuevos viajan juntos en pack.js (data URI)
-PACK_FROM = 550
+FILES_MAX = 440  # cuántos personajes con foto van como archivo suelto; el resto viaja reducido dentro de pack*.js
 KEYS = ['inteligencia', 'fuerza', 'velocidad', 'aguante', 'poder', 'combate']
+
+
+def small(path):
+    from PIL import Image
+    import io
+    im = Image.open(path).convert('RGB'); im.thumbnail((300, 450)); b = io.BytesIO(); im.save(b, 'WEBP', quality=72, method=4); return b.getvalue()
 
 
 def main():
@@ -23,11 +29,12 @@ def main():
         gal.setdefault(r['character_id'], []).append(r['card_path'])
     power = dict(db.execute('SELECT character_id,power FROM v_power'))
     chars = []; pack = {}
+    file_ids = set(sorted(img)[:FILES_MAX])
     for r in db.execute('SELECT * FROM characters ORDER BY id'):
         st = stats[r['id']]; p = img.get(r['id']); fn = None
         if p and os.path.exists(os.path.join(ROOT, p)):
             fn = 'img/' + os.path.basename(p)
-            if r['id'] < PACK_FROM: shutil.copy(os.path.join(ROOT, p), os.path.join(OUT, fn))
+            if r['id'] in file_ids: shutil.copy(os.path.join(ROOT, p), os.path.join(OUT, fn))
             else: pack[fn] = p
         g = []
         for gp in gal.get(r['id'], []):
@@ -46,7 +53,7 @@ def main():
         f.write('const DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
     import base64
     # tres archivos (pack.js, pack2.js, pack3.js) para no pasar el máximo de 16 MB por archivo
-    items = [(k, json.dumps(k) + ':"data:image/webp;base64,' + base64.b64encode(open(os.path.join(ROOT, v), 'rb').read()).decode() + '"') for k, v in sorted(pack.items())]
+    items = [(k, json.dumps(k) + ':"data:image/webp;base64,' + base64.b64encode(small(os.path.join(ROOT, v))).decode() + '"') for k, v in sorted(pack.items())]
     total = sum(len(t) for _, t in items); parts = [[], [], []]; acc = 0
     for k, t in items:
         n = min(2, int(acc / (total / 3 + 1))); parts[n].append(t); acc += len(t)
