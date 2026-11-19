@@ -5,3 +5,9 @@ data/cache/
 data/raw_images/
 __pycache__/
 *.pyc
+apk/local.properties
+apk/.gradle/
+apk/app/build/
+apk/app/src/main/assets/
+apk/build/
+.gradle/

@@ -7,9 +7,12 @@ import json, os, shutil, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from catalog_lib import ROOT, connect
 
-OUT = os.path.join(ROOT, 'prototipo2')
+import argparse
+_ap = argparse.ArgumentParser(); _ap.add_argument('--out'); _ap.add_argument('--all', action='store_true', help='todas las fotos como archivo suelto (para la APK)')
+ARGS = _ap.parse_args()
+OUT = ARGS.out or os.path.join(ROOT, 'prototipo2')
 # La plataforma de prueba admite 511 archivos por versión: los personajes nuevos viajan juntos en pack.js (data URI)
-FILES_MAX = 440  # cuántos personajes con foto van como archivo suelto; el resto viaja reducido dentro de pack*.js
+FILES_MAX = 10**9 if ARGS.all else 440  # cuántos personajes con foto van como archivo suelto; el resto viaja reducido dentro de pack*.js
 KEYS = ['inteligencia', 'fuerza', 'velocidad', 'aguante', 'poder', 'combate']
 
 

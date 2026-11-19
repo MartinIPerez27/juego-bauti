@@ -1,0 +1,15 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.bauti.choque'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.bauti.choque'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '0.1'
+    }
+    buildTypes { release { minifyEnabled false } }
+    androidResources { noCompress 'webp', 'woff2', 'js' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
