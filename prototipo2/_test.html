@@ -485,7 +485,18 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .bub{animation:bub 3.2s ease-in infinite}.bub2{animation:bub 4.4s ease-in infinite -1.5s}@keyframes bub{from{transform:translateY(0);opacity:1}to{transform:translateY(-330px);opacity:0}}
 .alarm{animation:alm 1s ease-in-out infinite alternate}@keyframes alm{to{opacity:.15}}
 @media (prefers-reduced-motion:reduce){.scene svg *{animation:none!important}}
-.compact .pwr{top:262px}.compact .chips{top:344px}.compact .vs{top:104px}.compact .chip{font-size:22px;padding:3px 9px}#s-pick .scene::after{content:'';position:absolute;inset:0;background:rgba(5,7,30,.42);pointer-events:none}#hub{grid-template-rows:repeat(2,1fr)!important}</style>
+.compact .pwr{top:262px}.compact .chips{top:344px}.compact .vs{top:104px}.compact .chip{font-size:22px;padding:3px 9px}#s-pick .scene::after{content:'';position:absolute;inset:0;background:rgba(5,7,30,.42);pointer-events:none}#hub{grid-template-rows:repeat(2,1fr)!important}#vlist{position:absolute;inset:0;z-index:68;background:rgba(5,7,30,.96);display:none;flex-direction:column;padding:24px 60px}
+#vlist.on{display:flex}
+#vlist .vh{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-size:60px;color:var(--yellow);text-shadow:0 5px 0 var(--ink)}
+#vrows{flex:1;overflow-y:auto;margin:10px 0;display:flex;flex-direction:column;gap:10px;touch-action:pan-y}
+.vr{display:flex;align-items:center;gap:16px;background:var(--bg2);border:5px solid var(--ink);border-radius:18px;padding:8px 16px}
+.vr.cur{box-shadow:0 0 0 5px var(--yellow)}
+.vr b{font-family:var(--display);font-weight:400;font-size:40px;min-width:150px;color:#fff}
+.vr small{flex:1;font-family:var(--body);font-weight:900;font-size:18px;line-height:1.15;color:var(--paper);word-break:break-all}
+.vr .btn{height:64px;font-size:30px;padding:0 20px;border-width:4px;box-shadow:0 5px 0 var(--ink)}
+.vnote,.vnone{font-family:var(--display);font-size:26px;color:var(--paper);text-align:center}
+.voice #vall{height:56px;font-size:28px;padding:0 20px}
+</style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -525,7 +536,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <button class="btn round blue back" data-go="title" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">¿A QUÉ JUGAMOS?</div>
     <div id="hub"></div>
-    <div class="voice"><label for="vsel">VOZ</label><select id="vsel" aria-label="VOZ DEL NARRADOR"></select><button class="btn blue" id="vtest">PROBAR</button></div>
+    <div class="voice"><label for="vsel">VOZ</label><select id="vsel" aria-label="VOZ DEL NARRADOR"></select><button class="btn blue" id="vtest">PROBAR</button><button class="btn" id="vall">VER TODAS</button></div>
   </section>
 
   <!-- CONFIG -->
@@ -586,7 +597,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   <section class="screen" id="s-lib">
     <button class="btn round blue back" data-go="hub" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">BIBLIOTECA</div>
-    <div id="lbar"><input id="q" placeholder="BUSCAR POR NOMBRE" autocomplete="off" spellcheck="false" aria-label="BUSCAR POR NOMBRE">
+    <div id="lbar"><input id="q" placeholder="BUSCAR..." autocomplete="off" spellcheck="false" aria-label="BUSCAR POR NOMBRE">
       <div class="fl" id="fu"></div><div class="fl" id="fa"></div></div><div id="lcount"></div>
     <div id="lib"></div>
     <div id="viewer"></div>
@@ -627,6 +638,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <button class="btn round snd" id="b-snd" aria-label="SONIDO"><svg><use href="#i-snd"/></svg></button>
+  <div id="vlist"><div class="vh"><span>VOCES DE LA TABLET</span><button class="btn round red" id="vlx" aria-label="CERRAR"><svg><use href="#i-back"/></svg></button></div><div id="vrows"></div><div class="vnote">¿FALTAN VOCES? INSTALÁ MÁS EN AJUSTES &gt; SALIDA DE TEXTO A VOZ (SERVICIOS DE GOOGLE).</div></div>
   <div id="who"><div id="whoT"></div><div class="cb"><button class="btn blue" id="who-m"><svg><use href="#i-bot"/></svg>CONTRA LA MÁQUINA</button><button class="btn red" id="who-p"><svg><use href="#i-user"/></svg>DOS JUGADORES</button></div></div>
   <div id="mres"><div id="mresT"></div><div id="mresS"></div><div class="cb"><button class="btn" id="mres-again"><svg><use href="#i-play"/></svg>OTRA VEZ</button><button class="btn blue" id="mres-menu">MENÚ</button></div></div>
   <div id="conf"><div class="ct">¿SALIR DE LA PARTIDA?</div><div class="cb"><button class="btn red" id="c-no">NO, SEGUIR</button><button class="btn blue" id="c-yes">SÍ, SALIR</button></div></div>
@@ -695,6 +707,15 @@ function loadVoices(){try{VOICES=speechSynthesis.getVoices().filter(v=>/^es/i.te
   if(VOICE)sel.value=VOICE.name}
 try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices}catch(e){}
 $('#vsel').onchange=e=>{VOICE=VOICES.find(v=>v.name===e.target.value)||VOICE;try{localStorage.setItem('bauti_voz',e.target.value)}catch(x){}};
+const VSAMPLE='¡Hola, Bauti! ¡Bien! ¡Conseguiste a Hulk! Hoy peleamos con los mejores superhéroes.';
+function openVoices(){loadVoices();const r=$('#vrows');
+  r.innerHTML=VOICES.length?VOICES.map((v,i)=>`<div class="vr ${VOICE&&VOICE.name===v.name?'cur':''}"><b>VOZ ${i+1}</b><small>${v.lang}${v.localService===false?' · EN LÍNEA':''}<br>${v.name}</small><button class="btn blue" data-p="${i}">▶ ESCUCHAR</button><button class="btn" data-e="${i}">ELEGIR</button></div>`).join(''):'<div class="vnone">NO HAY VOCES EN ESPAÑOL INSTALADAS.</div>';
+  $('#vlist').classList.add('on')}
+$('#vall').onclick=()=>{ac();sfx('tap');openVoices()};
+$('#vlx').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}$('#vlist').classList.remove('on')};
+$('#vrows').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.p!=null){const v=VOICES[+b.dataset.p],old=VOICE;VOICE=v;SKIP=false;stopSpeech();speak(VSAMPLE).then(()=>{if(VOICE===v)VOICE=old})}
+  else if(b.dataset.e!=null){const v=VOICES[+b.dataset.e];VOICE=v;try{localStorage.setItem('bauti_voz',v.name)}catch(x){}$('#vsel').value=v.name;sfx('pop');openVoices();toast('¡VOZ ELEGIDA!')}};
 $('#vtest').onclick=()=>{ac();SKIP=false;speak('¡Hola, Bauti! ¡Vamos a jugar! Hoy peleamos con los mejores superhéroes.')};
 let SKIP=false;
 function speak(text){return new Promise(res=>{
