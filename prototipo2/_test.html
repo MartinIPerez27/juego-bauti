@@ -709,7 +709,7 @@ $('#b-snd').onclick=()=>{MUTED=!MUTED;$('#b-snd use').setAttribute('href',MUTED?
 
 /* ===== CARTAS ===== */
 function cardEl(c,cw){const e=document.createElement('div');e.className='card '+(c.side==='good'?'':(c.side==='bad'?'bad':'neutral'));e.style.setProperty('--cw',cw+'px');
-  const L=c.name.length,f=L<=8?1:L<=11?.78:L<=15?.66:L<=22?.56:L<=32?.48:.42;
+  const L=c.name.length,W=Math.max(...c.name.split(/[\s\-]+/).map(w=>w.length)),fw=W<=6?1:W<=7?.85:W<=8?.72:W<=9?.64:W<=10?.58:W<=11?.52:.46,fl=L<=8?1:L<=11?.78:L<=15?.66:L<=22?.56:L<=32?.48:.42,f=Math.min(fw,fl);
   e.innerHTML=(c.img?`<img src="${c.img}" alt="" draggable="false" loading="lazy">`:phHTML(c))+`<div class="nm"><b class="pw">${c.pw}</b><span style="--f:${f}em">${c.name}</span></div><div class="sh"></div>`;
   const im=$('img',e);if(im){const chk=()=>{if(im.naturalWidth/im.naturalHeight>.85){e.classList.add('fit');e.style.setProperty('--bg',`url(${c.img})`)}};im.complete?chk():im.addEventListener('load',chk)}
   return e}
@@ -1129,7 +1129,7 @@ function libFilter(){let n=0;$$('#lib .lc').forEach(b=>{const c=BYID[b.dataset.i
   const u=!LF.u||(LF.u==='OTROS'?(c.u!=='MARVEL'&&c.u!=='DC'):c.u===LF.u),a=!LF.a||c.side===LF.a,q=!LF.q||nrm(c.name).includes(LF.q);
   const ok=u&&a&&q;b.hidden=!ok;if(ok)n++});$('#lcount').textContent=n+' PERSONAJES';$('#lib').scrollTop=0}
 function buildLib(){const L=$('#lib');if(L.childElementCount)return;
-  LIBS.forEach(c=>{const b=document.createElement('button');b.className='lc';b.dataset.id=c.id;b.setAttribute('aria-label',c.name);b.append(cardEl(c,196));b.onclick=()=>{sfx('tap');openDet(c)};L.append(b)});
+  LIBS.forEach(c=>{const b=document.createElement('button');b.className='lc';b.dataset.id=c.id;b.setAttribute('aria-label',c.name);b.append(cardEl(c,250));b.onclick=()=>{sfx('tap');openDet(c)};L.append(b)});
   const mk=(sel,arr,key)=>{$(sel).innerHTML=arr.map(([v,l])=>`<button data-v="${v}" class="${v===LF[key]?'on':''}">${l}</button>`).join('');
     $(sel).onclick=e=>{const b=e.target.closest('button');if(!b)return;sfx('tap');LF[key]=b.dataset.v;$$('button',$(sel)).forEach(x=>x.classList.toggle('on',x===b));libFilter()}};
   mk('#fu',UNIS,'u');mk('#fa',ALS,'a');$('#q').oninput=e=>{LF.q=nrm(e.target.value.trim());libFilter()};libFilter()}

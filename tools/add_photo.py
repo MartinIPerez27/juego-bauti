@@ -29,7 +29,7 @@ def main():
     card, th = os.path.join(OUT, base + '.webp'), os.path.join(OUT, base + '_thumb.webp')
     im.save(card, 'WEBP', quality=82, method=4); t = im.copy(); t.thumbnail((160, 240)); t.save(th, 'WEBP', quality=78, method=4)
     if main_photo:
-        db.execute('UPDATE images SET is_selected=0 WHERE character_id=?', (r['id'],))
+        db.execute("UPDATE images SET is_selected=0, status=CASE WHEN status='lista' AND (card_path IS NULL OR card_path NOT LIKE '%_g%') THEN 'reemplazada' ELSE status END WHERE character_id=?", (r['id'],))
     db.execute('INSERT INTO images(character_id,source,source_url,card_path,thumb_path,width,height,bytes,sha256,has_alpha,is_selected,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
                (r['id'], 'usuario', a.url, os.path.relpath(card, ROOT), os.path.relpath(th, ROOT), im.width, im.height, os.path.getsize(card),
                 hashlib.sha256(raw).hexdigest(), int(alpha), int(main_photo), 'lista'))

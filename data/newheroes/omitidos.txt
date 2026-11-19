@@ -1,0 +1,13 @@
+# Nombres que NO deben volver a sumarse (se eliminaron o se unieron a otro personaje)
+WOLVERBROOM
+BULLETS AND BRACELETS
+DRAGON MAN
+WATCHER
+HAL JORDAN
+SINESTRO
+CYBORG SUPERMAN
+SWARM
+BLACK CANARY
+CLAYFACE
+MAD HATTER
+KILLER CROC

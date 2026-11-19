@@ -18,6 +18,8 @@ REACH = {'CUERPO A CUERPO', 'CORTO', 'MEDIO', 'LARGO', 'GLOBAL'}
 
 def main():
     db = connect(); have = {norm(r['name']) for r in db.execute('SELECT name FROM characters')}
+    om = os.path.join(ROOT, 'data', 'newheroes', 'omitidos.txt')
+    if os.path.exists(om): have |= {norm(l) for l in open(om, encoding='utf8').read().split('\n') if l.strip() and not l.startswith('#')}
     added, skipped, errors = [], [], []
     for f in sorted(glob.glob(os.path.join(ROOT, 'data', 'newheroes', 'batch*.txt'))):
         for n, ln in enumerate(open(f, encoding='utf8'), 1):
