@@ -16,7 +16,7 @@
 html,body{height:100%}
 body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--body);font-weight:900;
   overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 *{box-sizing:border-box}
 ::selection{background:var(--yellow);color:var(--ink)}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
@@ -31,6 +31,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(47,168,255,.16) 0 7deg,transparent 7deg 15deg)}
 .screen{position:absolute;inset:0;opacity:0;visibility:hidden;transform:translateY(10px);
   transition:opacity .25s var(--ease-out),transform .25s var(--ease-out),visibility 0s .25s}
+.screen.c720{inset:auto;left:calc((var(--W,1280px) - 1280px)/2);top:calc((var(--H,720px) - 720px)/2);width:1280px;height:720px}
 .screen.on{opacity:1;visibility:visible;transform:none;transition:opacity .25s var(--ease-out),transform .25s var(--ease-out)}
 .disp{font-family:var(--display);font-weight:400;letter-spacing:.03em;line-height:.95}
 .ink{color:var(--paper);-webkit-text-stroke:0;paint-order:stroke fill;text-shadow:0 5px 0 var(--ink),0 8px 18px rgba(0,0,0,.45)}
@@ -131,22 +132,28 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 #s-config .btn.go{position:absolute;right:70px;bottom:24px}
 
 /* ===== MEMORIA ===== */
-.side{position:absolute;top:14px;height:66px;display:flex;align-items:center;gap:16px;padding:0 22px;border-radius:20px;border:5px solid var(--ink);background:var(--bg2);
+/* franjas de abajo: cada jugador ve su nombre, su puntaje y las cartas que va juntando (en abanico) */
+.side{position:absolute;bottom:12px;height:124px;width:604px;display:flex;align-items:center;gap:14px;padding:0 16px;border-radius:22px;border:5px solid var(--ink);background:var(--bg2);
   transition:box-shadow .3s var(--ease-out);box-shadow:0 6px 0 var(--ink)}
-.side.a{left:30px}.side.b{right:30px;flex-direction:row-reverse}
-.side .nm{font-family:var(--display);font-size:38px;line-height:1;text-shadow:0 4px 0 var(--ink)}
+.side.a{left:24px}.side.b{right:24px;flex-direction:row-reverse}
+.side .who{flex:none;width:130px;text-align:center}
+.side .nm{font-family:var(--display);font-size:34px;line-height:1;text-shadow:0 4px 0 var(--ink);white-space:nowrap}
 .side.a .nm{color:var(--blue)}.side.b .nm{color:var(--red)}
-.side .sc{font-family:var(--display);font-size:50px;line-height:1;min-width:34px;text-align:center;color:#fff;text-shadow:0 4px 0 var(--ink)}
+.side .sc{font-family:var(--display);font-size:60px;line-height:1;text-align:center;color:#fff;text-shadow:0 4px 0 var(--ink)}
+.side .fan{position:relative;flex:1;height:100px;border-radius:14px;background:rgba(11,14,51,.45)}
+.side .fan .card{position:absolute;top:2px;transition:left .3s var(--ease-out)}
+.side .fan .card.pop{animation:pop .36s var(--ease-out)}
 .side .sc.bump{animation:bump .4s var(--ease-out)}
 @keyframes bump{40%{transform:scale(1.3)}}
-#mturn{position:absolute;left:50%;top:14px;translate:-50% 0;height:66px;display:flex;align-items:center;gap:12px;font-family:var(--display);font-size:40px;color:var(--yellow);text-shadow:0 4px 0 var(--ink);white-space:nowrap}
+#mturn{position:absolute;left:50%;top:10px;translate:-50% 0;height:56px;display:flex;align-items:center;gap:12px;font-family:var(--display);font-size:40px;color:var(--yellow);text-shadow:0 4px 0 var(--ink);white-space:nowrap}
 #mturn .pip{width:26px;height:26px;border-radius:50%;border:4px solid var(--ink);background:var(--bg2);transition:background .15s,transform .2s var(--ease-out)}
 #mturn .pip.on{background:var(--yellow);transform:scale(1.15)}
 .thumb{width:44px;height:66px;border:3px solid var(--ink);border-radius:8px;object-fit:cover;object-position:50% 18%;background:var(--ink)}
 .thumb.pop{animation:pop .36s var(--ease-out)}
 @keyframes pop{from{opacity:0;transform:scale(.6)}}
 .side.turn{box-shadow:0 6px 0 var(--ink),0 0 0 5px var(--yellow)}
-#board{position:absolute;left:30px;right:30px;top:98px;bottom:22px;perspective:1100px;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2)}
+#s-mem .exit{left:24px;top:8px;width:58px;height:58px}
+#board{position:absolute;left:24px;right:24px;top:72px;bottom:150px;perspective:1100px;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2)}
 #board .bi{position:relative;width:100%}
 .slot{position:absolute;transition:transform .16s var(--ease-out)}
 .slot:active:not(:disabled){transform:scale(.96)}
@@ -168,7 +175,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 /* ===== EQUIPOS ===== */
 #s-team .tt{position:absolute;left:0;right:0;top:22px;text-align:center;font-size:70px;color:var(--yellow);text-shadow:0 5px 0 var(--ink)}
 #s-team .tt span{color:#fff}
-#coll{position:absolute;left:60px;right:60px;top:130px;height:350px;overflow-y:auto;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2);display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-content:flex-start;padding-top:20px}
+#coll{position:absolute;left:40px;right:40px;top:104px;bottom:var(--slotsH,300px);overflow-y:auto;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--bg2);display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-content:center;padding-top:20px}
 .pick{position:relative;transition:transform .2s var(--ease-out)}
 .pick:active{transform:scale(.96)}
 .pick.sel{transform:translateY(-14px)}
@@ -177,11 +184,11 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .pick.sel .ck{opacity:1;transform:none}
 .pick .ck svg{width:30px;height:30px}
 .pick.sel .card{box-shadow:0 0 0 .3em var(--yellow),0 .5em 1.1em rgba(0,0,0,.5)}
-#slots{position:absolute;left:0;right:0;bottom:48px;height:200px;display:flex;gap:26px;justify-content:center;align-items:flex-end}
-.slotph{width:120px;height:180px;border:6px dashed rgba(255,244,214,.45);border-radius:18px;display:grid;place-items:center}
+#slots{position:absolute;left:0;right:0;bottom:22px;height:var(--slotsH,260px);display:flex;gap:26px;justify-content:center;align-items:flex-end}
+.slotph{width:var(--sw,120px);height:calc(var(--sw,120px)*1.5);border:6px dashed rgba(255,244,214,.45);border-radius:18px;display:grid;place-items:center}
 .slotph svg{width:60px;height:60px;opacity:.4}
 #s-team .btn.go{position:absolute;right:50px;bottom:50px}
-#s-team .ai{position:absolute;left:0;right:0;top:300px;text-align:center;font-size:64px;color:var(--paper);text-shadow:0 5px 0 var(--ink)}
+#s-team .ai{position:absolute;left:0;right:0;bottom:calc(var(--slotsH,300px) - 130px);text-align:center;font-size:64px;color:var(--paper);text-shadow:0 5px 0 var(--ink)}
 
 /* ===== BATALLA ===== */
 .score{position:absolute;top:12px;left:30px;right:30px;height:64px;display:flex;justify-content:space-between;align-items:center}
@@ -191,8 +198,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .score .p .v{font-family:var(--display);font-size:50px;line-height:1;color:#fff;text-shadow:0 4px 0 var(--ink);min-width:44px;text-align:center}
 .score .v.bump{animation:bump .5s var(--ease-out)}
 .score .rd{font-family:var(--display);font-size:36px;color:var(--yellow);text-shadow:0 4px 0 var(--ink)}
-.team{position:absolute;top:92px;height:268px;width:560px;display:flex;gap:14px;align-items:flex-start;justify-content:center}
-.team.a{left:30px}.team.b{right:30px}
+.team{position:absolute;top:92px;height:268px;width:590px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;align-content:flex-start;justify-content:center}
+.team.a{left:24px}.team.b{right:24px}
 .team .card{transition:filter .4s,opacity .4s,transform .5s var(--ease-out)}
 .team.win .card{box-shadow:0 0 0 .3em var(--yellow),0 .5em 1.1em rgba(0,0,0,.5)}
 .team.lose .card{filter:saturate(.7) brightness(.85)}
@@ -200,9 +207,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   border:5px solid var(--ink);border-radius:20px;font-family:var(--display);font-size:62px;box-shadow:0 6px 0 var(--ink);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .3s var(--ease-out)}
 .pwr.show{opacity:1;transform:none}
 .pwr svg{width:44px;height:44px}
-.pwr.a{left:160px}.pwr.b{right:160px}
-.chips{position:absolute;top:438px;width:560px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.chips.a{left:30px}.chips.b{right:30px}
+.pwr.a{left:169px}.pwr.b{right:169px}
+.chips{position:absolute;top:438px;width:590px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chips.a{left:24px}.chips.b{right:24px}
 .chip{font-family:var(--display);font-size:25px;line-height:1;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:12px;padding:4px 10px;
   animation:pop .35s var(--ease-out) both}
 .chip b{font-weight:400;color:var(--red)}
@@ -211,7 +218,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .vs.show{animation:vs .6s var(--ease-out) both}
 @keyframes vs{0%{opacity:0;transform:scale(2.2) rotate(-12deg)}60%{opacity:1;transform:scale(.95) rotate(-6deg)}100%{opacity:1;transform:scale(1) rotate(-6deg)}}
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:25}
-.cap{position:absolute;left:30px;right:360px;bottom:22px;height:128px;background:var(--paper);color:var(--ink);border:6px solid var(--ink);border-radius:18px;
+.cap{position:absolute;left:96px;right:360px;bottom:22px;height:128px;background:var(--paper);color:var(--ink);border:6px solid var(--ink);border-radius:18px;
   padding:12px 22px;display:flex;align-items:center;font-family:var(--display);font-size:46px;line-height:1.02;box-shadow:0 8px 0 var(--ink)}
 .cap span{display:block;animation:line .28s var(--ease-out) both}
 @keyframes line{from{opacity:0;transform:translateY(10px)}}
@@ -371,7 +378,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 #viewer .vn,#viewer .vp{position:absolute;top:50%;translate:0 -50%}#viewer .vn{right:30px}#viewer .vp{left:30px}
 .exit{position:absolute;z-index:8;width:66px;height:66px;border-radius:50%;border:5px solid var(--ink);background:var(--red);color:#fff;font:400 34px var(--display);box-shadow:0 5px 0 var(--ink);display:grid;place-items:center}
 .exit:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
-#s-mem .exit{left:340px;top:14px}#s-team .exit{left:24px;top:22px}#s-battle .exit{width:52px;height:52px;font-size:28px}
+#s-team .exit{left:24px;top:22px}#s-battle .exit{width:60px;height:60px;font-size:30px;left:24px;bottom:50px}
 #conf{position:absolute;inset:0;z-index:70;background:rgba(5,7,30,.9);display:none;align-items:center;justify-content:center;flex-direction:column;gap:30px}
 #conf.on{display:flex}#conf .ct{font-family:var(--display);font-size:78px;color:var(--yellow);text-shadow:0 6px 0 var(--ink);text-align:center}
 #conf .cb{display:flex;gap:30px}#conf .btn{height:110px;font-size:56px}
@@ -446,7 +453,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
 .uniseg{position:absolute;left:50%;top:92px;translate:-50% 0;display:flex;gap:10px;z-index:3}
 .uniseg button{height:58px;padding:0 30px;border-radius:18px;border:5px solid var(--ink);background:var(--bg2);color:#fff;font-family:var(--display);font-size:34px;box-shadow:0 5px 0 var(--ink);transition:transform .16s var(--ease-out)}
 .uniseg button.on{background:var(--yellow);color:var(--ink)}.uniseg button:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
-#mmsg{position:absolute;left:50%;bottom:22px;translate:-50% 0;z-index:12;max-width:1100px;padding:10px 30px;border-radius:20px;border:6px solid var(--ink);background:var(--yellow);color:var(--ink);font-family:var(--display);font-size:46px;line-height:1;text-align:center;box-shadow:0 8px 0 var(--ink);opacity:0;pointer-events:none;transform:translateY(20px)}
+#mmsg{position:absolute;left:50%;bottom:156px;translate:-50% 0;z-index:12;max-width:1100px;padding:10px 30px;border-radius:20px;border:6px solid var(--ink);background:var(--yellow);color:var(--ink);font-family:var(--display);font-size:46px;line-height:1;text-align:center;box-shadow:0 8px 0 var(--ink);opacity:0;pointer-events:none;transform:translateY(20px)}
 #mmsg.on{opacity:1;transform:none;transition:opacity .2s,transform .3s var(--ease-out)}
 #pkgrid.big{grid-template-columns:repeat(5,1fr);top:150px;gap:10px}
 .pab{margin-top:8px;max-width:176px;font-family:var(--body);font-weight:900;font-size:16px;line-height:1.1;color:#fff;background:rgba(11,14,51,.78);border-radius:10px;padding:5px 8px;text-align:center}
@@ -524,7 +531,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   <div class="rays"></div><div class="dots"></div>
 
   <!-- TÍTULO -->
-  <section class="screen on" id="s-title">
+  <section class="screen c720 on" id="s-title">
     <div class="disp t1 rise">CHOQUE</div>
     <div class="disp t2 rise" style="animation-delay:.12s">DE HÉROES</div>
     <div class="fan" id="fan"></div>
@@ -532,7 +539,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <!-- MENÚ -->
-  <section class="screen" id="s-hub">
+  <section class="screen c720" id="s-hub">
     <button class="btn round blue back" data-go="title" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">¿A QUÉ JUGAMOS?</div>
     <div id="hub"></div>
@@ -540,7 +547,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <!-- CONFIG -->
-  <section class="screen" id="s-config">
+  <section class="screen c720" id="s-config">
     <button class="btn round blue back" data-go="hub" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">ARMEMOS LA PARTIDA</div>
     <div class="pl a"><div class="who">JUGADOR 1</div><label for="n1" style="position:absolute;left:-9999px">NOMBRE JUGADOR 1</label><input id="n1" maxlength="9" value="BAUTI" autocomplete="off"></div>
@@ -555,8 +562,8 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   <!-- MEMORIA -->
   <section class="screen" id="s-mem">
     <button class="exit" data-exit aria-label="SALIR">✕</button>
-    <div class="side a" id="sd0"><div class="nm"></div><div class="sc">0</div></div>
-    <div class="side b" id="sd1"><div class="nm"></div><div class="sc">0</div></div>
+    <div class="side a" id="sd0"><div class="who"><div class="nm"></div><div class="sc">0</div></div><div class="fan"></div></div>
+    <div class="side b" id="sd1"><div class="who"><div class="nm"></div><div class="sc">0</div></div><div class="fan"></div></div>
     <div id="mturn" aria-live="polite"><span class="tn"></span><i class="pip"></i><i class="pip"></i></div>
     <div id="board"></div>
     <div class="disp banner" id="mbanner"></div>
@@ -576,7 +583,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   <!-- BATALLA -->
   <section class="screen" id="s-battle">
     <div class="scene" id="scene"></div><div id="abn"></div><div id="abadge"></div>
-    <button class="exit" data-exit aria-label="SALIR" style="display:grid;right:12px;top:86px">✕</button>
+    <button class="exit" data-exit aria-label="SALIR" style="display:grid">✕</button>
     <div class="score">
       <div class="p a"><span class="n" id="bn0"></span><span class="v" id="bs0">0</span></div>
       <div class="rd" id="brd"></div>
@@ -594,7 +601,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <!-- BIBLIOTECA -->
-  <section class="screen" id="s-lib">
+  <section class="screen c720" id="s-lib">
     <button class="btn round blue back" data-go="hub" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">BIBLIOTECA</div>
     <div id="lbar"><input id="q" placeholder="BUSCAR..." autocomplete="off" spellcheck="false" aria-label="BUSCAR POR NOMBRE">
@@ -605,7 +612,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <!-- PERSONAJE vs PERSONAJE -->
-  <section class="screen" id="s-pvp">
+  <section class="screen c720" id="s-pvp">
     <button class="btn round blue back" data-go="hub" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div id="pvr"></div>
     <div class="pvp-col" id="pv0"></div>
@@ -614,7 +621,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
     <div class="pvp-col" id="pv1"></div>
   </section>
   <!-- ELEGÍ UNO -->
-  <section class="screen" id="s-uno">
+  <section class="screen c720" id="s-uno">
     <button class="btn round blue back" data-go="hub" aria-label="VOLVER"><svg><use href="#i-back"/></svg></button>
     <div class="disp head">ELEGÍ UNO</div>
     <div id="unomsg"></div><div id="unogrid"></div>
@@ -623,14 +630,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;paddin
   </section>
 
   <!-- ELEGIR CARTAS (equipo perfecto, desafío, draft, carrera) -->
-  <section class="screen" id="s-pick">
+  <section class="screen c720" id="s-pick">
     <button class="exit" data-exit aria-label="SALIR">✕</button>
     <div class="scene on" id="pkscene"></div>
     <div class="disp head" id="pkT"></div><div id="pkS"></div><div id="pkgrid"></div>
     <div id="pkbar"><div id="pkdots"></div><button class="btn go" id="pkok">¡LISTO!</button></div>
   </section>
   <!-- FINAL -->
-  <section class="screen" id="s-final">
+  <section class="screen c720" id="s-final">
     <svg class="tr"><use href="#i-trophy"/></svg>
     <div class="disp w" id="fw"></div>
     <div class="sc" id="fs"></div>
@@ -667,8 +674,11 @@ const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],
 const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const stage=$('#stage'), frame=$('#frame');
 let SC=1;
-function fit(){const w=frame.clientWidth,h=frame.clientHeight;SC=Math.min(w/1280,h/720);
-  stage.style.transform=`translate(${(w-1280*SC)/2}px,${(h-720*SC)/2}px) scale(${SC})`}
+/* El escenario se estira para llenar TODA la pantalla: mínimo 1280x720; en una tablet 7:5 queda 1280x~914. */
+function fit(){const w=frame.clientWidth,h=frame.clientHeight;let W=1280,H=720;
+  if(h*1280>=w*720){SC=w/1280;H=Math.round(h/SC)}else{SC=h/720;W=Math.round(w/SC)}
+  stage.style.width=W+'px';stage.style.height=H+'px';stage.style.transform=`scale(${SC})`;
+  const r=document.documentElement.style;r.setProperty('--W',W+'px');r.setProperty('--H',H+'px')}
 addEventListener('resize',fit);fit();
 const rectIn=e=>{const r=e.getBoundingClientRect(),s=stage.getBoundingClientRect();return{x:(r.left-s.left)/SC,y:(r.top-s.top)/SC,w:r.width/SC,h:r.height/SC}};
 const SVGNS='http://www.w3.org/2000/svg';
@@ -795,11 +805,14 @@ function layout(n,W,H){const gap=14;let best=null;
 function sideUpdate(){[0,1].forEach(i=>{const s=$('#sd'+i);s.classList.toggle('turn',S.turn===i);$('.nm',s).textContent=S.names[i]});
   const tn=$('#mturn .tn');tn.textContent='TURNO: '+S.names[S.turn];tn.style.color=S.turn?'var(--red)':'var(--blue)';
   $$('#mturn .pip').forEach((p,k)=>p.classList.toggle('on',k<flips))}
-function addThumb(p){const sc=$('.sc',$('#sd'+p));sc.textContent=S.coll[p].length;sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump')}
+function addThumb(p){const side=$('#sd'+p),sc=$('.sc',side),fan=$('.fan',side),n=S.coll[p].length;sc.textContent=n;sc.classList.remove('bump');void sc.offsetWidth;sc.classList.add('bump');
+  const t=cardEl(S.coll[p][n-1],64);t.classList.add('pop');fan.append(t);
+  const th=$$('.card',fan),F=fan.clientWidth-8,step=th.length>1?Math.max(3,Math.min(72,(F-64)/(th.length-1))):0;
+  th.forEach((x,i)=>{x.style.left=(4+i*step)+'px';x.style.zIndex=i})}
 function startMemory(){
   S.coll=[[],[]];S.score=[0,0];S.round=0;S.turn=0;busy=true;faceUp=new Set();flips=0;
   SKIP=false;const pick=shuffle(POOL()).slice(0,Math.min(S.pairs,POOL().length));deck=shuffle([...pick,...pick].map(c=>c.id));matched=deck.map(()=>false);left=pick.length;
-  [0,1].forEach(i=>{$('.sc',$('#sd'+i)).textContent='0'});sideUpdate();
+  [0,1].forEach(i=>{$('.sc',$('#sd'+i)).textContent='0';$('#sd'+i+' .fan').innerHTML=''});sideUpdate();
   go('mem');
   const board=$('#board');board.innerHTML='';board.scrollTop=0;
   const W=board.clientWidth,H=board.clientHeight,L=layout(deck.length,W,H);
@@ -832,7 +845,7 @@ async function doMatch(a,b){const c=BYID[deck[a]],p=S.turn;matched[a]=matched[b]
   [a,b].forEach(i=>slotEl(i).classList.add('ok'));
   focusSlot(a);
   await sleep(450);
-  const from=[slotEl(a),slotEl(b)],dst=$('#sd'+p+' .sc');
+  const from=[slotEl(a),slotEl(b)],dst=$('#sd'+p+' .fan');
   await Promise.all(from.map((s,k)=>fly(s,dst,c.img,k*90)));
   from.forEach(s=>s.classList.add('gone'));S.coll[p].push(c);addThumb(p);
   await said;$('#mmsg').classList.remove('on');
@@ -864,9 +877,12 @@ function pickTeam(p,size){return new Promise(async res=>{
   go('team');$('#tt').innerHTML=`<span>${S.names[p]}</span>: ¡ELEGÍ ${size}!`;
   const coll=$('#coll'),slots=$('#slots'),ready=$('#b-ready'),aiMsg=$('#aiMsg'),rem=remaining(p);let sel=[];
   coll.innerHTML='';slots.innerHTML='';ready.disabled=true;aiMsg.hidden=!S.ai[p];ready.hidden=S.ai[p];
-  const cw=rem.length<=6?138:rem.length<=8?118:100;
+  const sw=Math.min(190,Math.floor((stage.clientWidth-80-26*(size-1))/size),Math.floor((stage.clientHeight-104-190)/1.5*.42));   // tamaño de las cartas ya elegidas
+  const sh=Math.round(sw*1.5)+22,sc=$('#s-team');sc.style.setProperty('--slotsH',sh+'px');sc.style.setProperty('--sw',sw+'px');
+  const CW=stage.clientWidth-80,CH=stage.clientHeight-104-sh-30,gp=16;let cw=100;
+  for(let c=2;c<=14;c++){const r=Math.ceil(rem.length/c),w=Math.floor(Math.min((CW-gp*(c-1))/c,(CH-20-gp*(r-1))/r/1.5,200));if(w>cw)cw=w}
   const draw=()=>{slots.innerHTML='';for(let i=0;i<size;i++){const d=document.createElement('div');
-      if(sel[i]){d.className='rise';d.append(cardEl(sel[i],120))}else{d.className='slotph';d.innerHTML=icon('i-user')}slots.append(d)}
+      if(sel[i]){d.className='rise';d.append(cardEl(sel[i],sw))}else{d.className='slotph';d.innerHTML=icon('i-user')}slots.append(d)}
     $$('.pick',coll).forEach((e,i)=>e.classList.toggle('sel',sel.includes(rem[i])));ready.disabled=sel.length!==size};
   rem.forEach((c,i)=>{const b=document.createElement('button');b.className='pick rise';b.style.animationDelay=i*40+'ms';b.append(cardEl(c,cw));
     const ck=document.createElement('span');ck.className='ck';ck.innerHTML=icon('i-check');b.append(ck);
@@ -1029,7 +1045,14 @@ async function battle(A,B){
   ['#pa','#pb'].forEach(s=>{$(s).classList.remove('show');$('span',$(s)).textContent='0'});
   ['#ca','#cb'].forEach(s=>$(s).innerHTML='');
   $('#vs').classList.remove('show');$('#cap').innerHTML='';$('#b-next').hidden=true;$('#b-skip').hidden=false;
-  const cwFor=n=>Math.min(n>=3?158:172,Math.floor((560-14*(n-1))/n));
+  // tarjetas lo más grandes posible: se usa todo el alto de la tablet y, si hay muchas, van en 2 o 3 filas
+  const HH=stage.clientHeight,nn=Math.max(A.length,B.length);let bw=null;
+  for(let r=1;r<=3;r++){const cols=Math.ceil(nn/r),w=Math.floor(Math.min((590-14*(cols-1))/cols,(HH-472-14*(r-1))/r/1.5,230));if(!bw||w>bw.w)bw={w,r}}
+  const th=Math.round(bw.w*1.5*bw.r+14*(bw.r-1)),room=HH-92-170-(th+14+72+14+100),tp=92+Math.max(0,Math.floor(room/2));
+  ['#ta','#tb'].forEach(q=>{$(q).style.top=tp+'px';$(q).style.height=th+'px'});
+  ['#pa','#pb'].forEach(q=>$(q).style.top=(tp+th+14)+'px');['#ca','#cb'].forEach(q=>$(q).style.top=(tp+th+100)+'px');
+  $('#vs').style.top=Math.max(96,tp+th/2-56)+'px';
+  const cwFor=()=>bw.w;
   const place=(sel,T,from)=>{T.forEach((c,i)=>{const e=cardEl(c,cwFor(T.length));$(sel).append(e);
     if(!REDUCE)e.animate([{transform:`translateX(${from*520}px) rotate(${from*14}deg)`,opacity:0},{transform:'none',opacity:1}],{duration:520,delay:i*130,easing:'cubic-bezier(.23,1,.32,1)',fill:'backwards'});})};
   const cap=t=>{$('#cap').innerHTML=`<span>${t}</span>`};
